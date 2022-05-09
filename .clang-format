@@ -1,0 +1,14 @@
+Language: Cpp
+BasedOnStyle: Google
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -2
+ColumnLimit: 100
+BreakBeforeBraces: Custom
+DerivePointerAlignment: false
+PointerAlignment: Left
+AllowShortIfStatementsOnASingleLine: Never
+AlignOperands: true
+BreakBeforeBinaryOperators: true
