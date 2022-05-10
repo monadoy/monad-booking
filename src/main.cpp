@@ -59,6 +59,7 @@ void setup() {
 	Serial.println(F("Setting up RTC..."));
 	M5.RTC.begin();
 
+#ifdef USE_WEB_SETUP
 	Serial.println(F("Restoring WiFi-configuration..."));
 
 	if (restoreWifiConfig()) {
@@ -72,6 +73,19 @@ void setup() {
 	}
 	setRoutes();
 	webServer.begin();
+#else
+	Serial.print(F("Connecting WiFi..."));
+
+	WiFi.begin(SECRETS_WIFI_SSID, SECRETS_WIFI_PASS);
+
+	while (WiFi.status() != WL_CONNECTED) {
+		delay(500);
+		Serial.print(".");
+	}
+	Serial.println();
+
+	setupTime();
+#endif
 }
 
 bool restoreWifiConfig() {
@@ -118,25 +132,9 @@ void setupMode() {
 }
 
 void loop() {
-
+#ifdef USE_WEB_SETUP
 	webServer.handleClient();
-	setupTime();
-
-	// canvas.createCanvas(540, 960);
-	canvas.createCanvas(960, 540);
-	canvas.setTextSize(3);
-	canvas.fillCanvas(0xeeef);
-	canvas.drawString("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 110, 110);
-	// canvas.drawJpgUrl("https://m5stack.oss-cn-shenzhen.aliyuncs.com/image/example_pic/flower.jpg");
-	// canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-	// canvas.createCanvas(540, 960);
-	// canvas.setTextSize(3);
-	// canvas.drawJpgUrl("https://m5stack.oss-cn-shenzhen.aliyuncs.com/image/example_pic/flower.jpg");
-	canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-	Serial.print(canvas.readPixel(100, 100));
-}
-
-void loop() {
+#endif
 	printLocalTime();
 	delay(1000);
 }
