@@ -21,6 +21,9 @@ Preferences preferences;
 String WIFI_SSID = "";
 String WIFI_PASS = "";
 
+const char* NTP_SERVER = "time.google.com";
+const char* TZ_INFO = "EET-2EEST,M3.5.0/3,M10.5.0/4";
+
 bool restoreWifiConfig();
 void setupMode();
 String makePage(String title, String contents);
@@ -30,17 +33,9 @@ struct tm timeinfo;
 void setupTime() {
 	Serial.println("Setting up time");
 
-	M5.RTC.begin();
-
-	configTime(0, 0, NTP_SERVER);
-	if (!getLocalTime(&timeinfo)) {
-		Serial.println("Failed to obtain time");
-		return;
-	}
 	// See https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 	// for Timezone codes for your region
-	setenv("TZ", TZ_INFO, 1);
-	tzset();
+	configTzTime(TZ_INFO, NTP_SERVER);
 }
 
 void printLocalTime() {
