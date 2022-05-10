@@ -5,7 +5,7 @@
 #include <WiFiClient.h>
 
 #include "WebServer.h"
-// #include "secrets.h"
+#include "secrets.h"
 
 M5EPD_Canvas canvas(&M5.EPD);
 
@@ -29,6 +29,18 @@ void setupMode();
 String makePage(String title, String contents);
 
 struct tm timeinfo;
+
+void connectWifi(const char* ssid, const char* pass) {
+	Serial.print(F("Connecting WiFi..."));
+
+	WiFi.begin(ssid, pass);
+
+	while (WiFi.status() != WL_CONNECTED) {
+		delay(500);
+		Serial.print(".");
+	}
+	Serial.println();
+}
 
 void setupTime() {
 	Serial.println("Setting up time");
@@ -74,15 +86,7 @@ void setup() {
 	setRoutes();
 	webServer.begin();
 #else
-	Serial.print(F("Connecting WiFi..."));
-
-	WiFi.begin(SECRETS_WIFI_SSID, SECRETS_WIFI_PASS);
-
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		Serial.print(".");
-	}
-	Serial.println();
+	connectWifi(SECRETS_WIFI_SSID, SECRETS_WIFI_PASS);
 
 	setupTime();
 #endif
