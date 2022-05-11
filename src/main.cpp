@@ -4,8 +4,16 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 
+#define EZTIME_EZT_NAMESPACE 1
+#include <ezTime.h>
+
 #include "WebServer.h"
 #include "secrets.h"
+
+// Provide official timezone names
+// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+const char* IANA_TZ = "Europe/Helsinki";
+Timezone myTZ;
 
 M5EPD_Canvas canvas(&M5.EPD);
 
@@ -21,14 +29,9 @@ Preferences preferences;
 String WIFI_SSID = "";
 String WIFI_PASS = "";
 
-const char* NTP_SERVER = "time.google.com";
-const char* TZ_INFO = "EET-2EEST,M3.5.0/3,M10.5.0/4";
-
 bool restoreWifiConfig();
 void setupMode();
 String makePage(String title, String contents);
-
-struct tm timeinfo;
 
 void connectWifi(const char* ssid, const char* pass) {
 	Serial.print(F("Connecting WiFi..."));
@@ -45,18 +48,13 @@ void connectWifi(const char* ssid, const char* pass) {
 void setupTime() {
 	Serial.println("Setting up time");
 
-	// See https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
-	// for Timezone codes for your region
-	configTzTime(TZ_INFO, NTP_SERVER);
+	ezt::setDebug(INFO);
+	ezt::waitForSync();
+
+	myTZ.setLocation(IANA_TZ);
 }
 
-void printLocalTime() {
-	if (!getLocalTime(&timeinfo)) {
-		Serial.println("Failed to obtain time 1");
-		return;
-	}
-	Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S zone %Z %z ");
-}
+void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
 
 void setup() {
 	M5.begin();
