@@ -36,6 +36,7 @@ String WIFI_PASS = "";
 bool restoreWifiConfig();
 void setupMode();
 String makePage(String title, String contents);
+void setRoutes();
 
 struct tm timeinfo;
 
