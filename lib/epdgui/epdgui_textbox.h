@@ -10,7 +10,7 @@ public:
     static const int16_t EVENT_PRESSED = 1;
 
 public:
-    EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h);
+    EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16_t color, int16_t txt_color);
     ~EPDGUI_Textbox();
     void Draw(m5epd_update_mode_t mode = UPDATE_MODE_DU4);
     void Draw(M5EPD_Canvas* canvas);
@@ -29,6 +29,8 @@ private:
     M5EPD_Canvas *_canvas = NULL;
     String _data;
     uint16_t _size;
+    uint16_t _color;
+    uint16_t _txt_color;
     bool _thiscreat;
     int16_t _state;
     int16_t _margin_left, _margin_right, _margin_top, _margin_bottom;
