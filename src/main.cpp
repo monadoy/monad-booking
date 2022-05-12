@@ -96,7 +96,8 @@ void setup() {
 
 	if (restoreWifiConfig()) {
 		Serial.println(F("WiFi-config restored!"));
-		// connect
+		connectWifi(WIFI_SSID.c_str(), WIFI_PASS.c_str());
+		setupTime();
 	} else {
 		Serial.println(F("No wifi configuration stored"));
 		Serial.println(F("Entering setup-mode..."));
@@ -105,8 +106,6 @@ void setup() {
 	}
 	setRoutes();
 	webServer.begin();
-	connectWifi(WIFI_SSID.c_str(), WIFI_PASS.c_str());
-	setupTime();
 }
 
 bool restoreWifiConfig() {
