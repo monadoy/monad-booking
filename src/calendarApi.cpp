@@ -2,10 +2,62 @@
 
 #include <HTTPClient.h>
 #include <StreamUtils.h>
-#define EZTIME_EZT_NAMESPACE 1
-#include <ezTime.h>
+
+#include "cert.h"
 
 namespace calapi {
+namespace internal {
+void refresh(Token& token) {
+	Serial.println("Refreshing token...");
+	if (token.unixExpiry + 10 > UTC.now()) {
+		Serial.println("Token doesn't need refreshing");
+		return;
+	}
+
+	HTTPClient http;
+	http.begin(token.tokenUri, GOOGLE_API_FULL_CHAIN_CERT);
+	http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+	int httpCode
+	    = http.POST("client_id=" + token.clientId + "&client_secret=" + token.clientSecret
+	                + "&refresh_token=" + token.refreshToken + "&grant_type=refresh_token");
+
+	String responseBody = http.getString();
+	Serial.println("Received token response:\n" + responseBody + "\n");
+
+	if (httpCode == 200) {
+		StaticJsonDocument<1024> doc;
+		DeserializationError err = deserializeJson(doc, responseBody);
+		if (err) {
+			Serial.print(F("deserializeJson() failed with code "));
+			Serial.println(err.f_str());
+		}
+
+		token.accessToken = doc["access_token"].as<String>();
+		token.unixExpiry = UTC.now() + doc["expires_in"].as<long>();
+	} else {
+		Serial.println("Error on HTTP request: " + httpCode);
+	}
+
+	http.end();
+}
+
+time_t getNextMidnight(Timezone& myTZ) {
+	time_t now = myTZ.now();
+
+	tmElements_t tm;
+	ezt::breakTime(now, tm);
+	tm.Hour = 0;
+	tm.Minute = 0;
+	tm.Second = 0;
+	tm.Day += 1;
+
+	time_t nextMidnight = ezt::makeTime(tm);
+
+	return nextMidnight;
+}
+}  // namespace internal
+
 time_t parseRfcTimestamp(const String& input) {
 	tmElements_t tmElements{};
 	tmElements.Year = input.substring(0, 4).toInt() - 1970;
@@ -44,10 +96,9 @@ time_t parseRfcTimestamp(const String& input) {
 	return t;
 }
 
-Token parseToken(Stream& input) {
-	ReadLoggingStream loggingStream(input, Serial);
+Token parseToken(const String& input) {
 	StaticJsonDocument<1024> doc;
-	DeserializationError err = deserializeJson(doc, loggingStream);
+	DeserializationError err = deserializeJson(doc, input);
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
@@ -78,36 +129,92 @@ void printToken(const Token& token) {
 	Serial.println("}");
 }
 
-void refresh(Token& token) {
-	Serial.println("Refreshing token...");
-	if (token.unixExpiry + 10 > UTC.now()) {
-		Serial.println("Token doesn't need refreshing");
-		return;
-	}
-
+CalendarStatus fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId) {
+	internal::refresh(token);
 	HTTPClient http;
-	http.begin(token.tokenUri);
-	http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-	int httpCode
-	    = http.POST("client_id=" + token.clientId + "&client_secret=" + token.clientSecret
-	                + "&refresh_token=" + token.refreshToken + "&grant_type=refresh_token");
+	String timeMin = myTZ.dateTime(RFC3339);
+	timeMin.replace("+", "%2b");
+
+	String timeMax = myTZ.dateTime(internal::getNextMidnight(myTZ), RFC3339);
+	timeMax.replace("+", "%2b");
+
+	String timeZone = myTZ.getOlson();
+
+	http.begin("https://www.googleapis.com/calendar/v3/calendars/calendarId/events?calendarId="
+	           + calendarId + "&timeMin=" + timeMin + "&timeMax=" + timeMax
+	           + "&timeZone=" + timeZone + "&singleEvents=true&orderBy=startTime&maxResults=2"
+			   "&fields=summary,items(id,creator,start,end,summary)", GOOGLE_API_FULL_CHAIN_CERT
+	);
+
+	http.addHeader("Content-Type", "application/json");
+	http.addHeader("Authorization", "Bearer " + token.accessToken);
+
+	int httpCode = http.GET();
+
+	CalendarStatus result{
+	    .name = "",
+	    .currentEvent = nullptr,
+	    .nextEvent = nullptr,
+	};
+
+	String responseBody = http.getString();
+	Serial.println("Received event list response:\n" + responseBody + "\n");
 
 	if (httpCode == 200) {
-		ReadLoggingStream loggingStream(http.getStream(), Serial);
-		StaticJsonDocument<1024> doc;
-		DeserializationError err = deserializeJson(doc, loggingStream);
+		DynamicJsonDocument doc(2048);
+		DeserializationError err = deserializeJson(doc, responseBody);
 		if (err) {
 			Serial.print(F("deserializeJson() failed with code "));
 			Serial.println(err.f_str());
 		}
 
-		token.accessToken = doc["access_token"].as<String>();
-		token.unixExpiry = UTC.now() + doc["expires_in"].as<long>();
+		result.name = doc["summary"].as<String>();
+
+		JsonArray items = doc["items"].as<JsonArray>();
+
+		time_t now = UTC.now();
+
+		for (JsonObject item : items) {
+			// Whole day events contain "date" key, ignore these for now
+			if (item["start"].containsKey("date"))
+				continue;
+
+			time_t startTime = parseRfcTimestamp(item["start"]["dateTime"]);
+			time_t endTime = parseRfcTimestamp(item["end"]["dateTime"]);
+
+			auto createEvent = [&](JsonObject& o) {
+				return new Event{
+				    .id = o["id"],
+				    .creator = o["creator"]["displayName"] | o["creator"]["email"],
+				    .summary = o["summary"],
+				    .unixStartTime = startTime,
+				    .unixEndTime = endTime,
+				};
+			};
+
+			if (startTime <= now && now <= endTime && result.currentEvent == nullptr) {
+				result.currentEvent = std::unique_ptr<Event>(createEvent(item));
+			} else if (startTime > now && result.nextEvent == nullptr) {
+				result.nextEvent = std::unique_ptr<Event>(createEvent(item));
+			}
+		}
 	} else {
 		Serial.println("Error on HTTP request: " + httpCode);
 	}
 
 	http.end();
+
+	return result;
+}
+
+void printEvent(const Event& event) {
+	Serial.println("EVENT: {");
+	Serial.println("  Id: " + event.id);
+	Serial.println("  Creator: " + event.creator);
+	Serial.println("  Summary: " + event.summary);
+	Serial.println("  Start Timestamp: " + UTC.dateTime(event.unixStartTime, UTC_TIME, RFC3339));
+	Serial.println("  End Timestamp: " + UTC.dateTime(event.unixEndTime, UTC_TIME, RFC3339));
+	Serial.println("}");
 }
 }  // namespace calapi
