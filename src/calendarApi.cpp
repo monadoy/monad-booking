@@ -1,7 +1,6 @@
 #include "calendarApi.h"
 
 #include <HTTPClient.h>
-#include <StreamUtils.h>
 
 #include "cert.h"
 
