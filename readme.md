@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ### Generate token
 Authorize the program by logging in with the user:
 ```sh
-python src/oauth2flow.py
+python scripts/oauth2flow.py
 ```
 This generates a token.json that is used by the program to access and edit the calendars.
 
