@@ -64,7 +64,7 @@ Token parseToken(Stream& input) {
 	             .unixExpiry = 0};
 }
 
-void printToken(Token& token) {
+void printToken(const Token& token) {
 	Serial.println("TOKEN: {");
 	Serial.println("  Access Token: " + token.accessToken);
 	Serial.println("  Refresh Token: " + token.refreshToken);

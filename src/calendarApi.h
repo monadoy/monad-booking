@@ -16,7 +16,15 @@ struct Token {
 };
 
 /**
- * Parses an RFC 3339 time string (e.g. 2022-01-01T00:00:00+03:00) into a UTC time_t,
+ * Parses an RFC 3339 time string into a UTC time_t,
+ * Not a full RFC 3339 parser, but common (and used by google) formats shown below are supported.
+ * 2022-12-30T23:59:59Z
+ * 2022-12-30T23:59:59+03:00
+ * 2022-12-30T23:59:59-03:00
+ * 2022-12-30T23:59:59.000Z
+ * 2022-12-30T23:59:59.000+03:00
+ * 2022-12-30T23:59:59.000-03:00
+ * Seconds may contain any number of digits after the decimal point.
  */
 time_t parseRfcTimestamp(const String& input);
 
@@ -25,7 +33,7 @@ time_t parseRfcTimestamp(const String& input);
  */
 Token parseToken(Stream& input);
 
-void printToken(Token& token);
+void printToken(const Token& token);
 
 /**
  * Request new token from google if token has expired.
