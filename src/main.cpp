@@ -8,7 +8,11 @@
 #include <ezTime.h>
 
 #include "WebServer.h"
-#include "secrets.h"
+
+#define CONFIG_NAME "configuration"
+
+// Uncomment this to load config variables from secrets.h
+#define DEVMODE 1
 
 // Provide official timezone names
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -32,6 +36,19 @@ String WIFI_PASS = "";
 bool restoreWifiConfig();
 void setupMode();
 String makePage(String title, String contents);
+
+struct tm timeinfo;
+
+#ifdef DEVMODE
+
+#include "secrets.h"
+void loadSecrets(Preferences& prefs) {
+	prefs.begin(CONFIG_NAME);
+
+	prefs.putString("WIFI_SSID", SECRETS_WIFI_SSID);
+	prefs.putString("WIFI_PASS", SECRETS_WIFI_PASS);
+}
+#endif
 
 void connectWifi(const char* ssid, const char* pass) {
 	Serial.print(F("Connecting WiFi..."));
@@ -59,8 +76,13 @@ void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
 void setup() {
 	M5.begin();
 
+#ifdef DEVMODE
+	loadSecrets(preferences);
+#endif
+
 	Serial.println(F("========== Monad Booking =========="));
 	Serial.println(F("Booting up..."));
+	preferences.begin(CONFIG_NAME);
 
 	Serial.println(F("Setting up E-ink display..."));
 	M5.EPD.SetRotation(0);
@@ -69,7 +91,6 @@ void setup() {
 	Serial.println(F("Setting up RTC..."));
 	M5.RTC.begin();
 
-#ifdef USE_WEB_SETUP
 	Serial.println(F("Restoring WiFi-configuration..."));
 
 	if (restoreWifiConfig()) {
@@ -83,15 +104,11 @@ void setup() {
 	}
 	setRoutes();
 	webServer.begin();
-#else
-	connectWifi(SECRETS_WIFI_SSID, SECRETS_WIFI_PASS);
-
+	connectWifi(WIFI_SSID.c_str(), WIFI_PASS.c_str());
 	setupTime();
-#endif
 }
 
 bool restoreWifiConfig() {
-	preferences.begin("wifi-config");
 	delay(10);
 
 	WIFI_SSID = preferences.getString("WIFI_SSID");
@@ -134,9 +151,7 @@ void setupMode() {
 }
 
 void loop() {
-#ifdef USE_WEB_SETUP
 	webServer.handleClient();
-#endif
 	printLocalTime();
 	delay(1000);
 }
