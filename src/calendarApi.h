@@ -47,13 +47,10 @@ struct CalendarStatus {
 template <typename T>
 struct Result {
   private:
-	Result(std::shared_ptr<T> _ok, std::shared_ptr<Error> _err) {
-		_ok = _ok;
-		_err = _err;
-	};
+	Result(std::shared_ptr<T> ok, std::shared_ptr<Error> err) : _ok{ok}, _err(err) {}
 
-	std::shared_ptr<T> _ok;
-	std::shared_ptr<Error> _err;
+	const std::shared_ptr<T> _ok;
+	const std::shared_ptr<Error> _err;
 
   public:
 	static Result makeOk(T* value) { return Result(std::shared_ptr<T>(value), nullptr); }
@@ -64,15 +61,15 @@ struct Result {
 
 	static Result makeErr(std::shared_ptr<T> error) { return Result(nullptr, error); }
 
-	bool isOk() { return ok != nullptr; }
-	bool isErr() { return err != nullptr; }
+	bool isOk() const { return ok != nullptr; }
+	bool isErr() const { return err != nullptr; }
 
-	std::shared_ptr<T> ok() {
+	std::shared_ptr<T> ok() const {
 		assert(_ok != nullptr);
 		return _ok;
 	}
 
-	std::shared_ptr<Error> err() {
+	std::shared_ptr<Error> err() const {
 		assert(_err != nullptr);
 		return _err;
 	}
