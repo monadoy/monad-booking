@@ -91,7 +91,11 @@ void refresh(Token& token);
  */
 time_t getNextMidnight(Timezone& myTZ);
 
-std::unique_ptr<Event> extractEvent(const JsonObject& object);
+/**
+ * Get relevant values from json object and create an Events struct from them.
+ * Some fields can be empty if the json object doesn't contain them.
+ */
+std::shared_ptr<Event> extractEvent(const JsonObject& object);
 
 }  // namespace internal
 
@@ -119,10 +123,15 @@ void printToken(const Token& token);
  * Fetch the current and next events from Google Calendar API.
  * Also contains the name of the room.
  * Refreshes token if necessary.
- * CurrentEvent and/or nextEvent may be nullptr, check before using.
+ * Returns the calendar status on success and error on failure.
  */
 Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId);
 
+/**
+ * Request Google Calendar API to end the event pointed by calendarId and eventId.
+ * Refreshes token if necessary.
+ * Returns the changed event on success and error on failure.
+ */
 Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
                        const String& eventId);
 
