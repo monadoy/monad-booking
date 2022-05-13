@@ -261,19 +261,19 @@ void createLabels() {
 
 	// current booking status label
 	lbls[LABEL_CURRENT_BOOKING] = new EPDGUI_Textbox(80, 158, 418, 77, 0, 15);
-	lbls[LABEL_CURRENT_BOOKING]->SetTextSize(64);
+	lbls[LABEL_CURRENT_BOOKING]->SetTextSize(60);
 	lbls[LABEL_CURRENT_BOOKING]->AddText("Vapaa");
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 
 	// book event label
 	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 251, 197, 39, 0, 15);
-	lbls[LABEL_BOOK_EVENT]->SetTextSize(32);
+	lbls[LABEL_BOOK_EVENT]->SetTextSize(36);
 	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
 
 	// next event label
 	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 78, 3, 15);
-	lbls[LABEL_NEXT_EVENT]->SetTextSize(32);
+	lbls[LABEL_NEXT_EVENT]->SetTextSize(36);
 	lbls[LABEL_NEXT_EVENT]->AddText("Seuraava\nvaraus");
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
 
@@ -293,7 +293,7 @@ void createLabels() {
 	// next event time label
 	lbls[LABEL_NEXT_EVENT_TIME] = new EPDGUI_Textbox(701, 370, 231, 106, 3, 15);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_TIME]);
-	lbls[LABEL_NEXT_EVENT_TIME]->SetTextSize(44);
+	lbls[LABEL_NEXT_EVENT_TIME]->SetTextSize(48);
 	lbls[LABEL_NEXT_EVENT_TIME]->AddText("18.00 -\n21.00");
 
 	// current event creator label
@@ -313,7 +313,7 @@ void createLabels() {
 	// current event time label
 	lbls[LABEL_CURRENT_EVENT_TIME] = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
-	lbls[LABEL_CURRENT_EVENT_TIME]->SetTextSize(44);
+	lbls[LABEL_CURRENT_EVENT_TIME]->SetTextSize(36);
 	lbls[LABEL_CURRENT_EVENT_TIME]->AddText("18:00 - 21:00");
 	lbls[LABEL_CURRENT_EVENT_TIME]->SetHide(true);
 	Serial.println("Done!");
@@ -332,11 +332,11 @@ void setup() {
     M5.EPD.Clear(true);
     M5.RTC.begin();
 
-	canvasCurrentEvent.createCanvas(652, 540);
+	/* canvasCurrentEvent.createCanvas(652, 540);
 	canvasCurrentEvent.fillCanvas(0);
 
 	canvasNextEvent.createCanvas(308, 540);
-	canvasNextEvent.fillCanvas(3);
+	canvasNextEvent.fillCanvas(3); */
 
 	Event testCurrentEvent;
 	Event testNextEvent;
@@ -353,7 +353,7 @@ void setup() {
 
 	createButtons();
 	createLabels();
-	updateScreen();
+	//updateScreen();
 
 
 

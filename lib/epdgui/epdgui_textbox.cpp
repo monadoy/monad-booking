@@ -1,12 +1,12 @@
 #include "epdgui_textbox.h"
-#include "binaryttf.h"
+#include "interregularttf.h"
 
 uint32_t EPDGUI_Textbox::_textbox_touching_id = 0;
 
 EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16_t color, int16_t txt_color): EPDGUI_Base(x, y, w, h)
 {
     _canvas = new M5EPD_Canvas(&M5.EPD);
-    _canvas->loadFont(binaryttf, sizeof(binaryttf));
+    _canvas->loadFont(interregularttf, sizeof(interregularttf));
 
     _size = 26;
     _color = color;
@@ -99,7 +99,7 @@ void EPDGUI_Textbox::Draw(m5epd_update_mode_t mode)
     else
     {
         _canvas->setTextSize(_size);
-        _canvas->fillCanvas(0);
+        _canvas->fillCanvas(_color);
         _canvas->drawRect(0, 0, _w, _h, _color);
         _canvas->drawRect(1, 1, _w - 2, _h - 2, _color);
         _canvas->drawRect(2, 2, _w - 4, _h - 4, _color);

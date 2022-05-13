@@ -40,6 +40,9 @@ private:
     epdgui_args_vector_t _pressed_cb_args;
     epdgui_args_vector_t _released_cb_args;
     int16_t _state = EVENT_NONE;
+    uint16_t _size;
+    bool _thiscreatNormal;
+    bool _thiscreatPressed;
     String _label;
     bool _is_invisable = false;
 
