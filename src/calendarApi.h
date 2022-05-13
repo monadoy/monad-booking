@@ -121,6 +121,8 @@ void printToken(const Token& token);
  */
 Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId);
 
+Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
+                       const String& eventId);
 
 void printEvent(const Event& event);
 

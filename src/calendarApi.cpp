@@ -171,13 +171,13 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 
 	Serial.println("Received event list response:\n" + responseBody + "\n");
 
-		DynamicJsonDocument doc(2048);
-		DeserializationError err = deserializeJson(doc, responseBody);
-		if (err) {
-			Serial.print(F("deserializeJson() failed with code "));
-			Serial.println(err.f_str());
+	DynamicJsonDocument doc(2048);
+	DeserializationError err = deserializeJson(doc, responseBody);
+	if (err) {
+		Serial.print(F("deserializeJson() failed with code "));
+		Serial.println(err.f_str());
 		return Result<CalendarStatus>::makeErr(new Error{.code = 0, .message = err.f_str()});
-		}
+	}
 
 	if (httpCode != 200) {
 		Serial.println("Error on HTTP request: " + httpCode);
@@ -193,14 +193,14 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 
 	result->name = doc["summary"].as<String>();
 
-		JsonArray items = doc["items"].as<JsonArray>();
+	JsonArray items = doc["items"].as<JsonArray>();
 
-		time_t now = UTC.now();
+	time_t now = UTC.now();
 
-		for (JsonObject item : items) {
-			// Whole day events contain "date" key, ignore these for now
-			if (item["start"].containsKey("date"))
-				continue;
+	for (JsonObject item : items) {
+		// Whole day events contain "date" key, ignore these for now
+		if (item["start"].containsKey("date"))
+			continue;
 
 		std::unique_ptr<Event> event = internal::extractEvent(item);
 
@@ -209,7 +209,7 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 			result->currentEvent = std::move(event);
 		} else if (event->unixStartTime > now && result->nextEvent == nullptr) {
 			result->nextEvent = std::move(event);
-			}
+		}
 	}
 
 	return Result<CalendarStatus>::makeOk(result);
@@ -223,5 +223,51 @@ void printEvent(const Event& event) {
 	Serial.println("  Start Timestamp: " + UTC.dateTime(event.unixStartTime, UTC_TIME, RFC3339));
 	Serial.println("  End Timestamp: " + UTC.dateTime(event.unixEndTime, UTC_TIME, RFC3339));
 	Serial.println("}");
+}
+
+Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
+                       const String& eventId) {
+	internal::refresh(token);
+	HTTPClient http;
+
+	String nowStr = myTZ.dateTime(RFC3339);
+
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events/"
+	             + eventId + "?fields=id,creator,start,end,summary";
+
+	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+
+	http.addHeader("Content-Type", "application/json");
+	http.addHeader("Authorization", "Bearer " + token.accessToken);
+	StaticJsonDocument<200> payloadDoc;
+	payloadDoc["end"] = JsonObject{};
+	payloadDoc["end"]["dateTime"] = nowStr;
+	payloadDoc["end"]["timeZone"] = myTZ.getOlson();
+
+	String payload = "";
+	serializeJson(payloadDoc, payload);
+
+	int httpCode = http.PATCH(payload);
+
+	String responseBody = http.getString();
+	http.end();
+
+	Serial.println("Received event patch response:\n" + responseBody + "\n");
+
+	StaticJsonDocument<500> doc;
+	DeserializationError err = deserializeJson(doc, responseBody);
+	if (err) {
+		Serial.print(F("deserializeJson() failed with code "));
+		Serial.println(err.f_str());
+		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
+	}
+
+	if (httpCode != 200) {
+		Serial.println("Error on HTTP request: " + httpCode);
+		return Result<Event>::makeErr(
+		    new Error{.code = httpCode, .message = doc["error"]["message"]});
+	}
+
+	return Result<Event>::makeOk(internal::extractEvent(doc.as<JsonObject>()));
 }
 }  // namespace calapi
