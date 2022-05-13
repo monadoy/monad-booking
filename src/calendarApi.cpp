@@ -140,11 +140,13 @@ CalendarStatus fetchCalendarStatus(Token& token, Timezone& myTZ, const String& c
 
 	String timeZone = myTZ.getOlson();
 
-	http.begin("https://www.googleapis.com/calendar/v3/calendars/calendarId/events?calendarId="
-	           + calendarId + "&timeMin=" + timeMin + "&timeMax=" + timeMax
-	           + "&timeZone=" + timeZone + "&singleEvents=true&orderBy=startTime&maxResults=2"
-			   "&fields=summary,items(id,creator,start,end,summary)", GOOGLE_API_FULL_CHAIN_CERT
-	);
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + 
+		"/events?timeMin=" + timeMin + 
+		"&timeMax=" + timeMax + 
+		"&timeZone=" + timeZone + 
+		"&singleEvents=true&orderBy=startTime&maxResults=2&fields=summary,items(id,creator,start,end,summary)";
+
+	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
 
 	http.addHeader("Content-Type", "application/json");
 	http.addHeader("Authorization", "Bearer " + token.accessToken);
