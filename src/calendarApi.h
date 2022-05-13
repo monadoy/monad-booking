@@ -28,10 +28,52 @@ struct Event {
 	time_t unixEndTime;
 };
 
+struct Error {
+	int code;
+	String message;
+};
+
 struct CalendarStatus {
 	String name;
 	std::unique_ptr<Event> currentEvent;
 	std::unique_ptr<Event> nextEvent;
+};
+
+template <typename T>
+struct Result {
+	static Result makeOk(T* value) {
+		return Result{
+		    .ok = std::unique_ptr<T>(value),
+		    .err = nullptr,
+		};
+	}
+
+	static Result makeOk(std::unique_ptr<T> value) {
+		return Result{
+		    .ok = std::move(value),
+		    .err = nullptr,
+		};
+	}
+
+	static Result makeErr(Error* error) {
+		return Result{
+		    .ok = nullptr,
+		    .err = std::unique_ptr<Error>(error),
+		};
+	}
+
+	static Result makeErr(std::unique_ptr<T> error) {
+		return Result{
+		    .ok = nullptr,
+		    .err = std::move(error),
+		};
+	}
+
+	bool isOk() { return ok != nullptr; }
+	bool isErr() { return err != nullptr; }
+
+	std::unique_ptr<T> ok;
+	std::unique_ptr<Error> err;
 };
 
 namespace internal {
@@ -46,6 +88,8 @@ void refresh(Token& token);
  * Get LOCAL time_t representing today's midnight in timezone provided by myTZ.
  */
 time_t getNextMidnight(Timezone& myTZ);
+
+std::unique_ptr<Event> extractEvent(const JsonObject& object);
 
 }  // namespace internal
 
@@ -75,7 +119,8 @@ void printToken(const Token& token);
  * Refreshes token if necessary.
  * CurrentEvent and/or nextEvent may be nullptr, check before using.
  */
-CalendarStatus fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId);
+Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId);
+
 
 void printEvent(const Event& event);
 

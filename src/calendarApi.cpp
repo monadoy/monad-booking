@@ -6,6 +6,19 @@
 
 namespace calapi {
 namespace internal {
+std::unique_ptr<Event> extractEvent(const JsonObject& object) {
+	time_t startTime = parseRfcTimestamp(object["start"]["dateTime"]);
+	time_t endTime = parseRfcTimestamp(object["end"]["dateTime"]);
+
+	return std::unique_ptr<Event>(new Event{
+	    .id = object["id"],
+	    .creator = object["creator"]["displayName"] | object["creator"]["email"],
+	    .summary = object["summary"],
+	    .unixStartTime = startTime,
+	    .unixEndTime = endTime,
+	});
+}
+
 void refresh(Token& token) {
 	Serial.println("Refreshing token...");
 	if (token.unixExpiry + 10 > UTC.now()) {
@@ -128,7 +141,7 @@ void printToken(const Token& token) {
 	Serial.println("}");
 }
 
-CalendarStatus fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId) {
+Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const String& calendarId) {
 	internal::refresh(token);
 	HTTPClient http;
 
@@ -153,24 +166,32 @@ CalendarStatus fetchCalendarStatus(Token& token, Timezone& myTZ, const String& c
 
 	int httpCode = http.GET();
 
-	CalendarStatus result{
-	    .name = "",
-	    .currentEvent = nullptr,
-	    .nextEvent = nullptr,
-	};
-
 	String responseBody = http.getString();
+	http.end();
+
 	Serial.println("Received event list response:\n" + responseBody + "\n");
 
-	if (httpCode == 200) {
 		DynamicJsonDocument doc(2048);
 		DeserializationError err = deserializeJson(doc, responseBody);
 		if (err) {
 			Serial.print(F("deserializeJson() failed with code "));
 			Serial.println(err.f_str());
+		return Result<CalendarStatus>::makeErr(new Error{.code = 0, .message = err.f_str()});
 		}
 
-		result.name = doc["summary"].as<String>();
+	if (httpCode != 200) {
+		Serial.println("Error on HTTP request: " + httpCode);
+		return Result<CalendarStatus>::makeErr(
+		    new Error{.code = httpCode, .message = doc["error"]["message"]});
+	}
+
+	auto result = new CalendarStatus{
+	    .name = "",
+	    .currentEvent = nullptr,
+	    .nextEvent = nullptr,
+	};
+
+	result->name = doc["summary"].as<String>();
 
 		JsonArray items = doc["items"].as<JsonArray>();
 
@@ -181,32 +202,17 @@ CalendarStatus fetchCalendarStatus(Token& token, Timezone& myTZ, const String& c
 			if (item["start"].containsKey("date"))
 				continue;
 
-			time_t startTime = parseRfcTimestamp(item["start"]["dateTime"]);
-			time_t endTime = parseRfcTimestamp(item["end"]["dateTime"]);
+		std::unique_ptr<Event> event = internal::extractEvent(item);
 
-			auto createEvent = [&](JsonObject& o) {
-				return new Event{
-				    .id = o["id"],
-				    .creator = o["creator"]["displayName"] | o["creator"]["email"],
-				    .summary = o["summary"],
-				    .unixStartTime = startTime,
-				    .unixEndTime = endTime,
-				};
-			};
-
-			if (startTime <= now && now <= endTime && result.currentEvent == nullptr) {
-				result.currentEvent = std::unique_ptr<Event>(createEvent(item));
-			} else if (startTime > now && result.nextEvent == nullptr) {
-				result.nextEvent = std::unique_ptr<Event>(createEvent(item));
+		if (event->unixStartTime <= now && now <= event->unixEndTime
+		    && result->currentEvent == nullptr) {
+			result->currentEvent = std::move(event);
+		} else if (event->unixStartTime > now && result->nextEvent == nullptr) {
+			result->nextEvent = std::move(event);
 			}
-		}
-	} else {
-		Serial.println("Error on HTTP request: " + httpCode);
 	}
 
-	http.end();
-
-	return result;
+	return Result<CalendarStatus>::makeOk(result);
 }
 
 void printEvent(const Event& event) {
