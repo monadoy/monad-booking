@@ -35,45 +35,47 @@ struct Error {
 
 struct CalendarStatus {
 	String name;
-	std::unique_ptr<Event> currentEvent;
-	std::unique_ptr<Event> nextEvent;
+	std::shared_ptr<Event> currentEvent;
+	std::shared_ptr<Event> nextEvent;
 };
 
+/**
+ * Contains either a successful result or an error.
+ * Check first which value is contained with functions isOk() or isErr().
+ * Then you can get a shared_ptr to the value with functions ok() or err().
+ */
 template <typename T>
 struct Result {
-	static Result makeOk(T* value) {
-		return Result{
-		    .ok = std::unique_ptr<T>(value),
-		    .err = nullptr,
-		};
-	}
+  private:
+	Result(std::shared_ptr<T> _ok, std::shared_ptr<Error> _err) {
+		_ok = _ok;
+		_err = _err;
+	};
 
-	static Result makeOk(std::unique_ptr<T> value) {
-		return Result{
-		    .ok = std::move(value),
-		    .err = nullptr,
-		};
-	}
+	std::shared_ptr<T> _ok;
+	std::shared_ptr<Error> _err;
 
-	static Result makeErr(Error* error) {
-		return Result{
-		    .ok = nullptr,
-		    .err = std::unique_ptr<Error>(error),
-		};
-	}
+  public:
+	static Result makeOk(T* value) { return Result(std::shared_ptr<T>(value), nullptr); }
 
-	static Result makeErr(std::unique_ptr<T> error) {
-		return Result{
-		    .ok = nullptr,
-		    .err = std::move(error),
-		};
-	}
+	static Result makeOk(std::shared_ptr<T> value) { return Result(value, nullptr); }
+
+	static Result makeErr(Error* error) { return Result(nullptr, std::shared_ptr<Error>(error)); }
+
+	static Result makeErr(std::shared_ptr<T> error) { return Result(nullptr, error); }
 
 	bool isOk() { return ok != nullptr; }
 	bool isErr() { return err != nullptr; }
 
-	std::unique_ptr<T> ok;
-	std::unique_ptr<Error> err;
+	std::shared_ptr<T> ok() {
+		assert(_ok != nullptr);
+		return _ok;
+	}
+
+	std::shared_ptr<Error> err() {
+		assert(_err != nullptr);
+		return _err;
+	}
 };
 
 namespace internal {

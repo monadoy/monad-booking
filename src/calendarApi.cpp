@@ -6,11 +6,11 @@
 
 namespace calapi {
 namespace internal {
-std::unique_ptr<Event> extractEvent(const JsonObject& object) {
+std::shared_ptr<Event> extractEvent(const JsonObject& object) {
 	time_t startTime = parseRfcTimestamp(object["start"]["dateTime"]);
 	time_t endTime = parseRfcTimestamp(object["end"]["dateTime"]);
 
-	return std::unique_ptr<Event>(new Event{
+	return std::shared_ptr<Event>(new Event{
 	    .id = object["id"],
 	    .creator = object["creator"]["displayName"] | object["creator"]["email"],
 	    .summary = object["summary"],
@@ -185,13 +185,13 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 		    new Error{.code = httpCode, .message = doc["error"]["message"]});
 	}
 
-	auto result = new CalendarStatus{
+	auto status = new CalendarStatus{
 	    .name = "",
 	    .currentEvent = nullptr,
 	    .nextEvent = nullptr,
 	};
 
-	result->name = doc["summary"].as<String>();
+	status->name = doc["summary"].as<String>();
 
 	JsonArray items = doc["items"].as<JsonArray>();
 
@@ -202,17 +202,17 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 		if (item["start"].containsKey("date"))
 			continue;
 
-		std::unique_ptr<Event> event = internal::extractEvent(item);
+		std::shared_ptr<Event> event = internal::extractEvent(item);
 
 		if (event->unixStartTime <= now && now <= event->unixEndTime
-		    && result->currentEvent == nullptr) {
-			result->currentEvent = std::move(event);
-		} else if (event->unixStartTime > now && result->nextEvent == nullptr) {
-			result->nextEvent = std::move(event);
+		    && status->currentEvent == nullptr) {
+			status->currentEvent = std::move(event);
+		} else if (event->unixStartTime > now && status->nextEvent == nullptr) {
+			status->nextEvent = std::move(event);
 		}
 	}
 
-	return Result<CalendarStatus>::makeOk(result);
+	return Result<CalendarStatus>::makeOk(status);
 }
 
 void printEvent(const Event& event) {
