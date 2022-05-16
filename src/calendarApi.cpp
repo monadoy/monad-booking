@@ -10,6 +10,16 @@ namespace internal {
 const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(organizer,responseStatus)";
 const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 
+// Techincally we need to fetch only two events to gain knowledge of the current and next event.
+// The problem is that the fetch returns declined events. Fetching too many events will make us run
+// out of memory, so we need a some kind of sensible limit. Here we hope the at least two of these
+// events are accepted.
+const int LIST_MAX_EVENTS = 6;
+
+// A single event takes around 300 bytes plus 50 per each additional attendee.
+// Here we assume that an above average event contains 12 attendees.
+const int LIST_JSON_SIZE = LIST_MAX_EVENTS * (300 + 12 * 50);
+
 std::shared_ptr<Event> extractEvent(const JsonObject& object) {
 	// Whole day events contain "date" key, ignore these for now
 	if (object["start"].containsKey("date"))
@@ -178,6 +188,7 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId
 	             + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&timeZone=" + timeZone
+	             + "&maxResults=" + internal::LIST_MAX_EVENTS
 	             + "&singleEvents=true&orderBy=startTime&fields=summary,items("
 	             + internal::EVENT_FIELDS + ")";
 
@@ -193,8 +204,10 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 
 	Serial.println("Received event list response:\n" + responseBody + "\n");
 
-	DynamicJsonDocument doc(2048);
+	DynamicJsonDocument doc(internal::LIST_JSON_SIZE);
 	DeserializationError err = deserializeJson(doc, responseBody);
+
+	Serial.println("Doc is using " + String(doc.memoryUsage()) + " bytes");
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
