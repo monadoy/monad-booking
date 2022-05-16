@@ -154,6 +154,24 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
                        const String& eventId);
 
+/**
+ * Insert an event to the calendar using Google Calendar API.
+ * startTime and endTIme are unix epoch UTC timestamps.
+ * Fails if an event already exists between startTime and endTime.
+ * Refreshes token if necessary.
+ * Returns the new event on success and error on failure.
+ */
+Result<Event> insertEvent(Token& token, Timezone& myTZ, const String& calendarId, time_t startTime,
+                          time_t endTime);
+
+/**
+ * Get an event from the Google Calendar API.
+ * Fails if the event is not found or the event is declined.
+ * Refreshes token if necessary.
+ * Returns the event on success and error on failure.
+ */
+Result<Event> getEvent(Token& token, const String& calendarId, const String& eventId);
+
 void printEvent(const Event& event);
 
 }  // namespace calapi

@@ -8,6 +8,7 @@ namespace calapi {
 namespace internal {
 
 const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(organizer,responseStatus)";
+const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 
 std::shared_ptr<Event> extractEvent(const JsonObject& object) {
 	// Whole day events contain "date" key, ignore these for now
@@ -259,6 +260,7 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 
 	http.addHeader("Content-Type", "application/json");
 	http.addHeader("Authorization", "Bearer " + token.accessToken);
+
 	StaticJsonDocument<200> payloadDoc;
 	payloadDoc["end"] = JsonObject{};
 	payloadDoc["end"]["dateTime"] = nowStr;
@@ -274,7 +276,7 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 
 	Serial.println("Received event patch response:\n" + responseBody + "\n");
 
-	StaticJsonDocument<500> doc;
+	StaticJsonDocument<1024> doc;
 	DeserializationError err = deserializeJson(doc, responseBody);
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
@@ -292,7 +294,115 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 
 	if (!event) {
 		return Result<Event>::makeErr(
-		    new Error{.code = 0, .message = "PATCH didn't return a valid event"});
+		    new Error{.code = 0, .message = "PATCH didn't return a valid accepted event"});
+	}
+
+	return Result<Event>::makeOk(event);
+}
+
+Result<Event> insertEvent(Token& token, Timezone& myTZ, const String& calendarId, time_t startTime,
+                          time_t endTime) {
+	internal::refresh(token);
+	HTTPClient http;
+
+	String url
+	    = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events?fields=id";
+
+	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+
+	http.addHeader("Content-Type", "application/json");
+	http.addHeader("Authorization", "Bearer " + token.accessToken);
+
+	StaticJsonDocument<200> payloadDoc;
+	payloadDoc["start"] = JsonObject{};
+	payloadDoc["start"]["dateTime"] = myTZ.dateTime(startTime, UTC_TIME, RFC3339);
+	payloadDoc["start"]["timeZone"] = myTZ.getOlson();
+
+	payloadDoc["end"] = JsonObject{};
+	payloadDoc["end"]["dateTime"] = myTZ.dateTime(endTime, UTC_TIME, RFC3339);
+	payloadDoc["end"]["timeZone"] = myTZ.getOlson();
+
+	payloadDoc["summary"] = internal::NEW_EVENT_SUMMARY;
+
+	String payload = "";
+
+	serializeJson(payloadDoc, payload);
+
+	Serial.println("Sending event insert payload:\n" + payload + "\n");
+
+	int httpCode = http.POST(payload);
+	payload.clear();
+
+	WiFiClient& stream = http.getStream();
+
+	DynamicJsonDocument doc(1024);
+	DeserializationError err = deserializeJson(doc, stream);
+	if (err) {
+		Serial.print(F("deserializeJson() failed with code "));
+		Serial.println(err.f_str());
+		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
+	}
+
+	http.end();
+
+	Serial.println("Received event insert response:");
+	serializeJsonPretty(doc, Serial);
+	Serial.println();
+
+	if (httpCode != 200) {
+		Serial.println("Error on HTTP request: " + httpCode);
+		return Result<Event>::makeErr(
+		    new Error{.code = httpCode, .message = doc["error"]["message"]});
+	}
+
+	String eventId = doc["id"];
+
+	// We need to wait for the room to accept or decline this event.
+	// Because of this we need to get the event again after posting.
+	// For some reason HTTPClient seems to crash without some delay.
+	delay(500);
+	return getEvent(token, calendarId, eventId);
+}
+
+Result<Event> getEvent(Token& token, const String& calendarId, const String& eventId) {
+	internal::refresh(token);
+	HTTPClient http;
+
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events/"
+	             + eventId + "?fields=" + internal::EVENT_FIELDS;
+
+	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+
+	http.addHeader("Content-Type", "application/json");
+	http.addHeader("Authorization", "Bearer " + token.accessToken);
+
+	int httpCode = http.GET();
+
+	DynamicJsonDocument doc(1024);
+	DeserializationError err = deserializeJson(doc, http.getStream());
+	if (err) {
+		Serial.print(F("deserializeJson() failed with code "));
+		Serial.println(err.f_str());
+		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
+	}
+
+	http.end();
+
+	Serial.println("Received event get response:");
+	serializeJsonPretty(doc, Serial);
+	Serial.println();
+
+	if (httpCode != 200) {
+		Serial.println("Error on HTTP request: " + httpCode);
+		return Result<Event>::makeErr(
+		    new Error{.code = httpCode, .message = doc["error"]["message"]});
+	}
+
+	std::shared_ptr<Event> event = internal::extractEvent(doc.as<JsonObject>());
+
+	if (!event) {
+		return Result<Event>::makeErr(
+		    new Error{.code = 0, .message = "GET didn't return a valid accepted event"});
 	}
 
 	return Result<Event>::makeOk(event);
