@@ -14,11 +14,14 @@ const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 // The problem is that the fetch returns declined events. Fetching too many events will make us run
 // out of memory, so we need a some kind of sensible limit. Here we hope the at least two of these
 // events are accepted.
-const int LIST_MAX_EVENTS = 6;
+const int LIST_MAX_EVENTS = 16;
 
-// A single event takes around 300 bytes plus 50 per each additional attendee.
-// Here we assume that an above average event contains 12 attendees.
-const int LIST_JSON_SIZE = LIST_MAX_EVENTS * (300 + 12 * 50);
+// A single event takes around 600 bytes plus 50 per each additional attendee.
+// We limit the attendee count to one, because the room seems to be listed first, and it's the only
+// one we need to check.
+const int EVENT_MAX_SIZE = 1024;
+
+const int EVENT_LIST_MAX_SIZE = LIST_MAX_EVENTS * EVENT_MAX_SIZE;
 
 std::shared_ptr<Event> extractEvent(const JsonObject& object) {
 	// Whole day events contain "date" key, ignore these for now
@@ -185,11 +188,10 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 	timeMax.replace("+", "%2b");
 
 	String timeZone = myTZ.getOlson();
-
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId
 	             + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&timeZone=" + timeZone
 	             + "&maxResults=" + internal::LIST_MAX_EVENTS
-	             + "&singleEvents=true&orderBy=startTime&fields=summary,items("
+	             + "&maxAttendees=1&singleEvents=true&orderBy=startTime&fields=summary,items("
 	             + internal::EVENT_FIELDS + ")";
 
 	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
@@ -204,10 +206,9 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 
 	Serial.println("Received event list response:\n" + responseBody + "\n");
 
-	DynamicJsonDocument doc(internal::LIST_JSON_SIZE);
+	DynamicJsonDocument doc(internal::EVENT_LIST_MAX_SIZE);
 	DeserializationError err = deserializeJson(doc, responseBody);
 
-	Serial.println("Doc is using " + String(doc.memoryUsage()) + " bytes");
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
@@ -274,7 +275,7 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 	http.addHeader("Content-Type", "application/json");
 	http.addHeader("Authorization", "Bearer " + token.accessToken);
 
-	StaticJsonDocument<200> payloadDoc;
+	StaticJsonDocument<256> payloadDoc;
 	payloadDoc["end"] = JsonObject{};
 	payloadDoc["end"]["dateTime"] = nowStr;
 	payloadDoc["end"]["timeZone"] = myTZ.getOlson();
@@ -326,7 +327,7 @@ Result<Event> insertEvent(Token& token, Timezone& myTZ, const String& calendarId
 	http.addHeader("Content-Type", "application/json");
 	http.addHeader("Authorization", "Bearer " + token.accessToken);
 
-	StaticJsonDocument<200> payloadDoc;
+	StaticJsonDocument<256> payloadDoc;
 	payloadDoc["start"] = JsonObject{};
 	payloadDoc["start"]["dateTime"] = myTZ.dateTime(startTime, UTC_TIME, RFC3339);
 	payloadDoc["start"]["timeZone"] = myTZ.getOlson();
@@ -346,21 +347,18 @@ Result<Event> insertEvent(Token& token, Timezone& myTZ, const String& calendarId
 	int httpCode = http.POST(payload);
 	payload.clear();
 
-	WiFiClient& stream = http.getStream();
+	String responseBody = http.getString();
+	http.end();
+
+	Serial.println("Received event insert response:\n" + responseBody + "\n");
 
 	DynamicJsonDocument doc(1024);
-	DeserializationError err = deserializeJson(doc, stream);
+	DeserializationError err = deserializeJson(doc, responseBody);
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
 		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
 	}
-
-	http.end();
-
-	Serial.println("Received event insert response:");
-	serializeJsonPretty(doc, Serial);
-	Serial.println();
 
 	if (httpCode != 200) {
 		Serial.println("Error on HTTP request: " + httpCode);
@@ -382,7 +380,7 @@ Result<Event> getEvent(Token& token, const String& calendarId, const String& eve
 	HTTPClient http;
 
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events/"
-	             + eventId + "?fields=" + internal::EVENT_FIELDS;
+	             + eventId + "?maxAttendees=1&fields=" + internal::EVENT_FIELDS;
 
 	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
 
@@ -391,19 +389,18 @@ Result<Event> getEvent(Token& token, const String& calendarId, const String& eve
 
 	int httpCode = http.GET();
 
+	String responseBody = http.getString();
+	http.end();
+
+	Serial.println("Received event get response:\n" + responseBody + "\n");
+
 	DynamicJsonDocument doc(1024);
-	DeserializationError err = deserializeJson(doc, http.getStream());
+	DeserializationError err = deserializeJson(doc, responseBody);
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
 		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
 	}
-
-	http.end();
-
-	Serial.println("Received event get response:");
-	serializeJsonPretty(doc, Serial);
-	Serial.println();
 
 	if (httpCode != 200) {
 		Serial.println("Error on HTTP request: " + httpCode);
