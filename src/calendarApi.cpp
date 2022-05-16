@@ -6,7 +6,29 @@
 
 namespace calapi {
 namespace internal {
+
+const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(organizer,responseStatus)";
+
 std::shared_ptr<Event> extractEvent(const JsonObject& object) {
+	// Whole day events contain "date" key, ignore these for now
+	if (object["start"].containsKey("date"))
+		return nullptr;
+
+	// Check that this room has accepted the event.
+	// It will not be accepted if it would overlap with another event in this room.
+	JsonArray attendees = object["attendees"].as<JsonArray>();
+	bool roomAccepted = false;
+	for (JsonObject attendee : attendees) {
+		if ((attendee["organizer"] | false) == true && attendee["responseStatus"] == "accepted") {
+			roomAccepted = true;
+			break;
+		}
+	}
+	if (!roomAccepted)
+		return nullptr;
+
+	// Extract the values from the JSON object
+
 	time_t startTime = parseRfcTimestamp(object["start"]["dateTime"]);
 	time_t endTime = parseRfcTimestamp(object["end"]["dateTime"]);
 
@@ -153,11 +175,10 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 
 	String timeZone = myTZ.getOlson();
 
-	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + 
-		"/events?timeMin=" + timeMin + 
-		"&timeMax=" + timeMax + 
-		"&timeZone=" + timeZone + 
-		"&singleEvents=true&orderBy=startTime&maxResults=2&fields=summary,items(id,creator,start,end,summary)";
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId
+	             + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&timeZone=" + timeZone
+	             + "&singleEvents=true&orderBy=startTime&fields=summary,items("
+	             + internal::EVENT_FIELDS + ")";
 
 	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
 
@@ -198,11 +219,10 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 	time_t now = UTC.now();
 
 	for (JsonObject item : items) {
-		// Whole day events contain "date" key, ignore these for now
-		if (item["start"].containsKey("date"))
-			continue;
-
 		std::shared_ptr<Event> event = internal::extractEvent(item);
+
+		if (!event)
+			continue;
 
 		if (event->unixStartTime <= now && now <= event->unixEndTime
 		    && status->currentEvent == nullptr) {
@@ -233,7 +253,7 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 	String nowStr = myTZ.dateTime(RFC3339);
 
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events/"
-	             + eventId + "?fields=id,creator,start,end,summary";
+	             + eventId + "?fields=" + internal::EVENT_FIELDS;
 
 	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
 
@@ -268,6 +288,13 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 		    new Error{.code = httpCode, .message = doc["error"]["message"]});
 	}
 
-	return Result<Event>::makeOk(internal::extractEvent(doc.as<JsonObject>()));
+	std::shared_ptr<Event> event = internal::extractEvent(doc.as<JsonObject>());
+
+	if (!event) {
+		return Result<Event>::makeErr(
+		    new Error{.code = 0, .message = "PATCH didn't return a valid event"});
+	}
+
+	return Result<Event>::makeOk(event);
 }
 }  // namespace calapi
