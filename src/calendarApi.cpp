@@ -13,7 +13,7 @@ std::shared_ptr<Event> extractEvent(const JsonObject& object) {
 	return std::shared_ptr<Event>(new Event{
 	    .id = object["id"],
 	    .creator = object["creator"]["displayName"] | object["creator"]["email"],
-	    .summary = object["summary"],
+	    .summary = object["summary"] | "(No title)",
 	    .unixStartTime = startTime,
 	    .unixEndTime = endTime,
 	});
