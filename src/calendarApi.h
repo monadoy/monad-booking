@@ -8,6 +8,9 @@
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
 
+/**
+ * See calendarApi_example.cpp for example usage
+ */
 namespace calapi {
 
 struct Token {
