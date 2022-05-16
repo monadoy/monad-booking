@@ -47,31 +47,53 @@ struct CalendarStatus {
 template <typename T>
 struct Result {
   private:
-	Result(std::shared_ptr<T> ok, std::shared_ptr<Error> err) : _ok{ok}, _err(err) {}
+	Result(std::shared_ptr<T> _ok, std::shared_ptr<Error> _err) : ok_{_ok}, err_{_err} {}
 
-	const std::shared_ptr<T> _ok;
-	const std::shared_ptr<Error> _err;
+	const std::shared_ptr<T> ok_ = nullptr;
+	const std::shared_ptr<Error> err_ = nullptr;
 
   public:
-	static Result makeOk(T* value) { return Result(std::shared_ptr<T>(value), nullptr); }
+	Result(const Result& other) = default;
+	Result(Result&& other) = default;
+	Result& operator=(const Result& other) = default;
+	Result& operator=(Result&& other) = default;
+	virtual ~Result() = default;
 
-	static Result makeOk(std::shared_ptr<T> value) { return Result(value, nullptr); }
+	static Result makeOk(T* value) {
+		if (!value)
+			throw std::runtime_error("Tried to make an ok result with a null pointer");
+		return Result(std::shared_ptr<T>(value), nullptr);
+	}
 
-	static Result makeErr(Error* error) { return Result(nullptr, std::shared_ptr<Error>(error)); }
+	static Result makeOk(std::shared_ptr<T> value) {
+		if (!value)
+			throw std::runtime_error("Tried to make an ok result with a null pointer");
+		return Result(value, nullptr);
+	}
 
-	static Result makeErr(std::shared_ptr<T> error) { return Result(nullptr, error); }
+	static Result makeErr(Error* error) {
+		if (!error)
+			throw std::runtime_error("Tried to make an error result with a null pointer");
+		return Result(nullptr, std::shared_ptr<Error>(error));
+	}
 
-	bool isOk() const { return ok != nullptr; }
-	bool isErr() const { return err != nullptr; }
+	static Result makeErr(std::shared_ptr<T> error) {
+		if (!error)
+			throw std::runtime_error("Tried to make an error result with a null pointer");
+		return Result(nullptr, error);
+	}
+
+	bool isOk() const { return ok_ != nullptr; }
+	bool isErr() const { return err_ != nullptr; }
 
 	std::shared_ptr<T> ok() const {
-		assert(_ok != nullptr);
-		return _ok;
+		assert(isOk());
+		return ok_;
 	}
 
 	std::shared_ptr<Error> err() const {
-		assert(_err != nullptr);
-		return _err;
+		assert(isErr());
+		return err_;
 	}
 };
 
