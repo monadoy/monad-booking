@@ -80,7 +80,7 @@ struct Result {
 		return Result(nullptr, std::shared_ptr<Error>(error));
 	}
 
-	static Result makeErr(std::shared_ptr<T> error) {
+	static Result makeErr(std::shared_ptr<Error> error) {
 		if (!error)
 			throw std::runtime_error("Tried to make an error result with a null pointer");
 		return Result(nullptr, error);
@@ -118,6 +118,9 @@ time_t getNextMidnight(Timezone& myTZ);
  * Some fields can be empty if the json object doesn't contain them.
  */
 std::shared_ptr<Event> extractEvent(const JsonObject& object);
+
+std::shared_ptr<Error> deserializeResponse(JsonDocument& doc, int httpCode,
+                                           const String& responseBody);
 
 }  // namespace internal
 

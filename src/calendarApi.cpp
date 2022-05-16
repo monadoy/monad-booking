@@ -104,6 +104,28 @@ time_t getNextMidnight(Timezone& myTZ) {
 
 	return nextMidnight;
 }
+
+std::shared_ptr<Error> deserializeResponse(JsonDocument& doc, int httpCode,
+                                           const String& responseBody) {
+	DeserializationError err = deserializeJson(doc, responseBody);
+	if (err) {
+		Serial.print(F("deserializeJson() failed with code "));
+		Serial.println(err.f_str());
+		return std::shared_ptr<Error>(new Error{
+		    .code = 0, .message = "deserializeJson() failed with code " + String(err.f_str())});
+	}
+
+	if (httpCode != 200) {
+		Serial.println("Error in HTTP request: " + httpCode);
+		return std::shared_ptr<Error>(
+		    new Error{.code = httpCode,
+		              .message = "Error in HTTP request: " + String(httpCode) + ", "
+		                         + doc["error"]["message"].as<String>()});
+	}
+
+	return nullptr;
+}
+
 }  // namespace internal
 
 time_t parseRfcTimestamp(const String& input) {
@@ -207,19 +229,10 @@ Result<CalendarStatus> fetchCalendarStatus(Token& token, Timezone& myTZ, const S
 	Serial.println("Received event list response:\n" + responseBody + "\n");
 
 	DynamicJsonDocument doc(internal::EVENT_LIST_MAX_SIZE);
-	DeserializationError err = deserializeJson(doc, responseBody);
 
-	if (err) {
-		Serial.print(F("deserializeJson() failed with code "));
-		Serial.println(err.f_str());
-		return Result<CalendarStatus>::makeErr(new Error{.code = 0, .message = err.f_str()});
-	}
-
-	if (httpCode != 200) {
-		Serial.println("Error on HTTP request: " + httpCode);
-		return Result<CalendarStatus>::makeErr(
-		    new Error{.code = httpCode, .message = doc["error"]["message"]});
-	}
+	auto err = internal::deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<CalendarStatus>::makeErr(err);
 
 	auto status = new CalendarStatus{
 	    .name = "",
@@ -291,18 +304,9 @@ Result<Event> endEvent(Token& token, Timezone& myTZ, const String& calendarId,
 	Serial.println("Received event patch response:\n" + responseBody + "\n");
 
 	StaticJsonDocument<1024> doc;
-	DeserializationError err = deserializeJson(doc, responseBody);
-	if (err) {
-		Serial.print(F("deserializeJson() failed with code "));
-		Serial.println(err.f_str());
-		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
-	}
-
-	if (httpCode != 200) {
-		Serial.println("Error on HTTP request: " + httpCode);
-		return Result<Event>::makeErr(
-		    new Error{.code = httpCode, .message = doc["error"]["message"]});
-	}
+	auto err = internal::deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
 
 	std::shared_ptr<Event> event = internal::extractEvent(doc.as<JsonObject>());
 
@@ -353,18 +357,9 @@ Result<Event> insertEvent(Token& token, Timezone& myTZ, const String& calendarId
 	Serial.println("Received event insert response:\n" + responseBody + "\n");
 
 	DynamicJsonDocument doc(1024);
-	DeserializationError err = deserializeJson(doc, responseBody);
-	if (err) {
-		Serial.print(F("deserializeJson() failed with code "));
-		Serial.println(err.f_str());
-		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
-	}
-
-	if (httpCode != 200) {
-		Serial.println("Error on HTTP request: " + httpCode);
-		return Result<Event>::makeErr(
-		    new Error{.code = httpCode, .message = doc["error"]["message"]});
-	}
+	auto err = internal::deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
 
 	String eventId = doc["id"];
 
@@ -395,18 +390,9 @@ Result<Event> getEvent(Token& token, const String& calendarId, const String& eve
 	Serial.println("Received event get response:\n" + responseBody + "\n");
 
 	DynamicJsonDocument doc(1024);
-	DeserializationError err = deserializeJson(doc, responseBody);
-	if (err) {
-		Serial.print(F("deserializeJson() failed with code "));
-		Serial.println(err.f_str());
-		return Result<Event>::makeErr(new Error{.code = 0, .message = err.f_str()});
-	}
-
-	if (httpCode != 200) {
-		Serial.println("Error on HTTP request: " + httpCode);
-		return Result<Event>::makeErr(
-		    new Error{.code = httpCode, .message = doc["error"]["message"]});
-	}
+	auto err = internal::deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
 
 	std::shared_ptr<Event> event = internal::extractEvent(doc.as<JsonObject>());
 
