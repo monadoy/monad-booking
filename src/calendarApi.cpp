@@ -7,7 +7,7 @@
 namespace calapi {
 namespace internal {
 
-const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(organizer,responseStatus)";
+const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(resource,responseStatus)";
 const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 
 // Techincally we need to fetch only two events to gain knowledge of the current and next event.
@@ -30,7 +30,7 @@ std::shared_ptr<Event> extractEvent(const JsonObject& object) {
 	JsonArray attendees = object["attendees"].as<JsonArray>();
 	bool roomAccepted = false;
 	for (JsonObject attendee : attendees) {
-		if ((attendee["organizer"] | false) == true && attendee["responseStatus"] == "accepted") {
+		if ((attendee["resource"] | false) == true && attendee["responseStatus"] == "accepted") {
 			roomAccepted = true;
 			break;
 		}
