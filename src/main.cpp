@@ -1,4 +1,7 @@
 
+#include <Arduino.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <M5EPD.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -6,8 +9,6 @@
 
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
-
-#include "WebServer.h"
 
 #define CONFIG_NAME "configuration"
 
@@ -23,9 +24,10 @@ M5EPD_Canvas canvas(&M5.EPD);
 
 const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
 const char* SETUP_SSID = "BOOKING_SETUP";
+const char* PARAM_MESSAGE = "message";
 
 // Initialize HTTP Server
-WebServer webServer(80);
+AsyncWebServer webServer(80);
 
 // Config store
 Preferences preferences;
@@ -129,15 +131,30 @@ String makePage(String title, String contents) {
 }
 
 void setRoutes() {
-	webServer.on("/", []() {
-		Serial.println("Handling request for /");
-		webServer.send(200, "text/html", makePage("TEST", "<h1>Toimiiko?</h1>"));
+	webServer.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send(200, "text/plain", "Hello, world");
 	});
 
-	webServer.onNotFound([]() {
-		String s = "<h1>AP mode</h1><p><a href=\"/settings\">Wi-Fi Settings</a></p>";
-		Serial.println("Not found");
-		webServer.send(200, "text/html", makePage("AP mode", s));
+	// Send a GET request to <IP>/get?message=<message>
+	webServer.on("/get", HTTP_GET, [](AsyncWebServerRequest* request) {
+		String message;
+		if (request->hasParam(PARAM_MESSAGE)) {
+			message = request->getParam(PARAM_MESSAGE)->value();
+		} else {
+			message = "No message sent";
+		}
+		request->send(200, "text/plain", "Hello, GET: " + message);
+	});
+
+	// Send a POST request to <IP>/post with a form field message set to <message>
+	webServer.on("/post", HTTP_POST, [](AsyncWebServerRequest* request) {
+		String message;
+		if (request->hasParam(PARAM_MESSAGE, true)) {
+			message = request->getParam(PARAM_MESSAGE, true)->value();
+		} else {
+			message = "No message sent";
+		}
+		request->send(200, "text/plain", "Hello, POST: " + message);
 	});
 }
 
@@ -150,8 +167,4 @@ void setupMode() {
 	WiFi.mode(WIFI_MODE_AP);
 }
 
-void loop() {
-	webServer.handleClient();
-	printLocalTime();
-	delay(1000);
-}
+void loop() { delay(2); }
