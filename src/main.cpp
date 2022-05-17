@@ -170,6 +170,10 @@ void setRoutes() {
 		}
 	});
 	webServer.addHandler(confighandler);
+
+	webServer.serveStatic("/", LittleFS, "/webroot/")
+	    .setDefaultFile("index.html")
+	    .setCacheControl("max-age=60");
 }
 
 void setupMode() {
