@@ -2,10 +2,17 @@
 #include <Arduino.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <LittleFS.h>
 #include <M5EPD.h>
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <ezTime.h>
+
+#include "FS.h"
+
+// Format the filesystem automatically if not formatted already
+#define FORMAT_LITTLEFS_IF_FAILED true
 
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
@@ -86,6 +93,13 @@ void setup() {
 	Serial.println(F("========== Monad Booking =========="));
 	Serial.println(F("Booting up..."));
 	preferences.begin(CONFIG_NAME);
+
+	Serial.println(F("Setting up LittleFS..."));
+	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+		Serial.println("LittleFS Mount Failed");
+		Serial.println("Please ensure your partition layout has spiffs partition defined");
+		return;
+	}
 
 	Serial.println(F("Setting up E-ink display..."));
 	M5.EPD.SetRotation(0);
