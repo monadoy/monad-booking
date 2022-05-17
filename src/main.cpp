@@ -9,6 +9,8 @@
 #include <WiFiClient.h>
 #include <ezTime.h>
 
+#include "ArduinoJson.h"
+#include "AsyncJson.h"
 #include "FS.h"
 
 // Format the filesystem automatically if not formatted already
@@ -149,27 +151,25 @@ void setRoutes() {
 		request->send(200, "text/plain", "Hello, world");
 	});
 
-	// Send a GET request to <IP>/get?message=<message>
-	webServer.on("/get", HTTP_GET, [](AsyncWebServerRequest* request) {
-		String message;
-		if (request->hasParam(PARAM_MESSAGE)) {
-			message = request->getParam(PARAM_MESSAGE)->value();
-		} else {
-			message = "No message sent";
-		}
-		request->send(200, "text/plain", "Hello, GET: " + message);
+	webServer.on("/config", HTTP_GET, [](AsyncWebServerRequest* request) {
+		AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/config.json", "application/json");
+		request->send(response);
 	});
 
-	// Send a POST request to <IP>/post with a form field message set to <message>
-	webServer.on("/post", HTTP_POST, [](AsyncWebServerRequest* request) {
-		String message;
-		if (request->hasParam(PARAM_MESSAGE, true)) {
-			message = request->getParam(PARAM_MESSAGE, true)->value();
+	AsyncCallbackJsonWebHandler* confighandler = new AsyncCallbackJsonWebHandler(
+	    "/config", [](AsyncWebServerRequest* request, JsonVariant& json) {
+		    JsonObject const& configObj = json.as<JsonObject>();
+		    Serial.println("Writing new config to filesystem...");
+
+			File configFile = fs.open("/config.json", FILE_WRITE);
+
+			if (!configFile) {
+				Serial.println("Cannot write to filesystem...");
 		} else {
-			message = "No message sent";
+				configFile.print(configObj);
 		}
-		request->send(200, "text/plain", "Hello, POST: " + message);
 	});
+	webServer.addHandler(confighandler);
 }
 
 void setupMode() {
