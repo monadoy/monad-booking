@@ -1,27 +1,38 @@
 #include "epdgui_textbox.h"
+#include "interregularttf.h"
+#include "interboldttf.h"
 
 uint32_t EPDGUI_Textbox::_textbox_touching_id = 0;
 
-EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h) : EPDGUI_Base(x, y, w, h)
+EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16_t color, int16_t txt_color, int16_t txt_size, bool use_bold): EPDGUI_Base(x, y, w, h)
 {
     _canvas = new M5EPD_Canvas(&M5.EPD);
+    _use_bold = use_bold;
 
-    _size = 26;
+    if(_use_bold){
+         _canvas->loadFont(interboldttf, sizeof(interboldttf));
+    }else {
+        _canvas->loadFont(interregularttf, sizeof(interregularttf));
+    }
+
+    _size = txt_size;
+    _color = color;
+    _txt_color = txt_color;
     _thiscreat = false;
 
     _canvas->createCanvas(_w, _h);
 
-    _canvas->fillCanvas(15);
-    _canvas->drawRect(0, 0, _w, _h, 15);
+    _canvas->fillCanvas(color);
+    _canvas->drawRect(0, 0, _w, _h, color);
     if (!_canvas->isRenderExist(_size))
     {
-        _canvas->createRender(_size, 60);
+        _canvas->createRender(_size, 120);
         _thiscreat = true;
     }
     _canvas->setTextSize(_size);
 
     _canvas->setTextDatum(TL_DATUM);
-    _canvas->setTextColor(15);
+    _canvas->setTextColor(_txt_color);
 
     for (int i = 0; i < 26; i++)
     {
@@ -86,8 +97,8 @@ void EPDGUI_Textbox::Draw(m5epd_update_mode_t mode)
     if (_state == EVENT_NONE)
     {
         _canvas->setTextSize(_size);
-        _canvas->fillCanvas(0);
-        _canvas->drawRect(0, 0, _w, _h, 15);
+        _canvas->fillCanvas(_color);
+        _canvas->drawRect(0, 0, _w, _h, _color);
         _canvas->setTextArea(_margin_left, _margin_top, _w - _margin_right, _h - _margin_bottom);
         _canvas->print(_data);
         _canvas->pushCanvas(_x, _y, mode);
@@ -95,10 +106,10 @@ void EPDGUI_Textbox::Draw(m5epd_update_mode_t mode)
     else
     {
         _canvas->setTextSize(_size);
-        _canvas->fillCanvas(0);
-        _canvas->drawRect(0, 0, _w, _h, 15);
-        _canvas->drawRect(1, 1, _w - 2, _h - 2, 15);
-        _canvas->drawRect(2, 2, _w - 4, _h - 4, 15);
+        _canvas->fillCanvas(_color);
+        _canvas->drawRect(0, 0, _w, _h, _color);
+        _canvas->drawRect(1, 1, _w - 2, _h - 2, _color);
+        _canvas->drawRect(2, 2, _w - 4, _h - 4, _color);
         _canvas->setTextArea(_margin_left, _margin_top, _w - _margin_right, _h - _margin_bottom);
         _canvas->print(_data);
         _canvas->pushCanvas(_x, _y, mode);
@@ -115,8 +126,8 @@ void EPDGUI_Textbox::Draw(M5EPD_Canvas* canvas)
     if (_state == EVENT_NONE)
     {
         _canvas->setTextSize(_size);
-        _canvas->fillCanvas(0);
-        _canvas->drawRect(0, 0, _w, _h, 15);
+        _canvas->fillCanvas(_color);
+        _canvas->drawRect(0, 0, _w, _h, _color);
         _canvas->setTextArea(_margin_left, _margin_top, _w - _margin_right, _h - _margin_bottom);
         _canvas->print(_data);
         _canvas->pushToCanvas(_x, _y, canvas);
@@ -124,10 +135,10 @@ void EPDGUI_Textbox::Draw(M5EPD_Canvas* canvas)
     else
     {
         _canvas->setTextSize(_size);
-        _canvas->fillCanvas(0);
-        _canvas->drawRect(0, 0, _w, _h, 15);
-        _canvas->drawRect(1, 1, _w - 2, _h - 2, 15);
-        _canvas->drawRect(2, 2, _w - 4, _h - 4, 15);
+        _canvas->fillCanvas(_color);
+        _canvas->drawRect(0, 0, _w, _h, _color);
+        _canvas->drawRect(1, 1, _w - 2, _h - 2, _color);
+        _canvas->drawRect(2, 2, _w - 4, _h - 4, _color);
         _canvas->setTextArea(_margin_left, _margin_top, _w - _margin_right, _h - _margin_bottom);
         _canvas->print(_data);
         _canvas->pushToCanvas(_x, _y, canvas);
@@ -230,4 +241,14 @@ void EPDGUI_Textbox::AddText(String text)
     }
 
     Draw(UPDATE_MODE_A2);
+}
+
+void EPDGUI_Textbox::useBold(bool usebold)
+{
+    _use_bold = usebold;
+}
+
+void EPDGUI_Textbox::setColors(int16_t color, int16_t txt_color) {
+    _color = color;
+    _txt_color = txt_color;
 }

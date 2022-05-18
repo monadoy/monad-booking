@@ -1,4 +1,6 @@
 #include "epdgui_button.h"
+#include "interregularttf.h"
+#include "interboldttf.h"
 
 EPDGUI_Button::EPDGUI_Button(int16_t x, int16_t y, int16_t w, int16_t h): 
 EPDGUI_Base(x, y, w, h)
@@ -9,7 +11,7 @@ EPDGUI_Base(x, y, w, h)
     this->_CanvasPressed->createCanvas(_w, _h);
 }
 
-EPDGUI_Button::EPDGUI_Button(String label, int16_t x, int16_t y, int16_t w, int16_t h, uint32_t style): 
+EPDGUI_Button::EPDGUI_Button(String label, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, uint16_t color_pressed, uint16_t txt_color, bool use_bold, uint32_t style): 
 EPDGUI_Base(x, y, w, h)
 {
     if(style & STYLE_INVISABLE)
@@ -17,24 +19,57 @@ EPDGUI_Base(x, y, w, h)
         _is_invisable = true;
         return;
     }
-    
+    _use_bold = use_bold;
+    _thiscreatNormal = false;
+    _thiscreatPressed = false;
+    _size = 28;
+    _color = color;
+    _txt_color = txt_color;
+    _color_pressed = color_pressed;
+
     this->_label = label;
     
     this->_CanvasNormal = new M5EPD_Canvas(&M5.EPD);
     this->_CanvasPressed = new M5EPD_Canvas(&M5.EPD);
+    if(_use_bold){
+        this->_CanvasNormal->loadFont(interboldttf, sizeof(interboldttf));
+        this->_CanvasPressed->loadFont(interboldttf, sizeof(interboldttf));
+    } else {
+        this->_CanvasNormal->loadFont(interregularttf, sizeof(interregularttf));
+        this->_CanvasPressed->loadFont(interregularttf, sizeof(interregularttf));
+    }
+
+    if(!_CanvasNormal->isRenderExist(_size)){
+        _CanvasNormal->createRender(_size, 120);
+        _thiscreatNormal = true;
+    }
+
+    if(!_CanvasPressed->isRenderExist(_size)){
+        _CanvasPressed->createRender(_size, 120);
+        _thiscreatPressed = true;
+    }
 
     // log_d("[%s] %d, %d", label.c_str(), _x, _y);
     
     this->_CanvasNormal->createCanvas(_w, _h);
     this->_CanvasPressed->createCanvas(_w, _h);
 
-    this->_CanvasNormal->fillCanvas(0);
-    this->_CanvasNormal->setTextSize(36);
-    this->_CanvasNormal->setTextColor(15);
+    this->_CanvasNormal->fillCanvas(_color);
+    this->_CanvasNormal->setTextSize(_size);
+    this->_CanvasNormal->setTextColor(_txt_color);
 
-    this->_CanvasPressed->fillCanvas(15);
-    this->_CanvasPressed->setTextSize(36);
-    this->_CanvasPressed->setTextColor(0);
+    this->_CanvasPressed->fillCanvas(_color_pressed);
+    this->_CanvasPressed->setTextSize(_size);
+    this->_CanvasPressed->setTextColor(_txt_color);
+
+    for (int i = 0; i < 26; i++)
+    {
+        _CanvasPressed->preRender('a' + i);
+        _CanvasPressed->preRender('A' + i);
+        _CanvasNormal->preRender('a' + i);
+        _CanvasNormal->preRender('A' + i);
+    }
+
     if(style & STYLE_SOLIDBORDER)
     {
         this->_CanvasNormal->drawRect(0, 0, _w, _h, 15);
@@ -163,10 +198,10 @@ void EPDGUI_Button::UpdateState(int16_t x, int16_t y)
 
 void EPDGUI_Button::setBMPButton(String label_l, String label_r, const uint8_t *bmp32x32)
 {
-    _CanvasNormal->fillCanvas(0);
-    _CanvasNormal->drawRect(0, 0, _w, _h, 15);
-    _CanvasNormal->setTextSize(36);
-    _CanvasNormal->setTextColor(15);
+    _CanvasNormal->fillCanvas(_color);
+    _CanvasNormal->drawRect(0, 0, _w, _h, _color);
+    _CanvasNormal->setTextSize(_size);
+    _CanvasNormal->setTextColor(_txt_color);
     if(label_l.length())
     {
         _CanvasNormal->setTextDatum(CL_DATUM);
@@ -185,17 +220,17 @@ void EPDGUI_Button::setBMPButton(String label_l, String label_r, const uint8_t *
 void EPDGUI_Button::setLabel(String label)
 {
     _label = label;
-    this->_CanvasNormal->fillCanvas(0);
-    this->_CanvasNormal->drawRect(0, 0, _w, _h, 15);
-    this->_CanvasNormal->setTextSize(36);
+    this->_CanvasNormal->fillCanvas(_color);
+    this->_CanvasNormal->drawRect(0, 0, _w, _h, _color);
+    this->_CanvasNormal->setTextSize(_size);
     this->_CanvasNormal->setTextDatum(CC_DATUM);
-    this->_CanvasNormal->setTextColor(15);
+    this->_CanvasNormal->setTextColor(_txt_color);
     this->_CanvasNormal->drawString(_label,  _w / 2, _h / 2 + 3);
 
-    this->_CanvasPressed->fillCanvas(15);
-    this->_CanvasPressed->setTextSize(36);
+    this->_CanvasPressed->fillCanvas(_color);
+    this->_CanvasPressed->setTextSize(_size);
     this->_CanvasPressed->setTextDatum(CC_DATUM);
-    this->_CanvasPressed->setTextColor(0);
+    this->_CanvasPressed->setTextColor(_txt_color);
     this->_CanvasPressed->drawString(_label, _w / 2, _h / 2 + 3);
 }
 
@@ -223,4 +258,9 @@ void EPDGUI_Button::AddArgs(int16_t event, uint16_t n, void* arg)
             _released_cb_args.push_back(arg);
         }
     }
+}
+
+void EPDGUI_Button::setInvisable(bool isinvisable)
+{
+    _is_invisable = isinvisable;
 }
