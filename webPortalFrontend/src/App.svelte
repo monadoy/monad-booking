@@ -28,13 +28,19 @@
 	}
 
 	let submitOk: boolean | null = null
-	const submit = async () => {
-		const response = await fetch("/config", {
+	const submit = () => {
+		fetch("/config", {
 			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
 			body: JSON.stringify(config),
 		})
-
-		submitOk = response.ok
+			.then(res => (submitOk = res.ok))
+			.catch(err => {
+				console.log(err)
+				submitOk = false
+			})
 	}
 
 	let config: Config | null = defaultConfig
