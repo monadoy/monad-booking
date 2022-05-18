@@ -160,7 +160,7 @@ void setRoutes() {
 		    JsonObject const& configObj = json.as<JsonObject>();
 		    Serial.println("Writing new config to filesystem...");
 
-			File configFile = fs.open("/config.json", FILE_WRITE);
+		    File configFile = LittleFS.open("/config.json", FILE_WRITE);
 
 			if (!configFile) {
 				Serial.println("Cannot write to filesystem...");
