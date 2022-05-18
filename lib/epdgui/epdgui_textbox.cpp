@@ -1,14 +1,21 @@
 #include "epdgui_textbox.h"
 #include "interregularttf.h"
+#include "interboldttf.h"
 
 uint32_t EPDGUI_Textbox::_textbox_touching_id = 0;
 
-EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16_t color, int16_t txt_color): EPDGUI_Base(x, y, w, h)
+EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16_t color, int16_t txt_color, int16_t txt_size, bool use_bold): EPDGUI_Base(x, y, w, h)
 {
     _canvas = new M5EPD_Canvas(&M5.EPD);
-    _canvas->loadFont(interregularttf, sizeof(interregularttf));
+    _use_bold = use_bold;
 
-    _size = 26;
+    if(_use_bold){
+         _canvas->loadFont(interboldttf, sizeof(interboldttf));
+    }else {
+        _canvas->loadFont(interregularttf, sizeof(interregularttf));
+    }
+
+    _size = txt_size;
     _color = color;
     _txt_color = txt_color;
     _thiscreat = false;
@@ -234,4 +241,14 @@ void EPDGUI_Textbox::AddText(String text)
     }
 
     Draw(UPDATE_MODE_A2);
+}
+
+void EPDGUI_Textbox::useBold(bool usebold)
+{
+    _use_bold = usebold;
+}
+
+void EPDGUI_Textbox::setColors(int16_t color, int16_t txt_color) {
+    _color = color;
+    _txt_color = txt_color;
 }
