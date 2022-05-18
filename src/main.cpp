@@ -157,7 +157,7 @@ void setRoutes() {
 
 	AsyncCallbackJsonWebHandler* confighandler = new AsyncCallbackJsonWebHandler(
 	    "/config", [](AsyncWebServerRequest* request, JsonVariant& json) {
-		    JsonObject const& configObj = json.as<JsonObject>();
+		    // TODO: Probably good idea to validate the config before writing, somehow
 		    Serial.println("Writing new config to filesystem...");
 
 		    File configFile = LittleFS.open("/config.json", FILE_WRITE);
@@ -165,7 +165,9 @@ void setRoutes() {
 			if (!configFile) {
 				Serial.println("Cannot write to filesystem...");
 		} else {
-				configFile.print(configObj);
+			    String configString = "";
+			    serializeJson(json, configString);
+			    configFile.print(configString);
 		}
 	});
 	webServer.addHandler(confighandler);
