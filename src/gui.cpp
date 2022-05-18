@@ -1,4 +1,6 @@
 #include "gui.h"
+#include "calendarApi.h"
+#include "secrets.h"
 
 enum
 {
@@ -38,13 +40,6 @@ enum
 	LABEL_SIZE
 };
 
-struct Event {
-	String creator;
-	String description;
-	String startTime;
-	String endTime;
-};
-
 #define TIME_FONT_SIZE = 48;
 #define DEFAULT_FONT_SIZE = 24;
 #define MAIN_HEADER_FONT_SIZE = 60;
@@ -55,8 +50,14 @@ EPDGUI_Textbox *lbls[LABEL_SIZE];
 M5EPD_Canvas canvasCurrentEvent(&M5.EPD);
 M5EPD_Canvas canvasNextEvent(&M5.EPD);
 
-Event currentEvent;
-Event nextEvent;
+std::shared_ptr <calapi::Event> currentEvent;
+std::shared_ptr <calapi::Event> nextEvent;
+Timezone *guimyTZ;
+
+calapi::Token token = calapi::parseToken(TOKEN);
+String calendarId = CALENDAR_ID;
+String resourceName = "";
+
 
 //ei tarvii
 void updateScreen() {
@@ -158,9 +159,9 @@ void loadNextBooking(String time, String voltage, String wifiStatus) {
 		lbls[i]->SetTextSize(24);
         lbls[i]->SetText("");
 	}
-    lbls[LABEL_NEXT_EVENT_CREATOR]->SetText(nextEvent.creator);
-    lbls[LABEL_NEXT_EVENT_DESC]->SetText(nextEvent.description);
-    lbls[LABEL_NEXT_EVENT_TIME]->SetText(nextEvent.startTime+" -\n"+nextEvent.endTime);
+    lbls[LABEL_NEXT_EVENT_CREATOR]->SetText(nextEvent->creator);
+    lbls[LABEL_NEXT_EVENT_DESC]->SetText(nextEvent->summary);
+    lbls[LABEL_NEXT_EVENT_TIME]->SetText(guimyTZ->dateTime(nextEvent->unixStartTime, UTC_TIME, "H:i")+" -\n"+guimyTZ->dateTime(nextEvent->unixEndTime, UTC_TIME, "H:i"));
 	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU4);
 	EPDGUI_Run();
 }
@@ -241,12 +242,12 @@ void loadCurrentBooking() {
     lbls[LABEL_CURRENT_EVENT_DESC]->SetText("");
     lbls[LABEL_CURRENT_EVENT_TIME]->SetText("");
 
-	lbls[LABEL_CURRENT_BOOKING]->SetText("Varattu");
+	/* lbls[LABEL_CURRENT_BOOKING]->SetText("Varattu");
 	lbls[LABEL_CLOCK_MID]->SetText("13:37");
-	lbls[LABEL_RESOURCE]->SetText("Pieni neukkari 2");
-    lbls[LABEL_CURRENT_EVENT_CREATOR]->SetText(currentEvent.creator);
-    lbls[LABEL_CURRENT_EVENT_DESC]->SetText(currentEvent.description);
-    lbls[LABEL_CURRENT_EVENT_TIME]->SetText(currentEvent.startTime+" - "+currentEvent.endTime);
+	lbls[LABEL_RESOURCE]->SetText("Pieni neukkari 2"); */
+    lbls[LABEL_CURRENT_EVENT_CREATOR]->SetText(currentEvent->creator);
+    lbls[LABEL_CURRENT_EVENT_DESC]->SetText(currentEvent->summary);
+    lbls[LABEL_CURRENT_EVENT_TIME]->SetText(guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "H:i")+" - "+guimyTZ->dateTime(currentEvent->unixEndTime, UTC_TIME, "H:i"));
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_DU4);
 }
 
@@ -295,44 +296,44 @@ void toFreeBooking() {
 }
 
 void makeBooking(String creator, String desc, String startTime, String endTime) {
-	currentEvent.creator = creator;
+/* 	currentEvent.creator = creator;
 	currentEvent.description = desc;
 	currentEvent.startTime = startTime;
-	currentEvent.endTime = endTime;
+	currentEvent.endTime = endTime; */
 }
 
 void deleteBooking() {
-	currentEvent.creator = "";
+/* 	currentEvent.creator = "";
 	currentEvent.description = "";
 	currentEvent.startTime = "";
-	currentEvent.endTime = "";
+	currentEvent.endTime = ""; */
 }
 
 void makeNextBooking(String creator, String desc, String startTime, String endTime) {
-	nextEvent.creator = creator;
+/* 	nextEvent.creator = creator;
 	nextEvent.description = desc;
 	nextEvent.startTime = startTime;
-	nextEvent.endTime = endTime;
+	nextEvent.endTime = endTime; */
 }
 
 void deleteNextBooking() {
-	nextEvent.creator = "";
+/* 	nextEvent.creator = "";
 	nextEvent.description = "";
 	nextEvent.startTime = "";
-	nextEvent.endTime = "";
+	nextEvent.endTime = ""; */
 }
 
 void toMainScreen() {
 	// check for current event
 
-	if(currentEvent.creator == "")
+	if(currentEvent == nullptr)
 	{
 		loadCurrentFree();
 	} else {
 		loadCurrentBooking();
 	}
 
-	if(nextEvent.creator=="")
+	if(nextEvent == nullptr)
 	{
 		loadNextFree("13:00", "44%", "OK");
 	} else {
@@ -366,8 +367,7 @@ void tillNextButton(epdgui_args_vector_t &args) {
 }
 
 void confirmBookingButton(epdgui_args_vector_t &args) {
-	makeBooking("Källö Kallenen", "Videopalaveri", "13:00", "16:00");
-	makeNextBooking("Köllä Kallenen 2", "video palaveri\njatkuu", "18:00", "21:00");
+		
 	toMainScreen();
 }
 
@@ -546,12 +546,33 @@ void createLabels() {
 	lbls[LABEL_CONFIRM_TIME]->AddText("18:00 - 21:00");
 }
 
-void initGui() {
-	M5.begin();
-    M5.EPD.SetRotation(0);
-    M5.EPD.Clear(true);
-    M5.RTC.begin();
+void initGui(Timezone *_myTZ) {
 
+	guimyTZ = _myTZ;
+
+	calapi::Result<calapi::CalendarStatus> statusRes
+	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
+
+	if (statusRes.isOk()) {
+		auto ok = statusRes.ok();
+		if (ok->currentEvent) {
+			Serial.println("Result CURRENT EVENT: ");
+			calapi::printEvent(*ok->currentEvent);
+		}
+
+		if (ok->nextEvent) {
+			Serial.println("Result NEXT EVENT: ");
+			calapi::printEvent(*ok->nextEvent);
+			
+		}
+		currentEvent = ok->currentEvent;
+		nextEvent = ok->nextEvent;
+		resourceName = ok->name;
+	} else {
+		Serial.print("Result ERROR: ");
+		Serial.println(statusRes.err()->message);
+	}
+	
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasCurrentEvent.fillCanvas(0);
 

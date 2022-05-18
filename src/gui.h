@@ -3,7 +3,7 @@
 
 #include <M5EPD.h>
 #include <epdgui.h>
-
+#include <ezTime.h>
 
 void updateScreen();
 void hideNextBooking(bool isHide);
@@ -46,6 +46,6 @@ void createButtons();
 void createLabels();
 
 
-void initGui();
+void initGui(Timezone *_myTZ);
 
 #endif
