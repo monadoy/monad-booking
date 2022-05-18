@@ -151,7 +151,8 @@ void setRoutes() {
 	});
 
 	webServer.on("/config", HTTP_GET, [](AsyncWebServerRequest* request) {
-		AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/config.json", "application/json");
+		AsyncWebServerResponse* response
+		    = request->beginResponse(LittleFS, "/config.json", "application/json");
 		request->send(response);
 	});
 
