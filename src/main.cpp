@@ -17,7 +17,6 @@
 #define FORMAT_LITTLEFS_IF_FAILED true
 
 #define EZTIME_EZT_NAMESPACE 1
-#include <ezTime.h>
 
 #define CONFIG_NAME "configuration"
 
