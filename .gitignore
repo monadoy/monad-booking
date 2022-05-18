@@ -1,5 +1,5 @@
 credentials.json
-token.json
+*token.json
 .python-version
 .vscode
 
