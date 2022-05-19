@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include "gui.h"
 
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
@@ -106,6 +107,8 @@ void setup() {
 	}
 	setRoutes();
 	webServer.begin();
+	initGui(&myTZ);
+	ezt::events();
 }
 
 bool restoreWifiConfig() {
@@ -151,7 +154,5 @@ void setupMode() {
 }
 
 void loop() {
-	webServer.handleClient();
-	printLocalTime();
-	delay(1000);
+	
 }

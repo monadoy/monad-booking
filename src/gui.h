@@ -5,19 +5,22 @@
 #include <epdgui.h>
 #include <ezTime.h>
 
+String getBatteryPercent();
+String getWifiStatus();
+void updateStatus();
 void updateScreen();
 void hideNextBooking(bool isHide);
 void hideMainButtons(bool isHide);
 void hideBookingConfirmationButtons(bool isHide);
 void hideFreeConfirmationButtons(bool isHide);
 void hideFreeRoomButton(bool isHide);
-void showConfirmBooking(String time);
+void showConfirmBooking(uint16_t time);
 void hideMainLabels(bool isHide);
 void hideConfirmBooking();
-void showFreeBooking(String time);
+void showFreeBooking();
 void hideFreeBooking();
-void loadNextBooking(String time, String voltage, String wifiStatus);
-void loadNextFree(String time, String voltage, String wifiStatus);
+void loadNextBooking();
+void loadNextFree();
 void hideCurrentBookingLabels(bool isHide);
 void loadCurrentBooking();
 void loadCurrentFree();
@@ -25,10 +28,8 @@ void toConfirmBooking();
 void toFreeBooking();
 void makeBooking();
 void deleteBooking();
-void makeNextBooking();
-void deleteNextBooking();
 
-void ToMainScreen();
+void toMainScreen();
 
 void settingsButton(epdgui_args_vector_t &args);
 void fifteenButton(epdgui_args_vector_t &args);
