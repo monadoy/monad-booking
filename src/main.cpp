@@ -9,9 +9,7 @@
 #include <WiFiClient.h>
 #include <ezTime.h>
 
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
-#include "FS.h"
+#include "configServer.h"
 
 // Format the filesystem automatically if not formatted already
 #define FORMAT_LITTLEFS_IF_FAILED true
@@ -34,9 +32,6 @@ const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
 const char* SETUP_SSID = "BOOKING_SETUP";
 const char* PARAM_MESSAGE = "message";
 
-// Initialize HTTP Server
-AsyncWebServer webServer(80);
-
 // Config store
 Preferences preferences;
 
@@ -45,8 +40,6 @@ String WIFI_PASS = "";
 
 bool restoreWifiConfig();
 void setupMode();
-String makePage(String title, String contents);
-void setRoutes();
 
 struct tm timeinfo;
 
@@ -121,8 +114,12 @@ void setup() {
 		// Setupmode
 		setupMode();
 	}
-	setRoutes();
-	webServer.begin();
+
+	// Initialize Configserver
+	// TODO: this is currently thrown away after setup() ends
+	Config::ConfigServer* configServer = new Config::ConfigServer(80);
+
+	configServer->start();
 }
 
 bool restoreWifiConfig() {
@@ -132,50 +129,6 @@ bool restoreWifiConfig() {
 	WIFI_PASS = preferences.getString("WIFI_PASS");
 
 	return WIFI_SSID.length() > 0;
-}
-
-String makePage(String title, String contents) {
-	String s = "<!DOCTYPE html><html><head>";
-	s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\">";
-	s += "<title>";
-	s += title;
-	s += "</title></head><body>";
-	s += contents;
-	s += "</body></html>";
-	return s;
-}
-
-void setRoutes() {
-	webServer.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-		request->send(200, "text/plain", "Hello, world");
-	});
-
-	webServer.on("/config", HTTP_GET, [](AsyncWebServerRequest* request) {
-		AsyncWebServerResponse* response
-		    = request->beginResponse(LittleFS, "/config.json", "application/json");
-		request->send(response);
-	});
-
-	AsyncCallbackJsonWebHandler* confighandler = new AsyncCallbackJsonWebHandler(
-	    "/config", [](AsyncWebServerRequest* request, JsonVariant& json) {
-		    // TODO: Probably good idea to validate the config before writing, somehow
-		    Serial.println("Writing new config to filesystem...");
-
-		    File configFile = LittleFS.open("/config.json", FILE_WRITE);
-
-			if (!configFile) {
-				Serial.println("Cannot write to filesystem...");
-		} else {
-			    String configString = "";
-			    serializeJson(json, configString);
-			    configFile.print(configString);
-		}
-	});
-	webServer.addHandler(confighandler);
-
-	webServer.serveStatic("/", LittleFS, "/webroot/")
-	    .setDefaultFile("index.html")
-	    .setCacheControl("max-age=60");
 }
 
 void setupMode() {
