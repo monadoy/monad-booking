@@ -2,8 +2,14 @@
 
 #include <WiFi.h>
 
+#include <list>
+#include <map>
+#include <stack>
+
 #include "calendarApi.h"
 #include "secrets.h"
+#include "interregularttf.h"
+#include "interboldttf.h"
 
 enum {
 	BUTTON_SETTINGS,
@@ -38,29 +44,26 @@ enum {
 	LABEL_CONFIRM_BOOKING,
 	LABEL_CONFIRM_FREE,
 	LABEL_CONFIRM_TIME,
+	LABEL_LOADING,
 	LABEL_SIZE
 };
 
-enum 
-{
-	SCREEN_MAIN,
-	SCREEN_BOOKING,
-	SCREEN_FREEING,
-	SCREEN_SIZE
-};
+const uint16_t FONT_SIZE_NORMAL = 24;
+const uint16_t FONT_SIZE_BUTTON = 28;
+const uint16_t FONT_SIZE_HEADER = 32;
+const uint16_t FONT_SIZE_CLOCK = 44; 
+const uint16_t FONT_SIZE_TITLE = 64;
 
-#define TIME_FONT_SIZE = 48;
-#define DEFAULT_FONT_SIZE = 24;
-#define MAIN_HEADER_FONT_SIZE = 60;
-#define MID_HEADER_FONT_SIZE = 32;
+enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SIZE };
 
 EPDGUI_Button* btns[BUTTON_SIZE];
 EPDGUI_Textbox* lbls[LABEL_SIZE];
 M5EPD_Canvas canvasCurrentEvent(&M5.EPD);
 M5EPD_Canvas canvasNextEvent(&M5.EPD);
 
-std::shared_ptr<calapi::Event> currentEvent;
-std::shared_ptr<calapi::Event> nextEvent;
+
+std::shared_ptr<calapi::Event> currentEvent = nullptr;
+std::shared_ptr<calapi::Event> nextEvent = nullptr;
 Timezone* guimyTZ;
 
 calapi::Token token = calapi::parseToken(TOKEN);
@@ -69,10 +72,42 @@ String resourceName = "";
 uint16_t timeToBeBooked = 15;
 
 const uint32_t BAT_LOW = 3300;
-const uint32_t BAT_HIGH = 4350;
-const int UPDATE_INTERVAL = 30;
+const uint32_t BAT_HIGH = 4200;
 
 uint16_t currentScreen = SCREEN_MAIN;
+
+std::list<EPDGUI_Base*> epdgui_object_list;
+uint32_t obj_id = 1;
+
+void EPDGUI_AddObject(EPDGUI_Base* object) {
+	obj_id++;
+	epdgui_object_list.push_back(object);
+}
+
+void EPDGUI_Draw(m5epd_update_mode_t mode) {
+	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	     p != epdgui_object_list.end(); p++) {
+		(*p)->Draw(mode);
+	}
+}
+
+void EPDGUI_Process(void) {
+	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	     p != epdgui_object_list.end(); p++) {
+		(*p)->UpdateState(-1, -1);
+	}
+}
+
+void EPDGUI_Process(int16_t x, int16_t y) {
+	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	     p != epdgui_object_list.end(); p++) {
+		// log_d("%d, %d -> %d, %d, %d, %d", x, y, (*p)->getX(), (*p)->getY(), (*p)->getRX(),
+		// (*p)->getBY());
+		(*p)->UpdateState(x, y);
+	}
+}
+
+void EPDGUI_Clear(void) { epdgui_object_list.clear(); }
 
 String getBatteryPercent() {
 	auto clamped = std::min(std::max(M5.getBatteryVoltage(), BAT_LOW), BAT_HIGH);
@@ -90,40 +125,56 @@ String getWifiStatus() {
 
 // TODO: dont update screen if fetched event hasnt updated
 void updateStatus() {
-	Serial.println(F("call updatestatus"));
+	Serial.println("updatestatus called");
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
 
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
-		if (ok->currentEvent) {
-			Serial.println("Result CURRENT EVENT: ");
-			calapi::printEvent(*ok->currentEvent);
+
+		if (ok->currentEvent == nullptr) {
+			currentEvent = nullptr;
 		}
 
-		if (ok->nextEvent) {
-			Serial.println("Result NEXT EVENT: ");
-			calapi::printEvent(*ok->nextEvent);
+		if (ok->nextEvent == nullptr) {
+			nextEvent = nullptr;
 		}
-		currentEvent = ok->currentEvent;
+
 		nextEvent = ok->nextEvent;
-		resourceName = ok->name;
+		currentEvent = ok->currentEvent;
+		if (currentScreen == SCREEN_MAIN) {
+			toMainScreen();
+		}
+
 	} else {
 		Serial.print("Result ERROR: ");
 		Serial.println(statusRes.err()->message);
 	}
-	if(currentScreen == SCREEN_MAIN) {
-		toMainScreen();
-	}
-	guimyTZ->setEvent(updateStatus, guimyTZ->now()+UPDATE_INTERVAL);
-	Serial.println("set next call event");
 }
 
-// ei tarvii
 void updateScreen() {
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_DU4);
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU4);
-	EPDGUI_Run();
+	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
+	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
+	EPDGUI_Process();
+	EPDGUI_Draw(UPDATE_MODE_NONE);
+	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+}
+
+void updateClocksWifiBattery() {
+	for (int i = LABEL_CLOCK_UP; i < LABEL_RESOURCE; i++) {
+		lbls[i]->SetText("");
+	}
+	lbls[LABEL_CLOCK_UP]->SetText(guimyTZ->dateTime("G:i"));
+	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
+	lbls[LABEL_BATTERY]->SetText(getBatteryPercent());
+	lbls[LABEL_WIFI]->SetText(getWifiStatus());
+	for (int i = LABEL_CLOCK_UP; i < LABEL_RESOURCE; i++) {
+		lbls[i]->SetHide(false);
+	}
+	M5.EPD.UpdateArea(875, 16, 70, 40, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(780, 16, 90, 40, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(700, 16, 90, 40, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(80, 92, 77, 40, UPDATE_MODE_GC16);
 }
 
 // hides the next event on the right side
@@ -146,9 +197,26 @@ void hideNextBooking(bool isHide) {
 }
 
 void hideMainButtons(bool isHide) {
-	for (int i = BUTTON_SETTINGS; i < BUTTON_CONFIRMBOOKING; i++) {
+	for (int i = BUTTON_SETTINGS; i < BUTTON_TILLNEXT; i++) {
 		btns[i]->SetHide(isHide);
 	}
+	if (nextEvent != nullptr && currentScreen == SCREEN_MAIN && currentEvent == nullptr) {
+		btns[BUTTON_TILLNEXT]->SetEnable(true);
+		btns[BUTTON_TILLNEXT]->SetHide(false);
+	} else {
+		btns[BUTTON_TILLNEXT]->SetEnable(false);
+		btns[BUTTON_TILLNEXT]->SetHide(true);
+	}
+}
+
+time_t roundToFive(time_t endTime) {
+	long remainder = endTime % 300;
+	return endTime - remainder + 300;
+}
+
+void hideTillNextButton() {
+	btns[BUTTON_TILLNEXT]->SetEnable(true);
+	btns[BUTTON_TILLNEXT]->SetHide(false);
 }
 
 void hideBookingConfirmationButtons(bool isHide) {
@@ -166,9 +234,8 @@ void hideFreeRoomButton(bool isHide) { btns[BUTTON_FREEROOM]->SetHide(isHide); }
 void showConfirmBooking(uint16_t time) {
 	lbls[LABEL_CONFIRM_BOOKING]->SetHide(false);
 	lbls[LABEL_CONFIRM_TIME]->SetHide(false);
-	lbls[LABEL_CONFIRM_TIME]->SetText(
-	    guimyTZ->dateTime("G:i") + " - "
-	    + guimyTZ->dateTime(guimyTZ->now() + SECS_PER_MIN * time, "G:i"));
+	lbls[LABEL_CONFIRM_TIME]->SetText(guimyTZ->dateTime("G:i") + " - "
+	                                  + guimyTZ->dateTime(guimyTZ->now() + time, "G:i"));
 }
 
 void hideMainLabels(bool isHide) {
@@ -187,7 +254,7 @@ void showFreeBooking() {
 	lbls[LABEL_CONFIRM_FREE]->SetHide(false);
 	lbls[LABEL_CONFIRM_TIME]->SetHide(false);
 	lbls[LABEL_CONFIRM_TIME]->SetText(
-		guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "G:i") + " - "
+	    guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "G:i") + " - "
 	    + guimyTZ->dateTime(currentEvent->unixEndTime, UTC_TIME, "G:i"));
 }
 
@@ -199,9 +266,8 @@ void hideFreeBooking() {
 void loadNextBooking() {
 	canvasNextEvent.fillRect(0, 0, 308, 540, 3);
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
-		lbls[i]->SetHide(false);
 		lbls[i]->setColors(3, 15);
-		lbls[i]->SetTextSize(24);
+		// lbls[i]->SetTextSize(24);
 		lbls[i]->SetText("");
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(guimyTZ->dateTime("G:i"));
@@ -209,9 +275,8 @@ void loadNextBooking() {
 	lbls[LABEL_WIFI]->SetText(getWifiStatus());
 
 	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
-		lbls[i]->SetHide(false);
 		lbls[i]->setColors(3, 15);
-		lbls[i]->SetTextSize(24);
+		// lbls[i]->SetTextSize(24);
 		lbls[i]->SetText("");
 	}
 	lbls[LABEL_NEXT_EVENT_CREATOR]->SetText(nextEvent->creator);
@@ -219,8 +284,17 @@ void loadNextBooking() {
 	lbls[LABEL_NEXT_EVENT_TIME]->SetText(
 	    guimyTZ->dateTime(nextEvent->unixStartTime, UTC_TIME, "G:i") + " -\n"
 	    + guimyTZ->dateTime(nextEvent->unixEndTime, UTC_TIME, "G:i"));
+
+	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
+		lbls[i]->SetHide(false);
+	}
+	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
+		lbls[i]->SetHide(false);
+	}
 	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU4);
-	EPDGUI_Run();
+	EPDGUI_Process();
+	EPDGUI_Draw(UPDATE_MODE_NONE);
+	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 }
 
 void loadNextFree() {
@@ -228,13 +302,14 @@ void loadNextFree() {
 	// set up the top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->setColors(0, 15);
-		lbls[i]->SetHide(false);
-		lbls[i]->SetTextSize(24);
 		lbls[i]->SetText("");
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(guimyTZ->dateTime("G:i"));
 	lbls[LABEL_BATTERY]->SetText(getBatteryPercent());
 	lbls[LABEL_WIFI]->SetText(getWifiStatus());
+	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
+		lbls[i]->SetHide(false);
+	}
 
 	// hide the next event labels
 	for (int i = LABEL_NEXT_EVENT_CREATOR; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
@@ -243,10 +318,11 @@ void loadNextFree() {
 	lbls[LABEL_NEXT_EVENT]->SetHide(false);
 	// display no next booking
 	lbls[LABEL_NEXT_EVENT]->setColors(0, 15);
-	lbls[LABEL_BOOK_EVENT]->SetText("");
 	lbls[LABEL_NEXT_EVENT]->SetText("Ei seuraavia\nvarauksia");
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU4);
-	EPDGUI_Run();
+	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU);
+	EPDGUI_Process();
+	EPDGUI_Draw(UPDATE_MODE_NONE);
+	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 }
 
 void hideCurrentBookingLabels(bool isHide) {
@@ -260,6 +336,33 @@ void hideCurrentBookingLabels(bool isHide) {
 
 void loadCurrentBooking() {
 	canvasCurrentEvent.fillRect(0, 0, 652, 540, 15);
+	lbls[LABEL_CLOCK_MID]->setColors(15, 0);
+	lbls[LABEL_RESOURCE]->setColors(15, 0);
+	lbls[LABEL_CURRENT_BOOKING]->setColors(15, 0);
+	/* 	lbls[LABEL_CLOCK_MID]->SetText("");
+	    lbls[LABEL_RESOURCE]->SetText("");
+	    lbls[LABEL_CURRENT_BOOKING]->SetText(""); */
+	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
+	lbls[LABEL_RESOURCE]->SetText(resourceName);
+	lbls[LABEL_CURRENT_BOOKING]->SetText("Varattu");
+	lbls[LABEL_BOOK_EVENT]->SetHide(true);
+
+	for (int i = LABEL_CURRENT_EVENT_CREATOR; i < LABEL_CONFIRM_BOOKING; i++) {
+		lbls[i]->SetText("");
+	}
+	lbls[LABEL_CURRENT_EVENT_CREATOR]->setColors(15, 0);
+	lbls[LABEL_CURRENT_EVENT_DESC]->setColors(15, 0);
+	lbls[LABEL_CURRENT_EVENT_TIME]->setColors(15, 0);
+
+	lbls[LABEL_CURRENT_EVENT_CREATOR]->SetText(currentEvent->creator);
+	lbls[LABEL_CURRENT_EVENT_DESC]->SetText(currentEvent->summary);
+	lbls[LABEL_CURRENT_EVENT_TIME]->SetText(
+	    guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "G:i") + " - "
+	    + guimyTZ->dateTime(currentEvent->unixEndTime, UTC_TIME, "G:i"));
+
+	for (int i = LABEL_CURRENT_EVENT_CREATOR; i < LABEL_CONFIRM_BOOKING; i++) {
+		lbls[i]->SetHide(false);
+	}
 	hideMainButtons(true);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
@@ -267,44 +370,20 @@ void loadCurrentBooking() {
 	hideConfirmBooking();
 	hideFreeRoomButton(false);
 	hideCurrentBookingLabels(false);
-	lbls[LABEL_BOOK_EVENT]->SetHide(true);
-
-	for (int i = LABEL_CURRENT_EVENT_CREATOR; i < LABEL_CONFIRM_BOOKING; i++) {
-		lbls[i]->SetHide(false);
-		lbls[i]->SetText("");
-	}
-
-	lbls[LABEL_CLOCK_MID]->setColors(15, 0);
-	lbls[LABEL_RESOURCE]->setColors(15, 0);
-	lbls[LABEL_CURRENT_BOOKING]->setColors(15, 0);
-	lbls[LABEL_CURRENT_EVENT_CREATOR]->setColors(15, 0);
-	lbls[LABEL_CURRENT_EVENT_DESC]->setColors(15, 0);
-	lbls[LABEL_CURRENT_EVENT_TIME]->setColors(15, 0);
-
-	lbls[LABEL_CLOCK_MID]->SetTextSize(24);
-	lbls[LABEL_RESOURCE]->SetTextSize(24);
-	lbls[LABEL_CURRENT_BOOKING]->SetTextSize(24);
-	lbls[LABEL_CURRENT_EVENT_CREATOR]->SetTextSize(24);
-	lbls[LABEL_CURRENT_EVENT_DESC]->SetTextSize(24);
-	lbls[LABEL_CURRENT_EVENT_TIME]->SetTextSize(24);
-
-	lbls[LABEL_CLOCK_MID]->SetText("");
-	lbls[LABEL_RESOURCE]->SetText("");
-	lbls[LABEL_CURRENT_BOOKING]->SetText("");
-	lbls[LABEL_CURRENT_EVENT_CREATOR]->SetText("");
-	lbls[LABEL_CURRENT_EVENT_DESC]->SetText("");
-	lbls[LABEL_CURRENT_EVENT_TIME]->SetText("");
-
-	lbls[LABEL_CURRENT_EVENT_CREATOR]->SetText(currentEvent->creator);
-	lbls[LABEL_CURRENT_EVENT_DESC]->SetText(currentEvent->summary);
-	lbls[LABEL_CURRENT_EVENT_TIME]->SetText(
-	    guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "G:i") + " - "
-	    + guimyTZ->dateTime(currentEvent->unixEndTime, UTC_TIME, "G:i"));
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_DU4);
+	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 }
 
 void loadCurrentFree() {
 	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+	lbls[LABEL_RESOURCE]->setColors(0, 15);
+	lbls[LABEL_RESOURCE]->SetText("");
+	lbls[LABEL_RESOURCE]->SetText(resourceName);
+	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
+	lbls[LABEL_CURRENT_BOOKING]->SetText("");
+	lbls[LABEL_CURRENT_BOOKING]->SetText("Vapaa");
+	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
+	lbls[LABEL_CLOCK_MID]->SetText("");
+	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
 	hideMainButtons(false);
 	hideFreeRoomButton(true);
 	hideBookingConfirmationButtons(true);
@@ -313,28 +392,26 @@ void loadCurrentFree() {
 	hideConfirmBooking();
 	hideCurrentBookingLabels(true);
 	hideMainLabels(false);
-	lbls[LABEL_RESOURCE]->setColors(0, 15);
-	lbls[LABEL_RESOURCE]->SetText("");
-	lbls[LABEL_RESOURCE]->SetText("Pieni neukkari 2");
-	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
-	lbls[LABEL_CURRENT_BOOKING]->SetText("");
-	lbls[LABEL_CURRENT_BOOKING]->SetText("Vapaa");
-	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
-	lbls[LABEL_CLOCK_MID]->SetText("");
-	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
-	lbls[LABEL_BOOK_EVENT]->setColors(0, 15);
-	lbls[LABEL_BOOK_EVENT]->SetText("");
-	lbls[LABEL_BOOK_EVENT]->SetText("Varaa huone");
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_DU4);
+	lbls[LABEL_BOOK_EVENT]->SetHide(false);
+	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 }
 
-void toConfirmBooking(uint16_t time) {
+void toConfirmBooking(uint16_t time, bool isTillNext) {
+	time_t endTime = roundToFive(UTC.now() + SECS_PER_MIN * time);
+	if (nextEvent != nullptr) {
+		if (isTillNext || endTime > nextEvent->unixStartTime) {
+			timeToBeBooked = SECS_PER_MIN * time;
+		}else {
+			timeToBeBooked = endTime - UTC.now();
+		}
+	} else {
+		timeToBeBooked = endTime - UTC.now();
+	}
 	currentScreen = SCREEN_BOOKING;
 	hideMainButtons(true);
 	hideMainLabels(true);
 	hideNextBooking(true);
 	hideBookingConfirmationButtons(false);
-	timeToBeBooked = time;
 	showConfirmBooking(timeToBeBooked);
 	updateScreen();
 }
@@ -351,8 +428,9 @@ void toFreeBooking() {
 }
 
 void makeBooking(uint16_t time) {
-	calapi::Result<calapi::Event> eventRes = calapi::insertEvent(
-	    token, *guimyTZ, calendarId, UTC.now(), UTC.now() + SECS_PER_MIN * time);
+	hideLoading(false);
+	calapi::Result<calapi::Event> eventRes
+	    = calapi::insertEvent(token, *guimyTZ, calendarId, UTC.now(), UTC.now() + time);
 
 	if (eventRes.isOk()) {
 		calapi::printEvent(*eventRes.ok());
@@ -361,9 +439,11 @@ void makeBooking(uint16_t time) {
 		Serial.print("Result ERROR: ");
 		Serial.println(eventRes.err()->message);
 	}
+	hideLoading(true);
 }
 
 void deleteBooking() {
+	hideLoading(false);
 	calapi::Result<calapi::Event> endedEventRes
 	    = calapi::endEvent(token, *guimyTZ, calendarId, currentEvent->id);
 
@@ -374,10 +454,10 @@ void deleteBooking() {
 		Serial.print("Result ERROR: ");
 		Serial.println(endedEventRes.err()->message);
 	}
+	hideLoading(true);
 }
 
 void toMainScreen() {
-	// check for current event
 	currentScreen = SCREEN_MAIN;
 
 	if (currentEvent == nullptr) {
@@ -391,19 +471,21 @@ void toMainScreen() {
 	} else {
 		loadNextBooking();
 	}
-	updateScreen();
 }
 void settingsButton(epdgui_args_vector_t& args) {}
 
-void fifteenButton(epdgui_args_vector_t& args) { toConfirmBooking(15); }
+void fifteenButton(epdgui_args_vector_t& args) { toConfirmBooking(15, false); }
 
-void thirtyButton(epdgui_args_vector_t& args) { toConfirmBooking(30); }
+void thirtyButton(epdgui_args_vector_t& args) { toConfirmBooking(30, false); }
 
-void sixtyButton(epdgui_args_vector_t& args) { toConfirmBooking(60); }
+void sixtyButton(epdgui_args_vector_t& args) { toConfirmBooking(60, false); }
 
-void ninetyButton(epdgui_args_vector_t& args) { toConfirmBooking(90); }
+void ninetyButton(epdgui_args_vector_t& args) { toConfirmBooking(90, false); }
 
-void tillNextButton(epdgui_args_vector_t& args) { toConfirmBooking(120); }
+void tillNextButton(epdgui_args_vector_t& args) {
+	uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
+	toConfirmBooking(deltaTime, true);
+}
 
 void confirmBookingButton(epdgui_args_vector_t& args) {
 	makeBooking(timeToBeBooked);
@@ -420,6 +502,13 @@ void confirmFreeButton(epdgui_args_vector_t& args) {
 void cancelFreeButton(epdgui_args_vector_t& args) { toMainScreen(); }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
+
+void hideLoading(bool isHide) {
+	lbls[LABEL_LOADING]->SetHide(isHide);
+	EPDGUI_Process();
+	EPDGUI_Draw(UPDATE_MODE_NONE);
+	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU);
+}
 
 void createButtons() {
 	// Options button
@@ -493,97 +582,90 @@ void createButtons() {
 	btns[BUTTON_FREEROOM]->Bind(EPDGUI_Button::EVENT_RELEASED, freeRoomButton);
 }
 
-void createLabels() {
+void createRegularLabels() {
 	// upper right clock label
-	lbls[LABEL_CLOCK_UP] = new EPDGUI_Textbox(875, 16, 70, 40, 3, 15, 24, false);
+	lbls[LABEL_CLOCK_UP] = new EPDGUI_Textbox(875, 16, 70, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[0]);
-	lbls[LABEL_CLOCK_UP]->AddText("13");
 
 	// battery status label
-	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(816, 16, 60, 40, 3, 15, 24, false);
+	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(780, 16, 85, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_BATTERY]);
-	lbls[LABEL_BATTERY]->AddText("44% ");
 
 	// wifi status label
-	lbls[LABEL_WIFI] = new EPDGUI_Textbox(752, 16, 51, 40, 3, 15, 24, false);
+	lbls[LABEL_WIFI] = new EPDGUI_Textbox(700, 16, 80, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_WIFI]);
-	lbls[LABEL_WIFI]->AddText("OK");
 
 	// middle clock label
-	lbls[LABEL_CLOCK_MID] = new EPDGUI_Textbox(80, 92, 77, 40, 0, 15, 24, false);
+	lbls[LABEL_CLOCK_MID] = new EPDGUI_Textbox(80, 92, 77, 40, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CLOCK_MID]);
-	lbls[LABEL_CLOCK_MID]->AddText("13:39");
-	// 498
-	// resource label
-	lbls[LABEL_RESOURCE] = new EPDGUI_Textbox(80, 125, 418, 40, 0, 15, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
-	lbls[LABEL_RESOURCE]->AddText("Pieni neukkari 2");
 
+	// resource label
+	lbls[LABEL_RESOURCE] = new EPDGUI_Textbox(80, 125, 418, 40, 0, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
+	lbls[LABEL_RESOURCE]->AddText(resourceName);
+
+	// next event creator label
+	lbls[LABEL_NEXT_EVENT_CREATOR] = new EPDGUI_Textbox(701, 246, 239, 40, 3, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_CREATOR]);
+
+	// next event desc label
+	// TODO: dynamically change text formatting
+	lbls[LABEL_NEXT_EVENT_DESC] = new EPDGUI_Textbox(701, 279, 231, 87, 3, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_DESC]);
+
+	// current event creator label
+	lbls[LABEL_CURRENT_EVENT_CREATOR] = new EPDGUI_Textbox(80, 264, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_CREATOR]);
+
+	// current event desc label
+	lbls[LABEL_CURRENT_EVENT_DESC] = new EPDGUI_Textbox(80, 297, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
+
+	// current event time label
+	lbls[LABEL_CURRENT_EVENT_TIME] = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, true);
+	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
+
+	// current event creator label
+	lbls[LABEL_CONFIRM_BOOKING] = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
+	lbls[LABEL_CONFIRM_BOOKING]->AddText("Varataanko huone");
+
+	// current event desc label
+	lbls[LABEL_CONFIRM_FREE] = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
+	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
+
+	lbls[LABEL_LOADING] = new EPDGUI_Textbox(440, 240, 120, 40, 0, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_LOADING]);
+	lbls[LABEL_LOADING]->AddText("Loading...");
+	lbls[LABEL_LOADING]->SetHide(true);
+}
+
+void createBoldLabels() {
 	// current booking status label
-	lbls[LABEL_CURRENT_BOOKING] = new EPDGUI_Textbox(80, 158, 418, 77, 0, 15, 24, false);
-	lbls[LABEL_CURRENT_BOOKING]->AddText("Vapaa");
+	lbls[LABEL_CURRENT_BOOKING] = new EPDGUI_Textbox(80, 158, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 
 	// book event label
-	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 240, 60, 0, 15, 24, false);
-	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
+	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, true);
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
+	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
 
 	// next event label
-	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 78, 3, 15, 24, false);
+	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, true);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
-	lbls[LABEL_NEXT_EVENT]->AddText("Seuraava\nvaraus");
-
-	// next event creator label
-	lbls[LABEL_NEXT_EVENT_CREATOR] = new EPDGUI_Textbox(701, 246, 239, 40, 3, 15, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_CREATOR]);
-	lbls[LABEL_NEXT_EVENT_CREATOR]->AddText("Kalle Kallenen 2");
-
-	// next event desc label
-	// here height is n*27 where n is the number of rows
-	lbls[LABEL_NEXT_EVENT_DESC] = new EPDGUI_Textbox(701, 279, 231, 87, 3, 15, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_DESC]);
-	lbls[LABEL_NEXT_EVENT_DESC]->AddText("Videopalaveri\nasiakkaan kannsa\njatkuu");
 
 	// next event time label
-	lbls[LABEL_NEXT_EVENT_TIME] = new EPDGUI_Textbox(701, 370, 231, 106, 3, 15, 24, false);
+	lbls[LABEL_NEXT_EVENT_TIME] = new EPDGUI_Textbox(701, 370, 231, 106, 3, 15, FONT_SIZE_CLOCK, true);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_TIME]);
-	lbls[LABEL_NEXT_EVENT_TIME]->AddText("18.00 -\n21.00");
-
-	// current event creator label
-	lbls[LABEL_CURRENT_EVENT_CREATOR] = new EPDGUI_Textbox(80, 264, 412, 40, 15, 0, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_CREATOR]);
-	lbls[LABEL_CURRENT_EVENT_CREATOR]->AddText("Kalle Kallenen");
-
-	// current event desc label
-	lbls[LABEL_CURRENT_EVENT_DESC] = new EPDGUI_Textbox(80, 297, 412, 40, 15, 0, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
-	lbls[LABEL_CURRENT_EVENT_DESC]->AddText("Videopalaveri");
 
 	// current event time label
-	lbls[LABEL_CURRENT_EVENT_TIME] = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
-	lbls[LABEL_CURRENT_EVENT_TIME]->AddText("18:00 - 21:00");
-
-	// current event creator label
-	lbls[LABEL_CONFIRM_BOOKING] = new EPDGUI_Textbox(144, 164, 310, 40, 0, 15, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
-	lbls[LABEL_CONFIRM_BOOKING]->AddText("Vahvista varaus");
-
-	// current event desc label
-	lbls[LABEL_CONFIRM_FREE] = new EPDGUI_Textbox(144, 209, 310, 40, 0, 15, 24, false);
-	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
-	lbls[LABEL_CONFIRM_FREE]->AddText("Vahvista varauksen poisto");
-
-	// current event time label
-	lbls[LABEL_CONFIRM_TIME] = new EPDGUI_Textbox(144, 244, 456, 53, 0, 15, 24, false);
+	lbls[LABEL_CONFIRM_TIME] = new EPDGUI_Textbox(144, 244, 456, 77, 0, 15, FONT_SIZE_CLOCK, true);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
-	lbls[LABEL_CONFIRM_TIME]->AddText("18:00 - 21:00");
 }
 
 void initGui(Timezone* _myTZ) {
 	guimyTZ = _myTZ;
-
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
 
@@ -607,13 +689,73 @@ void initGui(Timezone* _myTZ) {
 	}
 
 	canvasCurrentEvent.createCanvas(652, 540);
-	canvasCurrentEvent.fillCanvas(0);
-
 	canvasNextEvent.createCanvas(308, 540);
-	canvasNextEvent.fillCanvas(3);
+
+	M5EPD_Canvas boldfont(&M5.EPD);
+    boldfont.loadFont(interboldttf, sizeof(interboldttf));
+    boldfont.createRender(FONT_SIZE_BUTTON, 128);
 
 	createButtons();
-	createLabels();
-	updateStatus();
-	guimyTZ->setEvent(updateStatus, guimyTZ->now()+UPDATE_INTERVAL);
+	boldfont.deleteCanvas();
+	
+
+	M5EPD_Canvas font(&M5.EPD);
+    font.loadFont(interregularttf, sizeof(interregularttf));
+    font.createRender(FONT_SIZE_NORMAL, 128);
+    font.createRender(FONT_SIZE_HEADER, 128);
+	font.createRender(FONT_SIZE_CLOCK, 128);
+	font.createRender(FONT_SIZE_TITLE, 128);
+	createBoldLabels();
+	createRegularLabels();
+
+	toMainScreen();
+}
+
+// Variables to store update-data from loop
+uint32_t lastActiveTime = 0;
+uint32_t lastFetchUpdate = 0;
+uint16_t lastPosX = 0xFFFF, lastPosY = 0xFFFF;
+bool isAutoUpdate = true;
+const int UPDATE_INTERVAL = 60000; // Milliseconds, how often to update status in the loop 
+
+void loopGui() {
+	if (M5.TP.avaliable())
+        {
+            M5.TP.update();
+            bool is_finger_up = M5.TP.isFingerUp();
+            if(is_finger_up || (lastPosX != M5.TP.readFingerX(0)) || (lastPosY != M5.TP.readFingerY(0)))
+            {
+                lastPosX = M5.TP.readFingerX(0);
+                lastPosY = M5.TP.readFingerY(0);
+                if(is_finger_up)
+                {
+                    EPDGUI_Process();
+                    lastActiveTime = millis();
+                }
+                else
+                {
+                    EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
+                    lastActiveTime = 0;
+                }
+            }
+            
+            M5.TP.flush();
+        }
+
+        if((lastActiveTime != 0) && (millis() - lastActiveTime > 2000))
+        {
+            if(M5.EPD.UpdateCount() > 4)
+            {
+                M5.EPD.ResetUpdateCount();
+                if(isAutoUpdate)
+                {
+                    M5.EPD.UpdateFull(UPDATE_MODE_GL16);
+                }
+            }
+            lastActiveTime = 0;
+        }
+        if(millis() - lastFetchUpdate > UPDATE_INTERVAL) {
+            lastFetchUpdate = millis();
+			updateStatus();
+        }
 }

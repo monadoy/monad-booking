@@ -3,6 +3,7 @@
 #include <list>
 #include "epdgui.h"
 
+
 std::list<EPDGUI_Base*> epdgui_object_list;
 uint32_t obj_id = 1;
 bool _is_auto_update = true;
@@ -44,13 +45,13 @@ void EPDGUI_Clear(void)
     epdgui_object_list.clear();
 }
 
-void EPDGUI_Run(void *pargs)
+void EPDGUI_Run()
 {
     uint32_t last_active_time = 0;
+    uint32_t last_fetch_update = 0;
 
     EPDGUI_Draw(UPDATE_MODE_NONE);
     M5.EPD.UpdateFull(UPDATE_MODE_GC16);
-
     while (1)
     {
         if (M5.TP.avaliable())
@@ -87,6 +88,11 @@ void EPDGUI_Run(void *pargs)
                 }
             }
             last_active_time = 0;
+        }
+        if(millis() - last_fetch_update > 30000) {
+            last_fetch_update = millis();
+            Serial.println("Should fetch new event now");
+            Serial.println("resetting clock");
         }
     }
 }

@@ -108,7 +108,6 @@ void setup() {
 	setRoutes();
 	webServer.begin();
 	initGui(&myTZ);
-	ezt::events();
 }
 
 bool restoreWifiConfig() {
@@ -154,5 +153,5 @@ void setupMode() {
 }
 
 void loop() {
-	
+	loopGui();
 }

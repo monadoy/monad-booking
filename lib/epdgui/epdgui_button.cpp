@@ -31,13 +31,13 @@ EPDGUI_Base(x, y, w, h)
     
     this->_CanvasNormal = new M5EPD_Canvas(&M5.EPD);
     this->_CanvasPressed = new M5EPD_Canvas(&M5.EPD);
-    if(_use_bold){
+    /* if(_use_bold){
         this->_CanvasNormal->loadFont(interboldttf, sizeof(interboldttf));
         this->_CanvasPressed->loadFont(interboldttf, sizeof(interboldttf));
     } else {
         this->_CanvasNormal->loadFont(interregularttf, sizeof(interregularttf));
         this->_CanvasPressed->loadFont(interregularttf, sizeof(interregularttf));
-    }
+    } */
 
     if(!_CanvasNormal->isRenderExist(_size)){
         _CanvasNormal->createRender(_size, 120);

@@ -9,11 +9,11 @@ EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16
     _canvas = new M5EPD_Canvas(&M5.EPD);
     _use_bold = use_bold;
 
-    if(_use_bold){
+    /* if(_use_bold){
          _canvas->loadFont(interboldttf, sizeof(interboldttf));
     }else {
         _canvas->loadFont(interregularttf, sizeof(interregularttf));
-    }
+    } */
 
     _size = txt_size;
     _color = color;
@@ -22,8 +22,8 @@ EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16
 
     _canvas->createCanvas(_w, _h);
 
-    _canvas->fillCanvas(color);
-    _canvas->drawRect(0, 0, _w, _h, color);
+    _canvas->fillCanvas(_color);
+    _canvas->drawRect(0, 0, _w, _h, _color);
     if (!_canvas->isRenderExist(_size))
     {
         _canvas->createRender(_size, 120);
@@ -84,7 +84,7 @@ void EPDGUI_Textbox::SetTextSize(uint16_t size)
         _canvas->preRender('a' + i);
         _canvas->preRender('A' + i);
     }
-    Draw(UPDATE_MODE_GC16);
+    Draw(UPDATE_MODE_NONE);
 }
 
 void EPDGUI_Textbox::Draw(m5epd_update_mode_t mode)
@@ -188,7 +188,7 @@ void EPDGUI_Textbox::SetText(String text)
     if (text != _data)
     {
         _data = text;
-        Draw(UPDATE_MODE_A2);
+        Draw(UPDATE_MODE_NONE);
     }
 }
 
@@ -240,7 +240,7 @@ void EPDGUI_Textbox::AddText(String text)
         }
     }
 
-    Draw(UPDATE_MODE_A2);
+    Draw(UPDATE_MODE_NONE);
 }
 
 void EPDGUI_Textbox::useBold(bool usebold)
@@ -251,4 +251,5 @@ void EPDGUI_Textbox::useBold(bool usebold)
 void EPDGUI_Textbox::setColors(int16_t color, int16_t txt_color) {
     _color = color;
     _txt_color = txt_color;
+    _canvas->setTextColor(_txt_color);
 }
