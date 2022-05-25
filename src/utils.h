@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <Arduino.h>
 
 #include <memory>
@@ -72,3 +75,5 @@ void connectWiFi(const String& ssid, const String& password);
 void ensureWiFi();
 
 }  // namespace utils
+
+#endif
