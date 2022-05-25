@@ -15,6 +15,8 @@
 // Uncomment this to load config variables from secrets.h
 #define DEVMODE 1
 
+#define USE_EXTERNAL_SERIAL true
+
 // Provide official timezone names
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 const char* IANA_TZ = "Europe/Helsinki";
@@ -76,7 +78,12 @@ void setupTime() {
 void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
 
 void setup() {
-	M5.begin();
+#ifdef USE_EXTERNAL_SERIAL
+	Serial.begin(115200, SERIAL_8N1, GPIO_NUM_18, GPIO_NUM_19);
+	delay(100);
+#endif
+
+	M5.begin(true, false, !USE_EXTERNAL_SERIAL, true, true);
 
 #ifdef DEVMODE
 	loadSecrets(preferences);
