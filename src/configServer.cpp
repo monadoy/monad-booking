@@ -42,7 +42,7 @@ void ConfigServer::start() {
 
 	this->server_->addHandler(configHandler);
 
-	this->server_->serveStatic("/", LittleFS, "/")
+	this->server_->serveStatic("/", LittleFS, "/webroot/")
 	    .setDefaultFile("index.html")
 	    .setCacheControl("max-age=60");
 
