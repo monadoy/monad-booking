@@ -2,10 +2,59 @@
 
 #include <LittleFS.h>
 
-#include "ArduinoJson.h"
-#include "AsyncJson.h"
-
 namespace Config {
+
+JsonObjectConst ConfigStore::getConfigJson() { return this->config_.as<JsonObjectConst>(); };
+
+bool ConfigStore::loadConfigFromFlash(const String& fileName) {
+	File configFileHandle;
+
+	configFileHandle = this->fs_.open(fileName, FILE_READ);
+	if (configFileHandle) {
+		auto err = deserializeMsgPack(this->config_, configFileHandle);
+		if (err) {
+			Serial.println("Cannot deserialize config.msgpack");
+			return false;
+		}
+		return true;
+	}
+
+	configFileHandle = fs_.open("config.json", FILE_READ);
+	if (configFileHandle) {
+		auto err = deserializeJson(this->config_, configFileHandle);
+		if (err) {
+			Serial.println("Cannot deserialize config.json");
+			return false;
+		}
+		return true;
+	}
+
+	// Cannot read any configfile
+	return false;
+};
+
+bool ConfigStore::saveConfigToFlash(JsonVariant& newConfig) {
+	File configFileHandle;
+
+	configFileHandle = fs_.open(this->configFileName_, FILE_WRITE);
+
+	if (!configFileHandle) {
+		Serial.println("Cannot open configfile for writing");
+		return false;
+	}
+
+	String configString = "";
+	serializeMsgPack(newConfig, configString);
+	configFileHandle.print(configString);
+
+	return true;
+};
+
+String ConfigStore::getTokenString() {
+	String tokenString = "";
+	serializeJson(this->config_["gcalsettings"]["token"], tokenString);
+	return tokenString;
+};
 
 ConfigServer::ConfigServer(uint16_t port) : port_(port) {}
 

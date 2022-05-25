@@ -7,7 +7,27 @@
 
 #include <ESPAsyncWebServer.h>
 
+#include "ArduinoJson.h"
+#include "AsyncJson.h"
+
 namespace Config {
+
+class ConfigStore {
+  public:
+	ConfigStore(fs::FS& fs, String configFileName = "/config.msgpack")
+	    : fs_(fs), configFileName_(configFileName) {
+		this->loadConfigFromFlash(configFileName);
+	};
+	JsonObjectConst getConfigJson();
+	bool saveConfigToFlash(JsonVariant& newConfig);
+	String getTokenString();
+
+  protected:
+	StaticJsonDocument<2048> config_;
+	String configFileName_;
+	bool loadConfigFromFlash(const String& fileName);
+	fs::FS& fs_;
+};
 
 class ConfigServer : public AsyncWebHandler {
   public:
