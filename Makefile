@@ -13,4 +13,4 @@ littlefs:
 prebuild: littlefs patch
 
 frontend:
-	cd webPortalFrontend && npm install && npm run build && cp -a ./dist/. ../data/webroot/
+	cd webPortalFrontend && npm install && npm run build && mkdir -p ../data/webroot && cp -a ./dist/. ../data/webroot/
