@@ -1,4 +1,8 @@
 
+#include <Arduino.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <LittleFS.h>
 #include <M5EPD.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -8,7 +12,12 @@
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
 
-#include "WebServer.h"
+#include "configServer.h"
+
+// Format the filesystem automatically if not formatted already
+#define FORMAT_LITTLEFS_IF_FAILED true
+
+#define EZTIME_EZT_NAMESPACE 1
 
 #define CONFIG_NAME "configuration"
 
@@ -24,9 +33,7 @@ M5EPD_Canvas canvas(&M5.EPD);
 
 const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
 const char* SETUP_SSID = "BOOKING_SETUP";
-
-// Initialize HTTP Server
-WebServer webServer(80);
+const char* PARAM_MESSAGE = "message";
 
 // Config store
 Preferences preferences;
@@ -36,8 +43,6 @@ String WIFI_PASS = "";
 
 bool restoreWifiConfig();
 void setupMode();
-String makePage(String title, String contents);
-void setRoutes();
 
 struct tm timeinfo;
 
@@ -86,6 +91,13 @@ void setup() {
 	Serial.println(F("Booting up..."));
 	preferences.begin(CONFIG_NAME);
 
+	Serial.println(F("Setting up LittleFS..."));
+	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+		Serial.println("LittleFS Mount Failed");
+		Serial.println("Please ensure your partition layout has spiffs partition defined");
+		return;
+	}
+
 	Serial.println(F("Setting up E-ink display..."));
 	M5.EPD.SetRotation(0);
 	M5.EPD.Clear(true);
@@ -105,9 +117,13 @@ void setup() {
 		// Setupmode
 		setupMode();
 	}
-	setRoutes();
-	webServer.begin();
 	initGui(&myTZ);
+
+	// Initialize Configserver
+	// TODO: this is currently thrown away after setup() ends
+	Config::ConfigServer* configServer = new Config::ConfigServer(80);
+
+	configServer->start();
 }
 
 bool restoreWifiConfig() {
@@ -117,30 +133,6 @@ bool restoreWifiConfig() {
 	WIFI_PASS = preferences.getString("WIFI_PASS");
 
 	return WIFI_SSID.length() > 0;
-}
-
-String makePage(String title, String contents) {
-	String s = "<!DOCTYPE html><html><head>";
-	s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\">";
-	s += "<title>";
-	s += title;
-	s += "</title></head><body>";
-	s += contents;
-	s += "</body></html>";
-	return s;
-}
-
-void setRoutes() {
-	webServer.on("/", []() {
-		Serial.println("Handling request for /");
-		webServer.send(200, "text/html", makePage("TEST", "<h1>Toimiiko?</h1>"));
-	});
-
-	webServer.onNotFound([]() {
-		String s = "<h1>AP mode</h1><p><a href=\"/settings\">Wi-Fi Settings</a></p>";
-		Serial.println("Not found");
-		webServer.send(200, "text/html", makePage("AP mode", s));
-	});
 }
 
 void setupMode() {
