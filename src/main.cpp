@@ -1,13 +1,12 @@
 
 #include <Arduino.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <LittleFS.h>
 #include <M5EPD.h>
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+
 #include "gui.h"
+#include "utils.h"
 
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
@@ -23,6 +22,8 @@
 
 // Uncomment this to load config variables from secrets.h
 #define DEVMODE 1
+
+#define USE_EXTERNAL_SERIAL true
 
 // Provide official timezone names
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -57,18 +58,6 @@ void loadSecrets(Preferences& prefs) {
 }
 #endif
 
-void connectWifi(const char* ssid, const char* pass) {
-	Serial.print(F("Connecting WiFi..."));
-
-	WiFi.begin(ssid, pass);
-
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		Serial.print(".");
-	}
-	Serial.println();
-}
-
 void setupTime() {
 	Serial.println("Setting up time");
 
@@ -80,8 +69,17 @@ void setupTime() {
 
 void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
 
+#define MICROS_PER_SEC 1000000
+#define MILLIS_PER_SEC 1000
+const uint64_t LIGHT_SLEEP_TIME = 120 * MICROS_PER_SEC;
+
 void setup() {
-	M5.begin();
+#ifdef USE_EXTERNAL_SERIAL
+	Serial.begin(115200, SERIAL_8N1, GPIO_NUM_18, GPIO_NUM_19);
+	delay(100);
+#endif
+
+	M5.begin(true, false, !USE_EXTERNAL_SERIAL, true, true);
 
 #ifdef DEVMODE
 	loadSecrets(preferences);
@@ -109,7 +107,7 @@ void setup() {
 
 	if (restoreWifiConfig()) {
 		Serial.println(F("WiFi-config restored!"));
-		connectWifi(WIFI_SSID.c_str(), WIFI_PASS.c_str());
+		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
 		setupTime();
 	} else {
 		Serial.println(F("No wifi configuration stored"));
@@ -125,7 +123,6 @@ void setup() {
 
 	configServer->start();
 }
-
 bool restoreWifiConfig() {
 	delay(10);
 
@@ -145,5 +142,15 @@ void setupMode() {
 }
 
 void loop() {
+	Serial.print("loop at ");
+	Serial.println(millis());
+
 	loopGui();
+
+	Serial.flush();
+
+	// Light sleep and wait for timer or touch interrupt to continue looping
+	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
+	esp_sleep_enable_timer_wakeup(LIGHT_SLEEP_TIME);
+	esp_light_sleep_start();
 }
