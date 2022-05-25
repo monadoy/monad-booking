@@ -3,7 +3,9 @@
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+
 #include "gui.h"
+#include "utils.h"
 
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
@@ -104,7 +106,7 @@ void setup() {
 
 	if (restoreWifiConfig()) {
 		Serial.println(F("WiFi-config restored!"));
-		connectWifi(WIFI_SSID.c_str(), WIFI_PASS.c_str());
+		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
 		setupTime();
 	} else {
 		Serial.println(F("No wifi configuration stored"));
