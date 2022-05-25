@@ -1,4 +1,3 @@
-
 #include <M5EPD.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -56,18 +55,6 @@ void loadSecrets(Preferences& prefs) {
 }
 #endif
 
-void connectWifi(const char* ssid, const char* pass) {
-	Serial.print(F("Connecting WiFi..."));
-
-	WiFi.begin(ssid, pass);
-
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		Serial.print(".");
-	}
-	Serial.println();
-}
-
 void setupTime() {
 	Serial.println("Setting up time");
 
@@ -78,6 +65,10 @@ void setupTime() {
 }
 
 void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
+
+#define MICROS_PER_SEC 1000000
+#define MILLIS_PER_SEC 1000
+const uint64_t LIGHT_SLEEP_TIME = 120 * MICROS_PER_SEC;
 
 void setup() {
 #ifdef USE_EXTERNAL_SERIAL
@@ -114,11 +105,8 @@ void setup() {
 		// Setupmode
 		setupMode();
 	}
-	setRoutes();
-	webServer.begin();
 	initGui(&myTZ);
 }
-
 bool restoreWifiConfig() {
 	delay(10);
 
@@ -126,30 +114,6 @@ bool restoreWifiConfig() {
 	WIFI_PASS = preferences.getString("WIFI_PASS");
 
 	return WIFI_SSID.length() > 0;
-}
-
-String makePage(String title, String contents) {
-	String s = "<!DOCTYPE html><html><head>";
-	s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\">";
-	s += "<title>";
-	s += title;
-	s += "</title></head><body>";
-	s += contents;
-	s += "</body></html>";
-	return s;
-}
-
-void setRoutes() {
-	webServer.on("/", []() {
-		Serial.println("Handling request for /");
-		webServer.send(200, "text/html", makePage("TEST", "<h1>Toimiiko?</h1>"));
-	});
-
-	webServer.onNotFound([]() {
-		String s = "<h1>AP mode</h1><p><a href=\"/settings\">Wi-Fi Settings</a></p>";
-		Serial.println("Not found");
-		webServer.send(200, "text/html", makePage("AP mode", s));
-	});
 }
 
 void setupMode() {
@@ -162,5 +126,15 @@ void setupMode() {
 }
 
 void loop() {
+	Serial.print("loop at ");
+	Serial.println(millis());
+
 	loopGui();
+
+	Serial.flush();
+
+	// Light sleep and wait for timer or touch interrupt to continue looping
+	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
+	esp_sleep_enable_timer_wakeup(LIGHT_SLEEP_TIME);
+	esp_light_sleep_start();
 }
