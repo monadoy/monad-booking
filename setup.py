@@ -32,14 +32,19 @@ def littlefs():
         click.echo("Unsupported system: " + system, err=True)
         return
 
+    click.echo("Downloading mklittlefs")
     res = requests.get(url)
 
+    click.echo("Extracting download")
     if system == "Windows":
         zip = ZipFile(io.BytesIO(res.content))
         zip.extractall("./")
     else:
         tar = tarfile.open(fileobj=io.BytesIO(res.content))
         tar.extractall("./")
+
+    click.echo("Creating data folder")
+    os.makedirs("./data", exist_ok=True)
 
     click.echo("Done")
 
