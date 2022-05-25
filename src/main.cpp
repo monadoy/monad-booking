@@ -1,5 +1,6 @@
 
 #include <Arduino.h>
+#include <LittleFS.h>
 #include <M5EPD.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -41,6 +42,8 @@ Preferences preferences;
 
 String WIFI_SSID = "";
 String WIFI_PASS = "";
+
+bool isSetupMode = false;
 
 bool restoreWifiConfig();
 void setupMode();
@@ -109,19 +112,19 @@ void setup() {
 		Serial.println(F("WiFi-config restored!"));
 		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
 		setupTime();
+		initGui(&myTZ);
 	} else {
+		isSetupMode = true;
 		Serial.println(F("No wifi configuration stored"));
 		Serial.println(F("Entering setup-mode..."));
 		// Setupmode
 		setupMode();
+		// Initialize Configserver
+		// TODO: this is currently thrown away after setup() ends
+		Config::ConfigServer* configServer = new Config::ConfigServer(80);
+
+		configServer->start();
 	}
-	initGui(&myTZ);
-
-	// Initialize Configserver
-	// TODO: this is currently thrown away after setup() ends
-	Config::ConfigServer* configServer = new Config::ConfigServer(80);
-
-	configServer->start();
 }
 bool restoreWifiConfig() {
 	delay(10);
@@ -142,15 +145,17 @@ void setupMode() {
 }
 
 void loop() {
-	Serial.print("loop at ");
-	Serial.println(millis());
+	if (!isSetupMode) {
+		Serial.print("loop at ");
+		Serial.println(millis());
 
-	loopGui();
+		loopGui();
 
-	Serial.flush();
+		Serial.flush();
 
-	// Light sleep and wait for timer or touch interrupt to continue looping
-	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
-	esp_sleep_enable_timer_wakeup(LIGHT_SLEEP_TIME);
-	esp_light_sleep_start();
+		// Light sleep and wait for timer or touch interrupt to continue looping
+		esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
+		esp_sleep_enable_timer_wakeup(LIGHT_SLEEP_TIME);
+		esp_light_sleep_start();
+	}
 }

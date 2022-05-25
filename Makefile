@@ -11,3 +11,6 @@ littlefs:
 	./fetchmklittlefs.sh
 	
 prebuild: littlefs patch
+
+frontend:
+	cd webPortalFrontend && npm install && npm run build && cp -a ./dist/. ../data/webroot/

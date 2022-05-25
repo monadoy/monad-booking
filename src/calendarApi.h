@@ -8,6 +8,8 @@
 #define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
 
+#include "utils.h"
+
 /**
  * See calendarApi_example.cpp for example usage
  */
@@ -42,65 +44,8 @@ struct CalendarStatus {
 	std::shared_ptr<Event> nextEvent;
 };
 
-/**
- * Contains either a successful result or an error.
- * Check first which value is contained with functions isOk() or isErr().
- * Then you can get a shared_ptr to the value with functions ok() or err().
- */
-template <typename T>
-struct Result {
-  private:
-	Result(std::shared_ptr<T> _ok, std::shared_ptr<Error> _err) : ok_{_ok}, err_{_err} {}
-
-	const std::shared_ptr<T> ok_ = nullptr;
-	const std::shared_ptr<Error> err_ = nullptr;
-
-  public:
-	Result(const Result& other) = default;
-	Result(Result&& other) = default;
-	Result& operator=(const Result& other) = default;
-	Result& operator=(Result&& other) = default;
-	virtual ~Result() = default;
-
-	static Result makeOk(T* value) {
-		if (!value)
-			throw std::runtime_error("Tried to make an ok result with a null pointer");
-		return Result(std::shared_ptr<T>(value), nullptr);
-	}
-
-	static Result makeOk(std::shared_ptr<T> value) {
-		if (!value)
-			throw std::runtime_error("Tried to make an ok result with a null pointer");
-		return Result(value, nullptr);
-	}
-
-	static Result makeErr(Error* error) {
-		if (!error)
-			throw std::runtime_error("Tried to make an error result with a null pointer");
-		return Result(nullptr, std::shared_ptr<Error>(error));
-	}
-
-	static Result makeErr(std::shared_ptr<Error> error) {
-		if (!error)
-			throw std::runtime_error("Tried to make an error result with a null pointer");
-		return Result(nullptr, error);
-	}
-
-	bool isOk() const { return ok_ != nullptr; }
-	bool isErr() const { return err_ != nullptr; }
-
-	std::shared_ptr<T> ok() const {
-		assert(isOk());
-		return ok_;
-	}
-
-	std::shared_ptr<Error> err() const {
-		assert(isErr());
-		return err_;
-	}
-};
-
 namespace internal {
+
 /**
  * Request new token from google if token has expired.
  * Updates the token parameter new values.
@@ -123,6 +68,9 @@ std::shared_ptr<Error> deserializeResponse(JsonDocument& doc, int httpCode,
                                            const String& responseBody);
 
 }  // namespace internal
+
+template <typename T>
+using Result = utils::Result<T, Error>;
 
 /**
  * Parses an RFC 3339 time string into a UTC time_t,

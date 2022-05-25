@@ -10,3 +10,5 @@ credentials.json
 .vscode/ipch
 src/secrets.h
 mklittlefs
+
+data/webroot/*
