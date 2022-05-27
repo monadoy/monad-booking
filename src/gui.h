@@ -62,7 +62,10 @@ void createRegularLabels();
 void createBoldLabels();
 
 
+
 void initGui(Timezone *_myTZ);
 void loopGui();
+void debug(String err);
+void updateGui();
 
 #endif

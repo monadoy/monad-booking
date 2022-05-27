@@ -45,6 +45,7 @@ enum {
 	LABEL_CONFIRM_FREE,
 	LABEL_CONFIRM_TIME,
 	LABEL_LOADING,
+	LABEL_ERROR,
 	LABEL_SIZE
 };
 
@@ -127,7 +128,6 @@ String getWifiStatus() {
 	}
 }
 
-
 void updateStatus() {
 	Serial.println("updatestatus called");
 	utils::ensureWiFi();
@@ -136,7 +136,6 @@ void updateStatus() {
 
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
-
 
 		nextEvent = ok->nextEvent;
 		currentEvent = ok->currentEvent;
@@ -236,8 +235,8 @@ void configureMainButtonPos() {
 		btns[i]->SetPos(button_positions[i - 1].first, button_positions[i - 1].second);
 		btns[i]->SetHide(false);
 	}
-	if(btnIndex != 4) {
-		for (int i =BUTTON_15MIN + btnIndex; i<BUTTON_CONFIRMBOOKING; i++){
+	if (btnIndex != 4) {
+		for (int i = BUTTON_15MIN + btnIndex; i < BUTTON_CONFIRMBOOKING; i++) {
 			btns[i]->SetHide(true);
 		}
 	}
@@ -518,7 +517,14 @@ void toMainScreen() {
 		loadNextBooking();
 	}
 }
-void settingsButton(epdgui_args_vector_t& args) { M5.shutdown(); }
+
+void resetErrorLabel() {
+	lbls[LABEL_ERROR]->SetText("");
+	lbls[LABEL_ERROR]->SetHide(true);
+	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+}
+
+void settingsButton(epdgui_args_vector_t& args) { resetErrorLabel(); }
 
 void fifteenButton(epdgui_args_vector_t& args) { toConfirmBooking(15, false); }
 
@@ -702,6 +708,10 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
 	lbls[LABEL_LOADING]->AddText("Loading...");
 	lbls[LABEL_LOADING]->SetHide(true);
+
+	lbls[LABEL_ERROR] = new EPDGUI_Textbox(308, 0, 344, 120, 0, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_ERROR]);
+	lbls[LABEL_ERROR]->SetHide(true);
 }
 
 void createBoldLabels() {
@@ -804,9 +814,19 @@ void loopGui() {
 		}
 		lastActiveTime = 0;
 	}
-	if (millis() - lastFetchUpdate > UPDATE_INTERVAL) {
-		lastFetchUpdate = millis();
-		updateStatus();
+	M5.EPD.Sleep();
+}
+
+void debug(String err) {
+	if (err != lbls[LABEL_ERROR]->GetText()) {
+		lbls[LABEL_ERROR]->SetText(err);
+		lbls[LABEL_ERROR]->SetHide(false);
+		M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 	}
+}
+
+void updateGui() {
+	M5.EPD.Active();
+	updateStatus();
 	M5.EPD.Sleep();
 }
