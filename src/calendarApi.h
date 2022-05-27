@@ -2,11 +2,9 @@
 #define CALENDAR_API_H
 
 #include <ArduinoJson.h>
+#include <ezTime.h>
 
 #include <memory>
-
-#define EZTIME_EZT_NAMESPACE 1
-#include <ezTime.h>
 
 #include "utils.h"
 

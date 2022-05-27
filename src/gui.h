@@ -2,12 +2,10 @@
 #define __GUI_H_
 
 #include <M5EPD.h>
-
-#include <ezTime.h>
-
 #include <epdgui_base.h>
 #include <epdgui_button.h>
 #include <epdgui_textbox.h>
+#include <ezTime.h>
 
 void EPDGUI_AddObject(EPDGUI_Base* object);
 void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_GC16);
@@ -46,26 +44,24 @@ void hideSettings(bool isHide);
 void toMainScreen();
 void toSettingsScreen();
 
-void settingsButton(epdgui_args_vector_t &args);
-void fifteenButton(epdgui_args_vector_t &args);
-void thirtyButton(epdgui_args_vector_t &args);
-void sixtyButton(epdgui_args_vector_t &args);
-void ninetyButton(epdgui_args_vector_t &args);
-void tillNextButton(epdgui_args_vector_t &args);
-void confirmBookingButton(epdgui_args_vector_t &args);
-void cancelBookingButton(epdgui_args_vector_t &args);
-void confirmFreeButton(epdgui_args_vector_t &args);
-void cancelFreeButton(epdgui_args_vector_t &args);
-void freeRoomButton(epdgui_args_vector_t &args);
+void settingsButton(epdgui_args_vector_t& args);
+void fifteenButton(epdgui_args_vector_t& args);
+void thirtyButton(epdgui_args_vector_t& args);
+void sixtyButton(epdgui_args_vector_t& args);
+void ninetyButton(epdgui_args_vector_t& args);
+void tillNextButton(epdgui_args_vector_t& args);
+void confirmBookingButton(epdgui_args_vector_t& args);
+void cancelBookingButton(epdgui_args_vector_t& args);
+void confirmFreeButton(epdgui_args_vector_t& args);
+void cancelFreeButton(epdgui_args_vector_t& args);
+void freeRoomButton(epdgui_args_vector_t& args);
 void hideLoading(bool isHide);
 
 void createButtons();
 void createRegularLabels();
 void createBoldLabels();
 
-
-
-void initGui(Timezone *_myTZ);
+void initGui(Timezone* _myTZ);
 void loopGui();
 void debug(String err);
 void updateGui();

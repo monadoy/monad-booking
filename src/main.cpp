@@ -6,19 +6,14 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <esp_wifi.h>
-
-#include "gui.h"
-#include "utils.h"
-
-#define EZTIME_EZT_NAMESPACE 1
 #include <ezTime.h>
 
 #include "configServer.h"
+#include "gui.h"
+#include "utils.h"
 
 // Format the filesystem automatically if not formatted already
 #define FORMAT_LITTLEFS_IF_FAILED true
-
-#define EZTIME_EZT_NAMESPACE 1
 
 #define CONFIG_NAME "configuration"
 
@@ -74,6 +69,7 @@ void setupTime() {
 	ezt::setDebug(INFO);
 	ezt::waitForSync();
 
+	if (!myTZ.setCache(String("timezones"), String(IANA_TZ)))
 	myTZ.setLocation(IANA_TZ);
 }
 
