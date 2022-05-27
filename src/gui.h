@@ -41,8 +41,10 @@ void toConfirmBooking(uint16_t time, bool isTillNext);
 void toFreeBooking();
 void makeBooking(uint16_t time);
 void deleteBooking();
+void hideSettings(bool isHide);
 
 void toMainScreen();
+void toSettingsScreen();
 
 void settingsButton(epdgui_args_vector_t &args);
 void fifteenButton(epdgui_args_vector_t &args);

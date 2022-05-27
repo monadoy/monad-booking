@@ -46,6 +46,7 @@ enum {
 	LABEL_CONFIRM_TIME,
 	LABEL_LOADING,
 	LABEL_ERROR,
+	LABEL_SETTINGS_STARTUP,
 	LABEL_SIZE
 };
 
@@ -55,7 +56,7 @@ const uint16_t FONT_SIZE_HEADER = 32;
 const uint16_t FONT_SIZE_CLOCK = 44;
 const uint16_t FONT_SIZE_TITLE = 64;
 
-enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SIZE };
+enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SIZE };
 
 EPDGUI_Button* btns[BUTTON_SIZE];
 EPDGUI_Textbox* lbls[LABEL_SIZE];
@@ -141,7 +142,8 @@ void updateStatus() {
 		currentEvent = ok->currentEvent;
 		if (currentScreen == SCREEN_MAIN) {
 			toMainScreen();
-		} else if (currentEvent == ok->currentEvent && nextEvent == ok->nextEvent) {
+		} else if (currentEvent == ok->currentEvent && nextEvent == ok->nextEvent
+		           && currentScreen == SCREEN_MAIN) {
 			updateClocksWifiBattery();
 		}
 		nextEvent = ok->nextEvent;
@@ -436,6 +438,7 @@ void loadCurrentFree() {
 	hideCurrentBookingLabels(true);
 	hideMainLabels(false);
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
+	btns[BUTTON_SETTINGS]->SetHide(false);
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 }
 
@@ -502,8 +505,16 @@ void deleteBooking() {
 	hideLoading(true);
 }
 
+void hideSettings(bool isHide) {
+	if (!isHide) {
+		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + guimyTZ->dateTime(RFC3339));
+	}
+	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
+}
+
 void toMainScreen() {
 	currentScreen = SCREEN_MAIN;
+	hideSettings(true);
 
 	if (currentEvent == nullptr) {
 		loadCurrentFree();
@@ -518,13 +529,30 @@ void toMainScreen() {
 	}
 }
 
+void toSettingsScreen() {
+	currentScreen = SCREEN_SETTINGS;
+	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+	hideMainLabels(true);
+	hideMainButtons(true);
+	hideNextBooking(true);
+	hideSettings(false);
+	btns[BUTTON_SETTINGS]->SetHide(false);
+	updateScreen();
+}
+
 void resetErrorLabel() {
 	lbls[LABEL_ERROR]->SetText("");
 	lbls[LABEL_ERROR]->SetHide(true);
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
 
-void settingsButton(epdgui_args_vector_t& args) { resetErrorLabel(); }
+void settingsButton(epdgui_args_vector_t& args) {
+	if (currentScreen == SCREEN_MAIN) {
+		toSettingsScreen();
+	} else {
+		toMainScreen();
+	}
+}
 
 void fifteenButton(epdgui_args_vector_t& args) { toConfirmBooking(15, false); }
 
@@ -712,6 +740,11 @@ void createRegularLabels() {
 	lbls[LABEL_ERROR] = new EPDGUI_Textbox(308, 0, 344, 120, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_ERROR]);
 	lbls[LABEL_ERROR]->SetHide(true);
+
+	lbls[LABEL_SETTINGS_STARTUP]
+	    = new EPDGUI_Textbox(40, 100, 400, 85, 0, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
+	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 }
 
 void createBoldLabels() {
