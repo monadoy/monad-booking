@@ -5,6 +5,7 @@
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <esp_wifi.h>
 
 #include "gui.h"
 #include "utils.h"
@@ -45,6 +46,12 @@ String WIFI_PASS = "";
 
 bool isSetupMode = false;
 
+#define MICROS_PER_MILLI 1000
+#define MILLIS_PER_SEC 1000
+#define MICROS_PER_SEC 1000000
+const uint64_t UPDATE_STATUS_INTERVAL_MS = 120 * MILLIS_PER_SEC;
+const uint64_t WAKE_TIME_MS = 400;
+
 bool restoreWifiConfig();
 void setupMode();
 
@@ -71,10 +78,6 @@ void setupTime() {
 }
 
 void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
-
-#define MICROS_PER_SEC 1000000
-#define MILLIS_PER_SEC 1000
-const uint64_t LIGHT_SLEEP_TIME = 120 * MICROS_PER_SEC;
 
 void setup() {
 #ifdef USE_EXTERNAL_SERIAL
@@ -113,6 +116,7 @@ void setup() {
 		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
 		setupTime();
 		initGui(&myTZ);
+		delay(3000);
 	} else {
 		isSetupMode = true;
 		Serial.println(F("No wifi configuration stored"));
@@ -143,19 +147,66 @@ void setupMode() {
 	WiFi.softAP(SETUP_SSID);
 	WiFi.mode(WIFI_MODE_AP);
 }
+// When to stop looping and go back to sleep
+unsigned long wakeUntilMillis = 0;
+
+// When to wake up in order to update status
+unsigned long nextStatusUpdateMillis = 0;
+
+void sleep() {
+	Serial.println("Going to sleep...");
+
+	// Calculate how long we need to sleep in order to achieve the desired update status interval.
+	unsigned long curMillis = millis();
+	uint64_t sleepTime
+	    = uint64_t(max(nextStatusUpdateMillis, curMillis + 1) - curMillis) * MICROS_PER_MILLI;
+
+	Serial.print("Sleeping for ");
+	Serial.print(sleepTime / MICROS_PER_SEC);
+	Serial.println(" s or until touch.");
+
+	Serial.flush();
+
+	esp_wifi_stop();
+
+	// Light sleep and wait for timer or touch interrupt
+	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
+	esp_sleep_enable_timer_wakeup(sleepTime);
+	esp_light_sleep_start();
+
+	esp_wifi_start();
+
+	Serial.print("Wakeup cause: ");
+	auto cause = esp_sleep_get_wakeup_cause();
+	if (cause == ESP_SLEEP_WAKEUP_TIMER) {
+		Serial.println("TIMER");
+		Serial.println("Updating gui status and going back to sleep");
+
+		// When wakeup is caused by timer, a status update is due.
+		updateGui();
+
+		// Calculate the next status update timestamp based on our interval.
+		nextStatusUpdateMillis = millis() + UPDATE_STATUS_INTERVAL_MS;
+
+		// Go instantly back to sleep
+		wakeUntilMillis = 0;
+	} else if (cause == ESP_SLEEP_WAKEUP_EXT0) {
+		Serial.println("TOUCH");
+
+		// Stay awake for a moment to process long touches
+		wakeUntilMillis = millis() + WAKE_TIME_MS;
+	}
+}
 
 void loop() {
-	if (!isSetupMode) {
-		Serial.print("loop at ");
-		Serial.println(millis());
+	if (isSetupMode)
+		return;
 
-		loopGui();
+	loopGui();
 
-		Serial.flush();
+	delay(100);
 
-		// Light sleep and wait for timer or touch interrupt to continue looping
-		esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
-		esp_sleep_enable_timer_wakeup(LIGHT_SLEEP_TIME);
-		esp_light_sleep_start();
+	while (millis() >= wakeUntilMillis) {
+		sleep();
 	}
 }
