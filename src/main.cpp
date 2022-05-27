@@ -47,6 +47,10 @@ bool isSetupMode = false;
 const uint64_t UPDATE_STATUS_INTERVAL_MS = 120 * MILLIS_PER_SEC;
 const uint64_t WAKE_TIME_MS = 400;
 
+std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
+
+std::array<uint8_t, 2> onHours{7, 19};
+
 bool restoreWifiConfig();
 void setupMode();
 
@@ -70,7 +74,7 @@ void setupTime() {
 	ezt::waitForSync();
 
 	if (!myTZ.setCache(String("timezones"), String(IANA_TZ)))
-	myTZ.setLocation(IANA_TZ);
+		myTZ.setLocation(IANA_TZ);
 }
 
 void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
@@ -109,6 +113,7 @@ void setup() {
 
 	if (restoreWifiConfig()) {
 		Serial.println(F("WiFi-config restored!"));
+		esp_wifi_start();
 		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
 		setupTime();
 		initGui(&myTZ);
@@ -143,6 +148,16 @@ void setupMode() {
 	WiFi.softAP(SETUP_SSID);
 	WiFi.mode(WIFI_MODE_AP);
 }
+
+bool shouldShutdown() {
+	time_t t = myTZ.now();
+	tmElements_t tm;
+	ezt::breakTime(t, tm);
+
+	return std::any_of(offDays.begin(), offDays.end(), [&](uint8_t d) { return d == tm.Day; })
+	       || tm.Hour < onHours[0] || tm.Hour >= onHours[1];
+}
+
 // When to stop looping and go back to sleep
 unsigned long wakeUntilMillis = 0;
 
@@ -202,7 +217,13 @@ void loop() {
 
 	delay(100);
 
+	Serial.println(myTZ.dateTime(RFC3339));
+
 	while (millis() >= wakeUntilMillis) {
+		if (shouldShutdown()) {
+			Serial.println("SHOULD SHUT DOWN NOW");
+		}
+
 		sleep();
 	}
 }
