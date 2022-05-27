@@ -11,6 +11,8 @@ void connectWiFi(const String& ssid, const String& password) {
 	auto startTime = millis();
 	Serial.print(F("Connecting WiFi..."));
 
+	WiFi.disconnect();
+
 	WiFi.begin(ssid_.c_str(), password_.c_str());
 
 	while (WiFi.status() != WL_CONNECTED) {
