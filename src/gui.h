@@ -21,6 +21,7 @@ void updateStatus();
 void updateScreen();
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
+void configureMainButtonPos();
 void hideMainButtons(bool isHide);
 time_t roundToFive(time_t endTime);
 void hideBookingConfirmationButtons(bool isHide);
