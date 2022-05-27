@@ -31,6 +31,11 @@ struct Event {
 	String summary;
 	time_t unixStartTime;
 	time_t unixEndTime;
+
+	bool operator==(const Event& other) {
+		return id == other.id && creator == other.creator && summary == other.summary
+		       && unixStartTime == other.unixStartTime && unixEndTime == other.unixEndTime;
+	};
 };
 
 struct Error {
