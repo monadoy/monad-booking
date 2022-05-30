@@ -7,6 +7,8 @@
 #include <epdgui_textbox.h>
 #include <ezTime.h>
 
+#include "configServer.h"
+
 void EPDGUI_AddObject(EPDGUI_Base* object);
 void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_GC16);
 void EPDGUI_Process(void);
@@ -61,9 +63,10 @@ void createButtons();
 void createRegularLabels();
 void createBoldLabels();
 
-void initGui(Timezone* _myTZ);
+void initGui(Timezone* _myTZ, Config::ConfigStore* configStore);
 void loopGui();
 void debug(String err);
+void clearDebug();
 void updateGui();
 
 #endif

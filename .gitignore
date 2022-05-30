@@ -12,3 +12,4 @@ src/secrets.h
 mklittlefs
 
 data/webroot/*
+data/config*
