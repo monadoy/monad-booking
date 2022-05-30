@@ -72,6 +72,10 @@
 	{#if config}
 		<form class="content" on:submit|preventDefault={submit}>
 			<div>
+				<label for="name">Name</label>
+				<input id="name" type="text" bind:value={config.name} />
+			</div>
+			<div>
 				<label for="wifissid">WIFI SSID</label>
 				<input id="wifissid" type="text" bind:value={config.wifi.ssid} />
 			</div>
