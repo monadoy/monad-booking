@@ -8,6 +8,8 @@
 #include <esp_wifi.h>
 #include <ezTime.h>
 
+#include <memory>
+
 #include "configServer.h"
 #include "gui.h"
 #include "utils.h"
@@ -16,6 +18,8 @@
 #define FORMAT_LITTLEFS_IF_FAILED true
 
 #define CONFIG_NAME "configuration"
+
+std::shared_ptr<Config::ConfigStore> configStore = std::make_shared<Config::ConfigStore>(LittleFS);
 
 // Uncomment this to load config variables from secrets.h
 #define DEVMODE 1
@@ -126,7 +130,7 @@ void setup() {
 		setupMode();
 		// Initialize Configserver
 		// TODO: this is currently thrown away after setup() ends
-		Config::ConfigServer* configServer = new Config::ConfigServer(80);
+		Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
 
 		configServer->start();
 	}

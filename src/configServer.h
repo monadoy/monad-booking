@@ -61,7 +61,8 @@ class ConfigStore {
 class ConfigServer : public AsyncWebHandler {
   public:
 	/// Initialize the web server with the specified port
-	explicit ConfigServer(uint16_t port);
+	explicit ConfigServer(uint16_t port, std::shared_ptr<ConfigStore> configStore)
+	    : port_(port), configStore_(configStore){};
 
 	bool canHandle(AsyncWebServerRequest* request) override;
 	void handleRequest(AsyncWebServerRequest* request) override;
@@ -74,6 +75,7 @@ class ConfigServer : public AsyncWebHandler {
 
   protected:
 	uint16_t port_;
+	std::shared_ptr<ConfigStore> configStore_;
 	AsyncWebServer* server_ = nullptr;
 	AsyncEventSource events_{"/events"};
 };
