@@ -41,7 +41,7 @@ bool isSetupMode = false;
 #define MICROS_PER_MILLI 1000
 #define MILLIS_PER_SEC 1000
 #define MICROS_PER_SEC 1000000
-const uint64_t UPDATE_STATUS_INTERVAL_MS = 20 * MILLIS_PER_SEC;
+const uint64_t UPDATE_STATUS_INTERVAL_MS = 120 * MILLIS_PER_SEC;
 const uint64_t WAKE_TIME_MS = 400;
 
 std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
