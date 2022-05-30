@@ -36,45 +36,33 @@ const char* PARAM_MESSAGE = "message";
 // Config store
 Preferences preferences;
 
-String WIFI_SSID = "";
-String WIFI_PASS = "";
-
 bool isSetupMode = false;
 
 #define MICROS_PER_MILLI 1000
 #define MILLIS_PER_SEC 1000
 #define MICROS_PER_SEC 1000000
-const uint64_t UPDATE_STATUS_INTERVAL_MS = 120 * MILLIS_PER_SEC;
+const uint64_t UPDATE_STATUS_INTERVAL_MS = 20 * MILLIS_PER_SEC;
 const uint64_t WAKE_TIME_MS = 400;
 
 std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
 
 std::array<uint8_t, 2> onHours{7, 19};
 
+std::unique_ptr<Config::ConfigStore> configStore = nullptr;
+
 bool restoreWifiConfig();
 void setupMode();
 
 struct tm timeinfo;
 
-#ifdef DEVMODE
-
-#include "secrets.h"
-void loadSecrets(Preferences& prefs) {
-	prefs.begin(CONFIG_NAME);
-
-	prefs.putString("WIFI_SSID", SECRETS_WIFI_SSID);
-	prefs.putString("WIFI_PASS", SECRETS_WIFI_PASS);
-}
-#endif
-
-void setupTime() {
+void setupTime(const String& IANATimeZone) {
 	Serial.println("Setting up time");
 
 	ezt::setDebug(INFO);
 	ezt::waitForSync();
 
-	if (!myTZ.setCache(String("timezones"), String(IANA_TZ)))
-		myTZ.setLocation(IANA_TZ);
+	if (!myTZ.setCache(String("timezones"), IANATimeZone))
+		myTZ.setLocation(IANATimeZone);
 }
 
 void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
@@ -87,10 +75,6 @@ void setup() {
 
 	M5.begin(true, false, !USE_EXTERNAL_SERIAL, true, true);
 
-#ifdef DEVMODE
-	loadSecrets(preferences);
-#endif
-
 	Serial.println("========== Monad Booking ==========");
 	Serial.println("Booting up...");
 	preferences.begin(CONFIG_NAME);
@@ -102,6 +86,8 @@ void setup() {
 		return;
 	}
 
+	configStore = std::unique_ptr<Config::ConfigStore>(new Config::ConfigStore(LittleFS));
+
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
 	M5.EPD.Clear(true);
@@ -109,18 +95,20 @@ void setup() {
 	Serial.println("Setting up RTC...");
 	M5.RTC.begin();
 
-	Serial.println("Restoring WiFi-configuration...");
+	Serial.println("Loading Configuration...");
 
-	if (restoreWifiConfig()) {
-		Serial.println("WiFi-config restored!");
+	JsonObjectConst config = configStore->getConfigJson();
+
+	if (config.begin() != config.end()) {
+		Serial.println("Config loaded!");
 		esp_wifi_start();
-		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
-		setupTime();
-		initGui(&myTZ);
+		utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
+		setupTime(config["timezone"]);
+		initGui(&myTZ, configStore.get());
 		delay(3000);
 	} else {
 		isSetupMode = true;
-		Serial.println("No wifi configuration stored");
+		Serial.println("No config stored");
 		Serial.println("Entering setup-mode...");
 		// Setupmode
 		setupMode();
@@ -130,14 +118,6 @@ void setup() {
 
 		configServer->start();
 	}
-}
-bool restoreWifiConfig() {
-	delay(10);
-
-	WIFI_SSID = preferences.getString("WIFI_SSID");
-	WIFI_PASS = preferences.getString("WIFI_PASS");
-
-	return WIFI_SSID.length() > 0;
 }
 
 void setupMode() {
@@ -171,7 +151,7 @@ time_t calculateTurnOnTime() {
 	return ezt::makeTime(tm);
 }
 
-bool isCharging() { return M5.getBatteryVoltage() > 4000; }
+bool isCharging() { return M5.getBatteryVoltage() > 4300; }
 
 void shutDown() {
 	time_t turnOnTime = calculateTurnOnTime();
@@ -249,8 +229,6 @@ void loop() {
 	loopGui();
 
 	delay(100);
-
-	Serial.println(myTZ.dateTime(RFC3339));
 
 	while (millis() >= wakeUntilMillis) {
 		if (shouldShutDown() && !isCharging()) {

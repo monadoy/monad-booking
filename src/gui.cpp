@@ -7,9 +7,9 @@
 #include <stack>
 
 #include "calendarApi.h"
+#include "configServer.h"
 #include "interboldttf.h"
 #include "interregularttf.h"
-#include "secrets.h"
 
 enum {
 	BUTTON_SETTINGS,
@@ -67,8 +67,8 @@ std::shared_ptr<calapi::Event> currentEvent = nullptr;
 std::shared_ptr<calapi::Event> nextEvent = nullptr;
 Timezone* guimyTZ;
 
-calapi::Token token = calapi::parseToken(TOKEN);
-String calendarId = CALENDAR_ID;
+calapi::Token token;
+String calendarId = "";
 String resourceName = "";
 uint16_t timeToBeBooked = 15;
 
@@ -127,20 +127,19 @@ String getWifiStatus() {
 	}
 }
 
-bool checkEventEquality(std::shared_ptr<calapi::Event> event1, std::shared_ptr<calapi::Event> event2) {
-
-	if(!!event1 != !!event2) {
+bool checkEventEquality(std::shared_ptr<calapi::Event> event1,
+                        std::shared_ptr<calapi::Event> event2) {
+	if (!!event1 != !!event2) {
 		return false;
-	} 
-	if(!event1 && !event2) {
+	}
+	if (!event1 && !event2) {
 		return true;
 	}
-	if(*event1 == *event2) {
+	if (*event1 == *event2) {
 		return true;
 	}
 	return false;
 }
-
 
 void updateStatus() {
 	Serial.println("Updating status...");
@@ -153,8 +152,8 @@ void updateStatus() {
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
 
-		if (checkEventEquality(currentEvent, ok->currentEvent) && checkEventEquality(nextEvent, ok->nextEvent)
-		    && currentScreen == SCREEN_MAIN) {
+		if (checkEventEquality(currentEvent, ok->currentEvent)
+		    && checkEventEquality(nextEvent, ok->nextEvent) && currentScreen == SCREEN_MAIN) {
 			Serial.println("Only updating essentials...");
 			nextEvent = ok->nextEvent;
 			currentEvent = ok->currentEvent;
@@ -170,7 +169,6 @@ void updateStatus() {
 		Serial.print("Result ERROR: ");
 		Serial.println(statusRes.err()->message);
 	}
-
 }
 
 void updateScreen() {
@@ -192,7 +190,7 @@ void updateClocksWifiBattery() {
 	for (int i = LABEL_CLOCK_UP; i < LABEL_RESOURCE; i++) {
 		lbls[i]->SetHide(false);
 	}
-	configureMainButtonPos(); //  223, 399, 365, 77,
+	configureMainButtonPos();  //  223, 399, 365, 77,
 	M5.EPD.UpdateArea(80, 306, 508, 170, UPDATE_MODE_GC16);
 	M5.EPD.UpdateArea(875, 16, 70, 40, UPDATE_MODE_GC16);
 	M5.EPD.UpdateArea(780, 16, 90, 40, UPDATE_MODE_GC16);
@@ -778,8 +776,20 @@ void createBoldLabels() {
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
 }
 
-void initGui(Timezone* _myTZ) {
+void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	guimyTZ = _myTZ;
+	auto res = configStore->getTokenString();
+	if (res.isOk()) {
+		Serial.println(*res.ok());
+		token = calapi::parseToken(*res.ok());
+	} else {
+		throw std::runtime_error("Token not found in config");
+	}
+
+	JsonObjectConst config = configStore->getConfigJson();
+
+	calendarId = config["gcalsettings"]["calendarid"].as<String>();
+
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
 
