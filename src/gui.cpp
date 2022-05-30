@@ -81,9 +81,7 @@ std::list<EPDGUI_Base*> epdgui_object_list;
 uint32_t obj_id = 1;
 
 std::vector<std::pair<int, int>> button_positions
-    = {{80, 306}, {223, 306}, {371, 306}, {80, 399}, {223, 399}
-
-};
+    = {{80, 306}, {223, 306}, {371, 306}, {80, 399}, {223, 399}};
 
 void EPDGUI_AddObject(EPDGUI_Base* object) {
 	obj_id++;
@@ -129,37 +127,50 @@ String getWifiStatus() {
 	}
 }
 
+bool checkEventEquality(std::shared_ptr<calapi::Event> event1, std::shared_ptr<calapi::Event> event2) {
+
+	if(!!event1 != !!event2) {
+		return false;
+	} 
+	if(!event1 && !event2) {
+		return true;
+	}
+	if(*event1 == *event2) {
+		return true;
+	}
+	return false;
+}
+
+
 void updateStatus() {
-	Serial.println("updatestatus called");
+	Serial.println("Updating status...");
+	hideLoading(false);
 	utils::ensureWiFi();
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
+	hideLoading(true);
 
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
 
-		nextEvent = ok->nextEvent;
-		currentEvent = ok->currentEvent;
-		if (currentScreen == SCREEN_MAIN) {
-			toMainScreen();
-		} else if (currentEvent == ok->currentEvent && nextEvent == ok->nextEvent
-		           && currentScreen == SCREEN_MAIN) {
+		if (checkEventEquality(currentEvent, ok->currentEvent) && checkEventEquality(nextEvent, ok->nextEvent)
+		    && currentScreen == SCREEN_MAIN) {
+			Serial.println("Only updating essentials...");
+			nextEvent = ok->nextEvent;
+			currentEvent = ok->currentEvent;
 			updateClocksWifiBattery();
-		}
-		nextEvent = ok->nextEvent;
-		currentEvent = ok->currentEvent;
-		if (ok->currentEvent == nullptr) {
-			currentEvent = nullptr;
-		}
-
-		if (ok->nextEvent == nullptr) {
-			nextEvent = nullptr;
+		} else if (currentScreen == SCREEN_MAIN) {
+			Serial.println("Going to main screen...");
+			nextEvent = ok->nextEvent;
+			currentEvent = ok->currentEvent;
+			toMainScreen();
 		}
 
 	} else {
 		Serial.print("Result ERROR: ");
 		Serial.println(statusRes.err()->message);
 	}
+
 }
 
 void updateScreen() {
@@ -181,6 +192,8 @@ void updateClocksWifiBattery() {
 	for (int i = LABEL_CLOCK_UP; i < LABEL_RESOURCE; i++) {
 		lbls[i]->SetHide(false);
 	}
+	configureMainButtonPos(); //  223, 399, 365, 77,
+	M5.EPD.UpdateArea(80, 306, 508, 170, UPDATE_MODE_GC16);
 	M5.EPD.UpdateArea(875, 16, 70, 40, UPDATE_MODE_GC16);
 	M5.EPD.UpdateArea(780, 16, 90, 40, UPDATE_MODE_GC16);
 	M5.EPD.UpdateArea(700, 16, 90, 40, UPDATE_MODE_GC16);
@@ -443,15 +456,15 @@ void loadCurrentFree() {
 }
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
-	time_t endTime = roundToFive(guimyTZ->now() + SECS_PER_MIN * time);
+	time_t endTime = roundToFive(UTC.now() + SECS_PER_MIN * time);
 	if (nextEvent != nullptr) {
 		if (isTillNext || endTime > nextEvent->unixStartTime) {
 			timeToBeBooked = SECS_PER_MIN * time;
 		} else {
-			timeToBeBooked = endTime - guimyTZ->now();
+			timeToBeBooked = endTime - UTC.now();
 		}
 	} else {
-		timeToBeBooked = endTime - guimyTZ->now();
+		timeToBeBooked = endTime - UTC.now();
 	}
 	currentScreen = SCREEN_BOOKING;
 	hideMainButtons(true);
@@ -464,6 +477,8 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 
 void toFreeBooking() {
 	currentScreen = SCREEN_FREEING;
+	hideMainButtons(true);
+	hideMainLabels(true);
 	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
 	hideFreeRoomButton(true);
 	hideNextBooking(true);
@@ -586,9 +601,9 @@ void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
-	EPDGUI_Process();
-	EPDGUI_Draw(UPDATE_MODE_DU);
-	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU);
+	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
+	EPDGUI_Draw(UPDATE_MODE_NONE);
+	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_GC16);
 }
 
 void createButtons() {
@@ -669,11 +684,11 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[0]);
 
 	// battery status label
-	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(780, 16, 85, 40, 3, 15, FONT_SIZE_NORMAL, false);
+	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(790, 16, 85, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_BATTERY]);
 
 	// wifi status label
-	lbls[LABEL_WIFI] = new EPDGUI_Textbox(700, 16, 80, 40, 3, 15, FONT_SIZE_NORMAL, false);
+	lbls[LABEL_WIFI] = new EPDGUI_Textbox(700, 16, 90, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_WIFI]);
 
 	// middle clock label
@@ -856,6 +871,12 @@ void debug(String err) {
 		lbls[LABEL_ERROR]->SetHide(false);
 		M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 	}
+}
+
+void clearDebug() {
+	lbls[LABEL_ERROR]->SetText("");
+	lbls[LABEL_ERROR]->SetHide(true);
+	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
 
 void updateGui() {
