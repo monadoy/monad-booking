@@ -152,18 +152,9 @@ void updateStatus() {
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
 
-		if (checkEventEquality(currentEvent, ok->currentEvent)
-		    && checkEventEquality(nextEvent, ok->nextEvent) && currentScreen == SCREEN_MAIN) {
-			Serial.println("Only updating essentials...");
-			nextEvent = ok->nextEvent;
-			currentEvent = ok->currentEvent;
-			updateClocksWifiBattery();
-		} else if (currentScreen == SCREEN_MAIN) {
-			Serial.println("Going to main screen...");
-			nextEvent = ok->nextEvent;
-			currentEvent = ok->currentEvent;
-			toMainScreen();
-		}
+		nextEvent = ok->nextEvent;
+		currentEvent = ok->currentEvent;
+		toMainScreen();
 
 	} else {
 		Serial.print("Result ERROR: ");
