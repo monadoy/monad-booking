@@ -91,28 +91,28 @@ void setup() {
 	loadSecrets(preferences);
 #endif
 
-	Serial.println(F("========== Monad Booking =========="));
-	Serial.println(F("Booting up..."));
+	Serial.println("========== Monad Booking ==========");
+	Serial.println("Booting up...");
 	preferences.begin(CONFIG_NAME);
 
-	Serial.println(F("Setting up LittleFS..."));
+	Serial.println("Setting up LittleFS...");
 	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
 		Serial.println("LittleFS Mount Failed");
 		Serial.println("Please ensure your partition layout has spiffs partition defined");
 		return;
 	}
 
-	Serial.println(F("Setting up E-ink display..."));
+	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
 	M5.EPD.Clear(true);
 
-	Serial.println(F("Setting up RTC..."));
+	Serial.println("Setting up RTC...");
 	M5.RTC.begin();
 
-	Serial.println(F("Restoring WiFi-configuration..."));
+	Serial.println("Restoring WiFi-configuration...");
 
 	if (restoreWifiConfig()) {
-		Serial.println(F("WiFi-config restored!"));
+		Serial.println("WiFi-config restored!");
 		esp_wifi_start();
 		utils::connectWiFi(WIFI_SSID, WIFI_PASS);
 		setupTime();
@@ -120,8 +120,8 @@ void setup() {
 		delay(3000);
 	} else {
 		isSetupMode = true;
-		Serial.println(F("No wifi configuration stored"));
-		Serial.println(F("Entering setup-mode..."));
+		Serial.println("No wifi configuration stored");
+		Serial.println("Entering setup-mode...");
 		// Setupmode
 		setupMode();
 		// Initialize Configserver
