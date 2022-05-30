@@ -37,7 +37,7 @@ void ConfigStore::loadConfigFromFlash(const String& fileName) {
 	Serial.println("No existing config file found on flash");
 };
 
-Result<bool> ConfigStore::saveConfigToFlash(JsonVariantConst& newConfig) {
+Result<bool> ConfigStore::saveConfigToFlash(JsonVariantConst newConfig) {
 	File configFileHandle;
 
 	configFileHandle = fs_.open(this->configFileName_, FILE_WRITE);

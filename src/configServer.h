@@ -46,7 +46,7 @@ class ConfigStore {
 	/**
 	 * Save configuration to flash and discard previously loaded config, if any
 	 */
-	Result<bool> saveConfigToFlash(JsonVariantConst& newConfig);
+	Result<bool> saveConfigToFlash(JsonVariantConst newConfig);
 	/**
 	 * Return contents of the token.json as string
 	 */
