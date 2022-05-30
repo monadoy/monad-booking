@@ -1,59 +1,69 @@
 #include "configServer.h"
 
-#include <LittleFS.h>
+#include <memory>
 
 namespace Config {
 
-JsonObjectConst ConfigStore::getConfigJson() { return this->config_.as<JsonObjectConst>(); };
-
-bool ConfigStore::loadConfigFromFlash(const String& fileName) {
+void ConfigStore::loadConfigFromFlash(const String& fileName) {
 	File configFileHandle;
+
+	Serial.println("Trying to load config from flash...");
 
 	configFileHandle = this->fs_.open(fileName, FILE_READ);
 	if (configFileHandle) {
 		auto err = deserializeMsgPack(this->config_, configFileHandle);
 		if (err) {
-			Serial.println("Cannot deserialize config.msgpack");
-			return false;
+			Serial.print("Cannot deserialize ");
+			Serial.println(fileName);
 		}
-		return true;
+		Serial.print(fileName);
+		Serial.println(" loaded from flash");
+		return;
 	}
 
-	configFileHandle = fs_.open("config.json", FILE_READ);
+	Serial.println("FALLBACK: Trying to load config.json from flash...");
+
+	configFileHandle = fs_.open("/config.json", FILE_READ);
 	if (configFileHandle) {
 		auto err = deserializeJson(this->config_, configFileHandle);
 		if (err) {
 			Serial.println("Cannot deserialize config.json");
-			return false;
 		}
-		return true;
+		Serial.println("/config.json loaded from flash");
+		return;
 	}
 
 	// Cannot read any configfile
-	return false;
+	Serial.println("No existing config file found on flash");
 };
 
-bool ConfigStore::saveConfigToFlash(JsonVariant& newConfig) {
+Result<bool> ConfigStore::saveConfigToFlash(JsonVariantConst& newConfig) {
 	File configFileHandle;
 
 	configFileHandle = fs_.open(this->configFileName_, FILE_WRITE);
 
 	if (!configFileHandle) {
-		Serial.println("Cannot open configfile for writing");
-		return false;
+		String errMsg = "Cannot open configfile for writing";
+		Serial.println(errMsg);
+		return Result<bool>::makeErr(
+		    std::make_shared<ConfigError_t>(ConfigError_t{.errorMessage = errMsg}));
 	}
 
 	String configString = "";
 	serializeMsgPack(newConfig, configString);
 	configFileHandle.print(configString);
 
-	return true;
+	return Result<bool>::makeOk(std::make_shared<bool>(true));
 };
 
-String ConfigStore::getTokenString() {
+Result<String> ConfigStore::getTokenString() {
 	String tokenString = "";
 	serializeJson(this->config_["gcalsettings"]["token"], tokenString);
-	return tokenString;
+	if (tokenString.isEmpty()) {
+		return Result<String>::makeErr(
+		    std::make_shared<ConfigError_t>(ConfigError_t{.errorMessage = "Cannot get token"}));
+	}
+	return Result<String>::makeOk(std::make_shared<String>(tokenString));
 };
 
 ConfigServer::ConfigServer(uint16_t port) : port_(port) {}

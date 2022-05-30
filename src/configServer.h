@@ -6,27 +6,56 @@
 #define MONAD_BOOKING_CONFIGSERVER
 
 #include <ESPAsyncWebServer.h>
+#include <LittleFS.h>
 
 #include "ArduinoJson.h"
 #include "AsyncJson.h"
+#include "utils.h"
 
 namespace Config {
 
+struct ConfigError_t {
+	String errorMessage;
+};
+
+template <typename T>
+using Result = utils::Result<T, ConfigError_t>;
+
+/**
+ * Configuration management 
+ * 
+ * Load, save and handle the configuration
+ */
 class ConfigStore {
   public:
+	/**
+	 * Load existing configuration from flash to memory, if any any
+	 */
 	ConfigStore(fs::FS& fs, String configFileName = "/config.msgpack")
 	    : fs_(fs), configFileName_(configFileName) {
 		this->loadConfigFromFlash(configFileName);
 	};
-	JsonObjectConst getConfigJson();
-	bool saveConfigToFlash(JsonVariant& newConfig);
-	String getTokenString();
+	/**
+	 * Returns constant reference to the configuration object
+	 */
+	JsonObjectConst getConfigJson() { return this->config_.as<JsonObjectConst>(); };
+	/**
+	 * Load configuration form flash and discard previously loaded config, if any
+	 */
+	void loadConfigFromFlash(const String& fileName);
+	/**
+	 * Save configuration to flash and discard previously loaded config, if any
+	 */
+	Result<bool> saveConfigToFlash(JsonVariantConst& newConfig);
+	/**
+	 * Return contents of the token.json as string
+	 */
+	Result<String> getTokenString();
 
   protected:
-	StaticJsonDocument<2048> config_;
-	String configFileName_;
-	bool loadConfigFromFlash(const String& fileName);
 	fs::FS& fs_;
+	String configFileName_;
+	StaticJsonDocument<2048> config_;
 };
 
 class ConfigServer : public AsyncWebHandler {
