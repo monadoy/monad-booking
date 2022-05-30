@@ -88,7 +88,7 @@ void setup() {
 		return;
 	}
 
-	configStore = std::unique_ptr<Config::ConfigStore>(new Config::ConfigStore(LittleFS));
+	configStore = std::make_shared<Config::ConfigStore>(LittleFS);
 
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
