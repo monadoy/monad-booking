@@ -149,13 +149,46 @@ void setupMode() {
 	WiFi.mode(WIFI_MODE_AP);
 }
 
-bool shouldShutdown() {
+bool shouldShutDown() {
 	time_t t = myTZ.now();
 	tmElements_t tm;
 	ezt::breakTime(t, tm);
 
 	return std::any_of(offDays.begin(), offDays.end(), [&](uint8_t d) { return d == tm.Day; })
 	       || tm.Hour < onHours[0] || tm.Hour >= onHours[1];
+}
+
+time_t calculateTurnOnTime() {
+	time_t now = myTZ.now();
+
+	tmElements_t tm;
+	ezt::breakTime(now, tm);
+	tm.Hour = onHours[0];
+	tm.Minute = 10;
+	tm.Second = 0;
+	tm.Day += 1;
+
+	return ezt::makeTime(tm);
+}
+
+bool isCharging() { return M5.getBatteryVoltage() > 4000; }
+
+void shutDown() {
+	time_t turnOnTime = calculateTurnOnTime();
+
+	Serial.println(String("Shut down, wakes up at ") + myTZ.dateTime(turnOnTime, RFC3339));
+
+	M5.EPD.Active();
+	M5.EPD.Clear(true);
+	canvas.createCanvas(960, 540);
+	canvas.setTextSize(24);
+	canvas.drawString(String("Shut down, wakes up at ") + myTZ.dateTime(turnOnTime, RFC3339), 45,
+	                  350);
+	canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+
+	delay(1000);
+
+	M5.shutdown(max((int64_t)turnOnTime - (int64_t)myTZ.now(), 1ll));
 }
 
 // When to stop looping and go back to sleep
@@ -220,8 +253,8 @@ void loop() {
 	Serial.println(myTZ.dateTime(RFC3339));
 
 	while (millis() >= wakeUntilMillis) {
-		if (shouldShutdown()) {
-			Serial.println("SHOULD SHUT DOWN NOW");
+		if (shouldShutDown() && !isCharging()) {
+			shutDown();
 		}
 
 		sleep();
