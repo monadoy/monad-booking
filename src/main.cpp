@@ -19,8 +19,6 @@
 
 #define CONFIG_NAME "configuration"
 
-std::shared_ptr<Config::ConfigStore> configStore = std::make_shared<Config::ConfigStore>(LittleFS);
-
 // Uncomment this to load config variables from secrets.h
 #define DEVMODE 1
 
@@ -52,7 +50,7 @@ std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
 
 std::array<uint8_t, 2> onHours{7, 19};
 
-std::unique_ptr<Config::ConfigStore> configStore = nullptr;
+std::shared_ptr<Config::ConfigStore> configStore = nullptr;
 
 bool restoreWifiConfig();
 void setupMode();
