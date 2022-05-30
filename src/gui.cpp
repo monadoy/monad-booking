@@ -143,11 +143,15 @@ bool checkEventEquality(std::shared_ptr<calapi::Event> event1,
 
 void updateStatus() {
 	Serial.println("Updating status...");
+	M5.EPD.Active();
 	hideLoading(false);
+	M5.EPD.Sleep();
 	utils::ensureWiFi();
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
+	M5.EPD.Active();
 	hideLoading(true);
+	M5.EPD.Sleep();
 
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
@@ -168,25 +172,6 @@ void updateScreen() {
 	EPDGUI_Process();
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
-}
-
-void updateClocksWifiBattery() {
-	for (int i = LABEL_CLOCK_UP; i < LABEL_RESOURCE; i++) {
-		lbls[i]->SetText("");
-	}
-	lbls[LABEL_CLOCK_UP]->SetText(guimyTZ->dateTime("G:i"));
-	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
-	lbls[LABEL_BATTERY]->SetText(getBatteryPercent());
-	lbls[LABEL_WIFI]->SetText(getWifiStatus());
-	for (int i = LABEL_CLOCK_UP; i < LABEL_RESOURCE; i++) {
-		lbls[i]->SetHide(false);
-	}
-	configureMainButtonPos();  //  223, 399, 365, 77,
-	M5.EPD.UpdateArea(80, 306, 508, 170, UPDATE_MODE_GC16);
-	M5.EPD.UpdateArea(875, 16, 70, 40, UPDATE_MODE_GC16);
-	M5.EPD.UpdateArea(780, 16, 90, 40, UPDATE_MODE_GC16);
-	M5.EPD.UpdateArea(700, 16, 90, 40, UPDATE_MODE_GC16);
-	M5.EPD.UpdateArea(80, 92, 77, 40, UPDATE_MODE_GC16);
 }
 
 // hides the next event on the right side
@@ -269,11 +254,6 @@ time_t roundToFive(time_t endTime) {
 	return endTime - remainder + 300;
 }
 
-void hideTillNextButton() {
-	btns[BUTTON_TILLNEXT]->SetEnable(true);
-	btns[BUTTON_TILLNEXT]->SetHide(false);
-}
-
 void hideBookingConfirmationButtons(bool isHide) {
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 	btns[BUTTON_CONFIRMBOOKING]->SetHide(isHide);
@@ -344,10 +324,12 @@ void loadNextBooking() {
 	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
 		lbls[i]->SetHide(false);
 	}
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU4);
+	M5.EPD.Active();
+	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
 	EPDGUI_Process();
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+	M5.EPD.Sleep();
 }
 
 void loadNextFree() {
@@ -355,13 +337,11 @@ void loadNextFree() {
 	// set up the top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->setColors(0, 15);
+		lbls[i]->SetHide(false);
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(guimyTZ->dateTime("G:i"));
 	lbls[LABEL_BATTERY]->SetText(getBatteryPercent());
 	lbls[LABEL_WIFI]->SetText(getWifiStatus());
-	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
-		lbls[i]->SetHide(false);
-	}
 
 	// hide the next event labels
 	for (int i = LABEL_NEXT_EVENT_CREATOR; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
@@ -372,10 +352,12 @@ void loadNextFree() {
 	// display no next booking
 	lbls[LABEL_NEXT_EVENT]->setColors(0, 15);
 	lbls[LABEL_NEXT_EVENT]->SetText("Ei seuraavia\nvarauksia");
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_DU);
+	M5.EPD.Active();
+	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
 	EPDGUI_Process();
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+	M5.EPD.Sleep();
 }
 
 void hideCurrentBookingLabels(bool isHide) {
@@ -420,7 +402,9 @@ void loadCurrentBooking() {
 	hideConfirmBooking();
 	hideFreeRoomButton(false);
 	hideCurrentBookingLabels(false);
+	M5.EPD.Active();
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
+	M5.EPD.Sleep();
 }
 
 void loadCurrentFree() {
@@ -441,15 +425,20 @@ void loadCurrentFree() {
 	hideMainLabels(false);
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
 	btns[BUTTON_SETTINGS]->SetHide(false);
+	M5.EPD.Active();
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
+	M5.EPD.Sleep();
 }
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
+	utils::ensureWiFi();
 	time_t endTime = roundToFive(UTC.now() + SECS_PER_MIN * time);
 	if (nextEvent != nullptr) {
-		if (isTillNext || endTime > nextEvent->unixStartTime) {
+		if (isTillNext || endTime >= nextEvent->unixStartTime) {
 			timeToBeBooked = SECS_PER_MIN * time;
 		} else {
+			Serial.print("Time to be booked: "),
+			Serial.println(timeToBeBooked);
 			timeToBeBooked = endTime - UTC.now();
 		}
 	} else {
@@ -592,7 +581,7 @@ void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 	EPDGUI_Draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU);
 }
 
 void createButtons() {
@@ -673,11 +662,11 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[0]);
 
 	// battery status label
-	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(790, 16, 85, 40, 3, 15, FONT_SIZE_NORMAL, false);
+	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(800, 16, 75, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_BATTERY]);
 
 	// wifi status label
-	lbls[LABEL_WIFI] = new EPDGUI_Textbox(700, 16, 90, 40, 3, 15, FONT_SIZE_NORMAL, false);
+	lbls[LABEL_WIFI] = new EPDGUI_Textbox(700, 16, 100, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_WIFI]);
 
 	// middle clock label
@@ -834,7 +823,6 @@ bool isAutoUpdate = true;
 const int UPDATE_INTERVAL = 90000;  // Milliseconds, how often to update status in the loop
 
 void loopGui() {
-	M5.EPD.Active();
 	if (M5.TP.avaliable()) {
 		M5.TP.update();
 		bool is_finger_up = M5.TP.isFingerUp();
@@ -843,10 +831,14 @@ void loopGui() {
 			lastPosX = M5.TP.readFingerX(0);
 			lastPosY = M5.TP.readFingerY(0);
 			if (is_finger_up) {
+				M5.EPD.Active();
 				EPDGUI_Process();
+				M5.EPD.Sleep();
 				lastActiveTime = millis();
 			} else {
+				M5.EPD.Active();
 				EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
+				M5.EPD.Sleep();
 				lastActiveTime = 0;
 			}
 		}
@@ -863,7 +855,6 @@ void loopGui() {
 		}
 		lastActiveTime = 0;
 	}
-	M5.EPD.Sleep();
 }
 
 void debug(String err) {
@@ -880,8 +871,4 @@ void clearDebug() {
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
 
-void updateGui() {
-	M5.EPD.Active();
-	updateStatus();
-	M5.EPD.Sleep();
-}
+void updateGui() { updateStatus(); }
