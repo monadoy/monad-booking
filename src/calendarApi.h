@@ -93,6 +93,8 @@ time_t parseRfcTimestamp(const String& input);
  */
 Token parseToken(const String& input);
 
+Token parseToken(const JsonObject& object);
+
 void printToken(const Token& token);
 
 /**

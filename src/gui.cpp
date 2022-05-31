@@ -346,6 +346,7 @@ void loadCurrentBooking() {
 	}
 
 	hideMainButtons(true);
+	btns[BUTTON_SETTINGS]->SetHide(false);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
 	hideFreeBooking(true);
