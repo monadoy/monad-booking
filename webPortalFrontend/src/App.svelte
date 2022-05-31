@@ -27,7 +27,8 @@
 		}
 	}
 
-	let submitOk: boolean | null = null
+	let message = { isError: false, content: "" }
+
 	const submit = () => {
 		fetch("/config", {
 			method: "POST",
@@ -36,20 +37,29 @@
 			},
 			body: JSON.stringify(config),
 		})
-			.then(res => (submitOk = res.ok))
+			.then(_ => (message = { isError: false, content: "Submit success" }))
 			.catch(err => {
 				console.log(err)
-				submitOk = false
+				message = { isError: true, content: "Submit failure" }
 			})
 	}
 
 	let config: Config | null = defaultConfig
 	$: console.log(config)
 
-	let files: FileList
-	$: if (files && files.length > 0) {
-		files[0].text().then(text => (config.gcalsettings.token = JSON.parse(text)))
+	const updateToken = (s: string) => {
+		if (!s) return
+		try {
+			config.gcalsettings.token = JSON.parse(s.trim())
+			message = { isError: false, content: "" }
+		} catch (err) {
+			console.log(err)
+			message = { isError: true, content: "Token.json is malformed" }
+		}
 	}
+
+	let tokenString = ""
+	$: updateToken(tokenString)
 
 	let configFetchStatus = "Fetching M5Paper config..."
 	onMount(() => {
@@ -57,9 +67,13 @@
 			.then(res => res.json())
 			.then(json => {
 				config = { ...defaultConfig, ...json }
+				try {
+					tokenString = JSON.stringify(config.gcalsettings.token)
+				} catch (err) {}
 				configFetchStatus = "M5Paper config fetch success"
 			})
 			.catch(err => {
+				config = defaultConfig
 				console.log(err)
 				configFetchStatus = "Couldn't fetch M5Paper config"
 			})
@@ -93,23 +107,12 @@
 			</div>
 			<div>
 				<label for="tokenjson">Token.json</label>
-				<input id="tokenjson" type="file" bind:files />
+				<textarea rows="10" id="tokenjson" bind:value={tokenString} />
 			</div>
 			<button type="submit">Submit</button>
 		</form>
-		{#if submitOk !== null}
-			{#if submitOk === true}
-				<div class="submit-status-ok">Submit success</div>
-			{:else}
-				<div class="submit-status-fail">Submit failure</div>
-			{/if}
-		{/if}
-
-		<p>Token.json contents:</p>
-		{#if config.gcalsettings.token}
-			<pre><code>{JSON.stringify(config.gcalsettings.token, null, 2)}</code></pre>
-		{:else}
-			<p>empty</p>
+		{#if message.content}
+			<div class={message.isError ? "error" : "ok"}>{message.content}</div>
 		{/if}
 	{:else}
 		<h2>Loading Config...</h2>
@@ -132,9 +135,16 @@
 		width: 150px;
 	}
 
-	input {
+	input,
+	textarea {
 		display: inline-block;
 		flex-grow: 1;
+	}
+
+	textarea {
+		white-space: pre;
+		overflow-wrap: normal;
+		overflow-x: scroll;
 	}
 
 	form > div {
@@ -150,11 +160,11 @@
 		padding: 8px;
 	}
 
-	.submit-status-ok {
+	.ok {
 		padding: 8px;
 		border: 1px solid blue;
 	}
-	.submit-status-fail {
+	.error {
 		padding: 8px;
 		border: 1px solid red;
 	}
