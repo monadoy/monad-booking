@@ -56,6 +56,14 @@ Result<bool> ConfigStore::saveConfigToFlash(JsonVariantConst newConfig) {
 	return Result<bool>::makeOk(std::make_shared<bool>(true));
 };
 
+Result<bool> ConfigStore::remove() {
+	this->config_.clear();
+	auto err = fs_.remove(configFileName_);
+	return !err ? Result<bool>::makeOk(std::make_shared<bool>(true))
+	            : Result<bool>::makeErr(
+	                new ConfigError_t{.errorMessage = "Could not remove config file from flash"});
+};
+
 Result<String> ConfigStore::getTokenString() {
 	String tokenString = "";
 	serializeJson(this->config_["gcalsettings"]["token"], tokenString);

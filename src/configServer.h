@@ -51,6 +51,10 @@ class ConfigStore {
 	 * Return contents of the token.json as string
 	 */
 	Result<String> getTokenString();
+	/**
+	 * Delete current configuration from memory and flash
+	 */
+	Result<bool> remove();
 
   protected:
 	fs::FS& fs_;
