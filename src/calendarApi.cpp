@@ -174,15 +174,18 @@ Token parseToken(const String& input) {
 		Serial.println(err.f_str());
 	}
 
-	return Token{.accessToken = doc["token"],
-	             .refreshToken = doc["refresh_token"],
-	             .tokenUri = doc["token_uri"],
-	             .clientId = doc["client_id"],
-	             .clientSecret = doc["client_secret"],
-	             .scope = doc["scopes"][0],
-	             // Init to zero as we can't parse time strings to unix time.
-	             // Needs to be refreshed.
-	             .unixExpiry = 0};
+	return parseToken(doc.as<JsonObject>());
+}
+
+Token parseToken(const JsonObject& obj) {
+	return Token{.accessToken = obj["token"],
+	             .refreshToken = obj["refresh_token"],
+	             .tokenUri = obj["token_uri"],
+	             .clientId = obj["client_id"],
+	             .clientSecret = obj["client_secret"],
+	             .scope = obj["scopes"][0],
+	             .unixExpiry = 0};  // Access tokens are valid for only 1 h, no need to parse here
+	                                // because it's probably expired anyway.
 }
 
 void printToken(const Token& token) {
