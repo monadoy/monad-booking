@@ -11,6 +11,8 @@
 #include "interboldttf.h"
 #include "interregularttf.h"
 
+
+namespace {
 enum {
 	BUTTON_SETTINGS,
 	BUTTON_15MIN,
@@ -98,6 +100,8 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 void EPDGUI_Process(void) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
+		/* Serial.print(millis());
+		Serial.println(" Process loop iteration"); */
 		(*p)->UpdateState(-1, -1);
 	}
 }
@@ -566,14 +570,12 @@ void confirmBookingButton(epdgui_args_vector_t& args) {
 	toMainScreen();
 }
 
-void cancelBookingButton(epdgui_args_vector_t& args) { toMainScreen(); }
+void cancelButton(epdgui_args_vector_t& args) { toMainScreen(); }
 
 void confirmFreeButton(epdgui_args_vector_t& args) {
 	deleteBooking();
 	toMainScreen();
 }
-
-void cancelFreeButton(epdgui_args_vector_t& args) { toMainScreen(); }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
@@ -635,7 +637,7 @@ void createButtons() {
 	EPDGUI_AddObject(btns[BUTTON_CANCELBOOKING]);
 	btns[BUTTON_CANCELBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
 	                                    btns[BUTTON_CANCELBOOKING]);
-	btns[BUTTON_CANCELBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelBookingButton);
+	btns[BUTTON_CANCELBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
 
 	// confirm booking button
 	btns[BUTTON_CONFIRMFREE] = new EPDGUI_Button("Vapauta", 684, 399, 212, 77, 15, 0, 0, true);
@@ -647,7 +649,7 @@ void createButtons() {
 	btns[BUTTON_CANCELFREE] = new EPDGUI_Button("Peruuta", 521, 399, 157, 77, 0, 15, 15, true);
 	EPDGUI_AddObject(btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CANCELFREE]);
-	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelFreeButton);
+	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
 
 	// free room button
 	btns[BUTTON_FREEROOM] = new EPDGUI_Button("Vapauta varaus", 80, 399, 242, 77, 0, 15, 15, true);
@@ -756,6 +758,10 @@ void createBoldLabels() {
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
 }
 
+} // namespace
+
+namespace gui{
+
 void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	guimyTZ = _myTZ;
 	auto res = configStore->getTokenString();
@@ -766,10 +772,11 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 		throw std::runtime_error("Token not found in config");
 	}
 
+	
 	JsonObjectConst config = configStore->getConfigJson();
 
 	calendarId = config["gcalsettings"]["calendarid"].as<String>();
-
+	utils::ensureWiFi();
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
 
@@ -810,7 +817,7 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	createBoldLabels();
 	font.setTextFont(1);
 	createRegularLabels();
-	// font.deleteCanvas();
+	font.deleteCanvas();
 
 	toMainScreen();
 }
@@ -872,3 +879,4 @@ void clearDebug() {
 }
 
 void updateGui() { updateStatus(); }
+} // namespace gui 

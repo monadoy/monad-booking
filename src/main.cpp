@@ -106,7 +106,7 @@ void setup() {
 		esp_wifi_start();
 		utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
 		setupTime(config["timezone"]);
-		initGui(&myTZ, configStore.get());
+		gui::initGui(&myTZ, configStore.get());
 		delay(3000);
 	} else {
 		isSetupMode = true;
@@ -209,7 +209,7 @@ void sleep() {
 		Serial.println("Updating gui status and going back to sleep");
 
 		// When wakeup is caused by timer, a status update is due.
-		updateGui();
+		gui::updateGui();
 
 		// Calculate the next status update timestamp based on our interval.
 		nextStatusUpdateMillis = millis() + UPDATE_STATUS_INTERVAL_MS;
@@ -228,7 +228,7 @@ void loop() {
 	if (isSetupMode)
 		return;
 
-	loopGui();
+	gui::loopGui();
 
 	delay(100);
 
