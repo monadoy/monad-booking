@@ -2,7 +2,7 @@
 #define UTILS_H
 
 #include <Arduino.h>
-
+#include <M5EPD.h>
 #include <memory>
 
 namespace {
@@ -73,6 +73,8 @@ struct Result {
 void connectWiFi(const String& ssid, const String& password);
 
 void ensureWiFi();
+
+bool isCharging();
 
 }  // namespace utils
 

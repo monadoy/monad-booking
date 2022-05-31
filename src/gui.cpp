@@ -11,54 +11,7 @@
 #include "interboldttf.h"
 #include "interregularttf.h"
 
-
 namespace {
-enum {
-	BUTTON_SETTINGS,
-	BUTTON_15MIN,
-	BUTTON_30MIN,
-	BUTTON_60MIN,
-	BUTTON_90MIN,
-	BUTTON_TILLNEXT,
-	BUTTON_CONFIRMBOOKING,
-	BUTTON_CANCELBOOKING,
-	BUTTON_FREEROOM,
-	BUTTON_CONFIRMFREE,
-	BUTTON_CANCELFREE,
-	BUTTON_SIZE
-};
-
-enum {
-	LABEL_CLOCK_UP,
-	LABEL_BATTERY,
-	LABEL_WIFI,
-	LABEL_CLOCK_MID,
-	LABEL_RESOURCE,
-	LABEL_CURRENT_BOOKING,
-	LABEL_BOOK_EVENT,
-	LABEL_NEXT_EVENT,
-	LABEL_NEXT_EVENT_CREATOR,
-	LABEL_NEXT_EVENT_DESC,
-	LABEL_NEXT_EVENT_TIME,
-	LABEL_CURRENT_EVENT_CREATOR,
-	LABEL_CURRENT_EVENT_DESC,
-	LABEL_CURRENT_EVENT_TIME,
-	LABEL_CONFIRM_BOOKING,
-	LABEL_CONFIRM_FREE,
-	LABEL_CONFIRM_TIME,
-	LABEL_LOADING,
-	LABEL_ERROR,
-	LABEL_SETTINGS_STARTUP,
-	LABEL_SIZE
-};
-
-const uint16_t FONT_SIZE_NORMAL = 24;
-const uint16_t FONT_SIZE_BUTTON = 28;
-const uint16_t FONT_SIZE_HEADER = 32;
-const uint16_t FONT_SIZE_CLOCK = 44;
-const uint16_t FONT_SIZE_TITLE = 64;
-
-enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SIZE };
 
 EPDGUI_Button* btns[BUTTON_SIZE];
 EPDGUI_Textbox* lbls[LABEL_SIZE];
@@ -100,8 +53,6 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 void EPDGUI_Process(void) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
-		/* Serial.print(millis());
-		Serial.println(" Process loop iteration"); */
 		(*p)->UpdateState(-1, -1);
 	}
 }
@@ -109,15 +60,15 @@ void EPDGUI_Process(void) {
 void EPDGUI_Process(int16_t x, int16_t y) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
-		// log_d("%d, %d -> %d, %d, %d, %d", x, y, (*p)->getX(), (*p)->getY(), (*p)->getRX(),
-		// (*p)->getBY());
 		(*p)->UpdateState(x, y);
 	}
 }
 
-void EPDGUI_Clear(void) { epdgui_object_list.clear(); }
-
 String getBatteryPercent() {
+	if (utils::isCharging()) {
+		return "USB";
+	}
+
 	auto clamped = std::min(std::max(M5.getBatteryVoltage(), BAT_LOW), BAT_HIGH);
 	int perc = (float)(clamped - BAT_LOW) / (float)(BAT_HIGH - BAT_LOW) * 100.0f;
 	return String(perc) + "%";
@@ -126,9 +77,8 @@ String getBatteryPercent() {
 String getWifiStatus() {
 	if (WiFi.status() == WL_CONNECTED) {
 		return "OK";
-	} else {
-		return "NOT OK";
 	}
+	return "NOT OK";
 }
 
 bool checkEventEquality(std::shared_ptr<calapi::Event> event1,
@@ -185,12 +135,10 @@ void hideNextBooking(bool isHide) {
 	} else {
 		canvasNextEvent.fillRect(0, 0, 308, 540, 3);
 	}
-
 	// top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->SetHide(isHide);
 	}
-
 	// the event
 	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
 		lbls[i]->SetHide(isHide);
@@ -268,7 +216,10 @@ void hideFreeConfirmationButtons(bool isHide) {
 	btns[BUTTON_CONFIRMFREE]->SetHide(isHide);
 }
 
-void hideFreeRoomButton(bool isHide) { btns[BUTTON_FREEROOM]->SetHide(isHide); }
+void hideFreeRoomButton(bool isHide) {
+	btns[BUTTON_FREEROOM]->SetHide(isHide);
+	btns[BUTTON_CONTINUE]->SetHide(isHide);
+}
 
 void showConfirmBooking(uint16_t time) {
 	lbls[LABEL_CONFIRM_BOOKING]->SetHide(false);
@@ -289,17 +240,14 @@ void hideConfirmBooking() {
 	lbls[LABEL_CONFIRM_TIME]->SetHide(true);
 }
 
-void showFreeBooking() {
-	lbls[LABEL_CONFIRM_FREE]->SetHide(false);
-	lbls[LABEL_CONFIRM_TIME]->SetHide(false);
-	lbls[LABEL_CONFIRM_TIME]->SetText(
-	    guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "G:i") + " - "
-	    + guimyTZ->dateTime(currentEvent->unixEndTime, UTC_TIME, "G:i"));
-}
-
-void hideFreeBooking() {
-	lbls[LABEL_CONFIRM_FREE]->SetHide(true);
-	lbls[LABEL_CONFIRM_TIME]->SetHide(true);
+void hideFreeBooking(bool isHide) {
+	lbls[LABEL_CONFIRM_FREE]->SetHide(isHide);
+	lbls[LABEL_CONFIRM_TIME]->SetHide(isHide);
+	if (!isHide) {
+		lbls[LABEL_CONFIRM_TIME]->SetText(
+		    guimyTZ->dateTime(currentEvent->unixStartTime, UTC_TIME, "G:i") + " - "
+		    + guimyTZ->dateTime(currentEvent->unixEndTime, UTC_TIME, "G:i"));
+	}
 }
 
 void loadNextBooking() {
@@ -353,7 +301,6 @@ void loadNextFree() {
 	}
 	lbls[LABEL_NEXT_EVENT]->SetPos(701, 359);
 	lbls[LABEL_NEXT_EVENT]->SetHide(false);
-	// display no next booking
 	lbls[LABEL_NEXT_EVENT]->setColors(0, 15);
 	lbls[LABEL_NEXT_EVENT]->SetText("Ei seuraavia\nvarauksia");
 	M5.EPD.Active();
@@ -382,10 +329,6 @@ void loadCurrentBooking() {
 	lbls[LABEL_RESOURCE]->SetText(resourceName);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Varattu");
 	lbls[LABEL_BOOK_EVENT]->SetHide(true);
-
-	for (int i = LABEL_CURRENT_EVENT_CREATOR; i < LABEL_CONFIRM_BOOKING; i++) {
-		lbls[i]->SetText("");
-	}
 	lbls[LABEL_CURRENT_EVENT_CREATOR]->setColors(15, 0);
 	lbls[LABEL_CURRENT_EVENT_DESC]->setColors(15, 0);
 	lbls[LABEL_CURRENT_EVENT_TIME]->setColors(15, 0);
@@ -399,10 +342,11 @@ void loadCurrentBooking() {
 	for (int i = LABEL_CURRENT_EVENT_CREATOR; i < LABEL_CONFIRM_BOOKING; i++) {
 		lbls[i]->SetHide(false);
 	}
+
 	hideMainButtons(true);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
-	hideFreeBooking();
+	hideFreeBooking(true);
 	hideConfirmBooking();
 	hideFreeRoomButton(false);
 	hideCurrentBookingLabels(false);
@@ -423,7 +367,7 @@ void loadCurrentFree() {
 	hideFreeRoomButton(true);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
-	hideFreeBooking();
+	hideFreeBooking(true);
 	hideConfirmBooking();
 	hideCurrentBookingLabels(true);
 	hideMainLabels(false);
@@ -441,8 +385,7 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 		if (isTillNext || endTime >= nextEvent->unixStartTime) {
 			timeToBeBooked = SECS_PER_MIN * time;
 		} else {
-			Serial.print("Time to be booked: "),
-			Serial.println(timeToBeBooked);
+			Serial.print("Time to be booked: "), Serial.println(timeToBeBooked);
 			timeToBeBooked = endTime - UTC.now();
 		}
 	} else {
@@ -466,7 +409,7 @@ void toFreeBooking() {
 	hideNextBooking(true);
 	hideCurrentBookingLabels(true);
 	hideFreeConfirmationButtons(false);
-	showFreeBooking();
+	hideFreeBooking(false);
 	updateScreen();
 }
 
@@ -507,6 +450,8 @@ void hideSettings(bool isHide) {
 		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + guimyTZ->dateTime(RFC3339));
 	}
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
+
+	btns[BUTTON_SETUP]->SetHide(isHide);
 }
 
 void toMainScreen() {
@@ -578,6 +523,10 @@ void confirmFreeButton(epdgui_args_vector_t& args) {
 }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
+
+void continueButton(epdgui_args_vector_t& args) {}
+
+void setupButton(epdgui_args_vector_t& args) {gui::debug("Virheviesti");}
 
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
@@ -656,6 +605,18 @@ void createButtons() {
 	EPDGUI_AddObject(btns[BUTTON_FREEROOM]);
 	btns[BUTTON_FREEROOM]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_FREEROOM]);
 	btns[BUTTON_FREEROOM]->Bind(EPDGUI_Button::EVENT_RELEASED, freeRoomButton);
+
+	// continue current booking
+	btns[BUTTON_CONTINUE] = new EPDGUI_Button("Jatka varausta", 330, 399, 242, 77, 0, 15, 15, true);
+	EPDGUI_AddObject(btns[BUTTON_CONTINUE]);
+	btns[BUTTON_CONTINUE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CONTINUE]);
+	btns[BUTTON_CONTINUE]->Bind(EPDGUI_Button::EVENT_RELEASED, continueButton);
+
+	// setup mode
+	btns[BUTTON_SETUP] = new EPDGUI_Button("Setupmode", 521, 399, 157, 77, 0, 15, 15, true);
+	EPDGUI_AddObject(btns[BUTTON_SETUP]);
+	btns[BUTTON_SETUP]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETUP]);
+	btns[BUTTON_SETUP]->Bind(EPDGUI_Button::EVENT_RELEASED, setupButton);
 }
 
 void createRegularLabels() {
@@ -758,9 +719,9 @@ void createBoldLabels() {
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
 }
 
-} // namespace
+}  // namespace
 
-namespace gui{
+namespace gui {
 
 void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	guimyTZ = _myTZ;
@@ -772,7 +733,6 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 		throw std::runtime_error("Token not found in config");
 	}
 
-	
 	JsonObjectConst config = configStore->getConfigJson();
 
 	calendarId = config["gcalsettings"]["calendarid"].as<String>();
@@ -808,26 +768,19 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	createButtons();
 
 	font.loadFont(interregularttf, sizeof(interregularttf));
-	font.createRender(FONT_SIZE_TITLE, 128);
-	font.createRender(FONT_SIZE_CLOCK, 128);
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);
-
-	font.setTextFont(2);
+	font.createRender(FONT_SIZE_TITLE, 128);
+	font.createRender(FONT_SIZE_CLOCK, 128);
 	createBoldLabels();
-	font.setTextFont(1);
 	createRegularLabels();
-	font.deleteCanvas();
 
 	toMainScreen();
 }
 
 // Variables to store update-data from loop
 uint32_t lastActiveTime = 0;
-uint32_t lastFetchUpdate = 0;
 uint16_t lastPosX = 0xFFFF, lastPosY = 0xFFFF;
-bool isAutoUpdate = true;
-const int UPDATE_INTERVAL = 90000;  // Milliseconds, how often to update status in the loop
 
 void loopGui() {
 	if (M5.TP.avaliable()) {
@@ -856,20 +809,17 @@ void loopGui() {
 	if ((lastActiveTime != 0) && (millis() - lastActiveTime > 2000)) {
 		if (M5.EPD.UpdateCount() > 4) {
 			M5.EPD.ResetUpdateCount();
-			/* if (isAutoUpdate) {
-			    M5.EPD.UpdateFull(UPDATE_MODE_GL16);
-			} */
 		}
 		lastActiveTime = 0;
 	}
 }
 
 void debug(String err) {
-	if (err != lbls[LABEL_ERROR]->GetText()) {
-		lbls[LABEL_ERROR]->SetText(err);
-		lbls[LABEL_ERROR]->SetHide(false);
-		M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
-	}
+	lbls[LABEL_ERROR]->SetText(err);
+	lbls[LABEL_ERROR]->SetHide(false);
+	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+	delay(500);
+	clearDebug();
 }
 
 void clearDebug() {
@@ -879,4 +829,4 @@ void clearDebug() {
 }
 
 void updateGui() { updateStatus(); }
-} // namespace gui 
+}  // namespace gui

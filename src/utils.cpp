@@ -42,4 +42,6 @@ void ensureWiFi() {
 	}
 }
 
+bool isCharging() { return M5.getBatteryVoltage() > 4275; }
+
 }  // namespace utils
