@@ -112,7 +112,10 @@ void updateStatus() {
 
 		nextEvent = ok->nextEvent;
 		currentEvent = ok->currentEvent;
-		toMainScreen();
+
+		if (currentScreen == SCREEN_MAIN) {
+			toMainScreen();
+		}
 
 	} else {
 		Serial.print("Result ERROR: ");
@@ -445,11 +448,17 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 400, 85);
 		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + guimyTZ->dateTime(RFC3339));
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
+		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
+	} else {
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 158);
 	}
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
 	btns[BUTTON_SETUP]->SetHide(isHide);
+	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 }
 
 void toMainScreen() {
@@ -476,14 +485,25 @@ void toSettingsScreen() {
 	hideMainButtons(true);
 	hideNextBooking(true);
 	hideSettings(false);
-	btns[BUTTON_SETTINGS]->SetHide(false);
+	btns[BUTTON_SETTINGS]->SetHide(true);
+	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
+
 	updateScreen();
 }
 
-void resetErrorLabel() {
-	lbls[LABEL_ERROR]->SetText("");
-	lbls[LABEL_ERROR]->SetHide(true);
-	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+void toSetupScreen() {
+	currentScreen = SCREEN_SETUP;
+	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+
+	btns[BUTTON_SETUP]->SetHide(true);
+	btns[BUTTON_CANCELBOOKING]->SetHide(true);
+
+	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
+	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 175, 800, 300);
+	lbls[LABEL_SETTINGS_STARTUP]->SetText("Wifin SSID:\n"+WiFi.BSSIDstr());
+
+	updateScreen();
 }
 
 void settingsButton(epdgui_args_vector_t& args) {
@@ -523,7 +543,7 @@ void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
 void continueButton(epdgui_args_vector_t& args) {}
 
-void setupButton(epdgui_args_vector_t& args) {gui::debug("Virheviesti");}
+void setupButton(epdgui_args_vector_t& args) { toSetupScreen(); }
 
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
@@ -610,7 +630,7 @@ void createButtons() {
 	btns[BUTTON_CONTINUE]->Bind(EPDGUI_Button::EVENT_RELEASED, continueButton);
 
 	// setup mode
-	btns[BUTTON_SETUP] = new EPDGUI_Button("Setupmode", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_SETUP] = new EPDGUI_Button("Setupmode", 684, 399, 212, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_SETUP]);
 	btns[BUTTON_SETUP]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETUP]);
 	btns[BUTTON_SETUP]->Bind(EPDGUI_Button::EVENT_RELEASED, setupButton);
@@ -695,7 +715,7 @@ void createRegularLabels() {
 	lbls[LABEL_ERROR]->SetHide(true);
 
 	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(40, 100, 400, 85, 0, 15, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 158, 400, 85, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 }
@@ -812,8 +832,8 @@ void loopGui() {
 }
 
 void debug(String err) {
-	lbls[LABEL_ERROR]->SetText(err);
 	lbls[LABEL_ERROR]->SetHide(false);
+	lbls[LABEL_ERROR]->SetText(err);
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 	delay(500);
 	clearDebug();
