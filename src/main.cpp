@@ -191,6 +191,13 @@ void sleep() {
 	Serial.print(sleepTime / MICROS_PER_SEC);
 	Serial.println(" s or until touch.");
 
+	WiFi.disconnect();
+
+	while (WiFi.status() != WL_DISCONNECTED) {
+		Serial.print(".");
+		delay(100);
+	}
+
 	Serial.flush();
 
 	esp_wifi_stop();
