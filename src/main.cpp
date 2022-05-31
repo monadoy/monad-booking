@@ -153,8 +153,6 @@ time_t calculateTurnOnTime() {
 	return ezt::makeTime(tm);
 }
 
-bool isCharging() { return M5.getBatteryVoltage() > 4300; }
-
 void shutDown() {
 	time_t turnOnTime = calculateTurnOnTime();
 
@@ -240,7 +238,7 @@ void loop() {
 	delay(100);
 
 	while (millis() >= wakeUntilMillis) {
-		if (shouldShutDown() && !isCharging()) {
+		if (shouldShutDown() && !utils::isCharging()) {
 			shutDown();
 		}
 
