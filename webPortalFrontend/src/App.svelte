@@ -1,16 +1,25 @@
 <script lang="ts">
 	import { onMount } from "svelte"
+	import { timeZonesNames } from "@vvo/tzdb"
+
+	const validateEmail = email => {
+		return String(email)
+			.toLowerCase()
+			.match(
+				/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+			)
+	}
 
 	let defaultConfig: Config = {
-		name: undefined,
-		timezone: undefined,
+		name: "",
+		timezone: "Europe/Helsinki",
 		gcalsettings: {
-			calendarid: undefined,
-			token: undefined,
+			calendarid: "",
+			token: null,
 		},
 		wifi: {
-			ssid: undefined,
-			password: undefined,
+			ssid: "",
+			password: "",
 		},
 	}
 
@@ -29,7 +38,24 @@
 
 	let message = { isError: false, content: "" }
 
+	const validateConfig = () => {
+		if (config.wifi.ssid.length == 0) {
+			return "Empty WIFI SSID"
+		} else if (!validateEmail(config.gcalsettings.calendarid)) {
+			return "Invalid calendar ID"
+		} else if (config.gcalsettings.token === null) {
+			return "Malformed token.json"
+		}
+		return ""
+	}
+
 	const submit = () => {
+		const errorMsg = validateConfig()
+		if (errorMsg) {
+			message = { isError: true, content: `Didn't submit, reason: ${errorMsg}` }
+			return
+		}
+
 		fetch("/config", {
 			method: "POST",
 			headers: {
@@ -37,24 +63,29 @@
 			},
 			body: JSON.stringify(config),
 		})
-			.then(_ => (message = { isError: false, content: "Submit success" }))
+			.then(res => {
+				if (res.ok) message = { isError: false, content: "[Submit success]" }
+				else
+					message = {
+						isError: true,
+						content: `[Submit failure] HTTP status: ${res.status} ${res.statusText}`,
+					}
+			})
 			.catch(err => {
 				console.log(err)
-				message = { isError: true, content: "Submit failure" }
+				message = { isError: true, content: `[Submit failure] ${err.message}` }
 			})
 	}
 
 	let config: Config | null = defaultConfig
-	$: console.log(config)
 
 	const updateToken = (s: string) => {
 		if (!s) return
 		try {
 			config.gcalsettings.token = JSON.parse(s.trim())
-			message = { isError: false, content: "" }
 		} catch (err) {
+			config.gcalsettings.token = null
 			console.log(err)
-			message = { isError: true, content: "Token.json is malformed" }
 		}
 	}
 
@@ -99,15 +130,27 @@
 			</div>
 			<div>
 				<label for="timezone">IANA Time Zone</label>
-				<input id="timezone" type="text" bind:value={config.timezone} />
+				<select id="timezone" value={config.timezone}>
+					{#each timeZonesNames as tz}
+						<option value={tz}>
+							{tz}
+						</option>
+					{/each}
+				</select>
 			</div>
+
 			<div>
 				<label for="calendarid">Calendar ID</label>
 				<input id="calendarid" type="text" bind:value={config.gcalsettings.calendarid} />
 			</div>
 			<div>
 				<label for="tokenjson">Token.json</label>
-				<textarea rows="10" id="tokenjson" bind:value={tokenString} />
+				<textarea
+					rows="10"
+					id="tokenjson"
+					placeholder="< Paste file contents here >"
+					bind:value={tokenString}
+				/>
 			</div>
 			<button type="submit">Submit</button>
 		</form>
