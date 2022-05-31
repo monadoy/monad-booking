@@ -150,7 +150,6 @@ void configureMainButtonPos() {
 	if (nextEvent == nullptr) {
 		btnIndex = 4;
 	} else {
-		utils::ensureWiFi();
 		int timeTillNext = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
 		Serial.println("Time till next booking");
 		Serial.println(timeTillNext);
@@ -379,7 +378,6 @@ void loadCurrentFree() {
 }
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
-	utils::ensureWiFi();
 	time_t endTime = roundToFive(UTC.now() + SECS_PER_MIN * time);
 	if (nextEvent != nullptr) {
 		if (isTillNext || endTime >= nextEvent->unixStartTime) {
@@ -505,7 +503,6 @@ void sixtyButton(epdgui_args_vector_t& args) { toConfirmBooking(60, false); }
 void ninetyButton(epdgui_args_vector_t& args) { toConfirmBooking(90, false); }
 
 void tillNextButton(epdgui_args_vector_t& args) {
-	utils::ensureWiFi();
 	uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
 	toConfirmBooking(deltaTime, true);
 }
