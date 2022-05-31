@@ -140,35 +140,51 @@ bool shouldShutDown() {
 	       || tm.Hour < onHours[0] || tm.Hour >= onHours[1];
 }
 
-time_t calculateTurnOnTime() {
+time_t calculateTurnOnTimeUTC() {
 	time_t now = myTZ.now();
 
 	tmElements_t tm;
 	ezt::breakTime(now, tm);
 	tm.Hour = onHours[0];
-	tm.Minute = 10;
+	tm.Minute = 5;
 	tm.Second = 0;
 	tm.Day += 1;
 
-	return ezt::makeTime(tm);
+	return myTZ.tzTime(ezt::makeTime(tm));
 }
 
 void shutDown() {
-	time_t turnOnTime = calculateTurnOnTime();
+	time_t nowUTC = UTC.now();
 
-	Serial.println(String("Shut down, wakes up at ") + myTZ.dateTime(turnOnTime, RFC3339));
+	tmElements_t tm;
+	ezt::breakTime(nowUTC, tm);
+
+	RTC_Date date(tm.Wday, tm.Month, tm.Day, tm.Year);
+	RTC_Time time(tm.Hour, tm.Minute, tm.Second);
+
+	M5.RTC.setDate(&date);
+	M5.RTC.setTime(&time);
+
+	time_t turnOnTimeUTC = calculateTurnOnTimeUTC();
+
+	String turnOnTimeStr = myTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
+
+	Serial.println("Shut down, wakes up at " + turnOnTimeStr);
 
 	M5.EPD.Active();
 	M5.EPD.Clear(true);
 	canvas.createCanvas(960, 540);
 	canvas.setTextSize(24);
-	canvas.drawString(String("Shut down, wakes up at ") + myTZ.dateTime(turnOnTime, RFC3339), 45,
-	                  350);
+	canvas.drawString("Shut down, wakes up at " + turnOnTimeStr, 45, 350);
 	canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
 
 	delay(1000);
 
-	M5.shutdown(max((int64_t)turnOnTime - (int64_t)myTZ.now(), 1ll));
+	tmElements_t tmOn;
+	ezt::breakTime(turnOnTimeUTC, tmOn);
+
+	M5.shutdown(RTC_Date(tmOn.Wday, tmOn.Month, tmOn.Day, tmOn.Year),
+	            RTC_Time(tmOn.Hour, tmOn.Minute, tmOn.Second));
 }
 
 // When to stop looping and go back to sleep
