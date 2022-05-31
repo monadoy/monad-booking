@@ -82,6 +82,41 @@ components:
         wifi:
           type: object
           $ref: '#/components/schemas/WiFiSettings'
+        awake:
+          type: object
+          description: > 
+            Days and hours that the device will be awake. Othervise it will
+            sleep to save power
+          properties:
+            time:
+              type: object
+              description: Hours of the day between the device should be awake
+              properties:
+                from: 
+                  type: string
+                  format: "hours:$minutes"
+                to:
+                  type: string
+                  format: "hours:$minutes"
+            weekdays:
+              type: object
+              description: True if device should wake up that day
+              properties:
+                mon:
+                  type: boolean
+                tue:
+                  type: boolean
+                wed:
+                  type: boolean
+                thu:
+                  type: boolean
+                fri:
+                  type: boolean
+                sat:
+                  type: boolean
+                sun:
+                  type: boolean
+            
     WiFiSettings:
       title: WiFi settings
       description: SSID and password
