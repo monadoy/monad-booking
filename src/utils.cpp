@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <esp_wifi.h>
 
 const unsigned long TIMEOUT_S = 20;
 
@@ -43,5 +44,23 @@ void ensureWiFi() {
 }
 
 bool isCharging() { return M5.getBatteryVoltage() > 4275; }
+
+bool isAP() {
+	wifi_mode_t mode = WiFi.getMode();
+	if(mode==WIFI_MODE_AP || mode==WIFI_MODE_APSTA){
+		return true;
+	}
+	return false;
+}
+
+String getApPassword() {
+	if(isAP()) {
+		wifi_config_t conf;
+    	esp_wifi_get_config((wifi_interface_t)WIFI_IF_STA, &conf);
+		String password = reinterpret_cast<const char*>(conf.sta.password);
+		return password;
+	}
+	return "The M5Paper is not in AP mode.";
+}
 
 }  // namespace utils

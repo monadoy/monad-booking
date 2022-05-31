@@ -449,7 +449,7 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 400, 85);
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
 		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + guimyTZ->dateTime(RFC3339));
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
@@ -485,8 +485,11 @@ void toSettingsScreen() {
 	hideMainLabels(true);
 	hideMainButtons(true);
 	hideNextBooking(true);
+	hideCurrentBookingLabels(true);
+	hideFreeRoomButton(true);
 	hideSettings(false);
 	btns[BUTTON_SETTINGS]->SetHide(true);
+	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 
 	updateScreen();
@@ -501,8 +504,15 @@ void toSetupScreen() {
 
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 175, 800, 300);
-	lbls[LABEL_SETTINGS_STARTUP]->SetText("Wifin SSID:\n"+WiFi.BSSIDstr());
+	utils::ensureWiFi();
+	String configData = "Wifin SSID: "+WiFi.SSID()+"\nLaitteen IP: "+WiFi.localIP().toString();
+	if(utils::isAP()){
+		configData+="\nAP:n salasana on: " + utils::getApPassword();
+	} else {
+		configData+="\n"+utils::getApPassword();
+	}
+	Serial.print(configData);
+	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
 
 	updateScreen();
 }
@@ -716,7 +726,7 @@ void createRegularLabels() {
 	lbls[LABEL_ERROR]->SetHide(true);
 
 	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(80, 158, 400, 85, 0, 15, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 158, 500, 150, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 }

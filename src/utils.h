@@ -76,6 +76,10 @@ void ensureWiFi();
 
 bool isCharging();
 
+bool isAP();
+
+String getApPassword();
+
 }  // namespace utils
 
 #endif
