@@ -9,7 +9,7 @@ const unsigned long TIMEOUT_S = 20;
 bool isInSetupMode = false;
 const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
 const char* SETUP_SSID = "BOOKING_SETUP";
-const char* SETUP_PASS = "salasanatesti";
+
 namespace utils {
 void connectWiFi(const String& ssid, const String& password) {
 	ssid_ = ssid;
@@ -73,6 +73,11 @@ bool isSetupMode() {
 
 void setupMode() {
 	isInSetupMode = true;
+
+	String passwordString = "Monad"+String((millis()%1000));
+	
+
+	const char* SETUP_PASS = passwordString.c_str();
 
 	Serial.printf("Starting Access Point at \"%s\"\n", SETUP_SSID);
 	WiFi.disconnect();
