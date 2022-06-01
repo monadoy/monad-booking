@@ -84,6 +84,8 @@ bool isSetupMode();
 
 void setupMode();
 
+String genRandomAppendix(int length);
+
 }  // namespace utils
 
 #endif

@@ -517,7 +517,6 @@ void toSetupScreen() {
 	}
 	Serial.print(configData);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
-	WiFi.softAPIP();
 	updateScreen();
 }
 

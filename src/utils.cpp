@@ -3,12 +3,15 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <esp_wifi.h>
+#include <ezTime.h>
 
 const unsigned long TIMEOUT_S = 20;
 
 bool isInSetupMode = false;
 const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
 const char* SETUP_SSID = "BOOKING_SETUP";
+String passwordString = ("Monad"+utils::genRandomAppendix(3)).c_str();
+const char* SETUP_PASS = passwordString.c_str();
 
 namespace utils {
 void connectWiFi(const String& ssid, const String& password) {
@@ -74,12 +77,8 @@ bool isSetupMode() {
 void setupMode() {
 	isInSetupMode = true;
 
-	String passwordString = "Monad"+String((millis()%1000));
-	
-
-	const char* SETUP_PASS = passwordString.c_str();
-
 	Serial.printf("Starting Access Point at \"%s\"\n", SETUP_SSID);
+	Serial.printf("Wifi password is \"%s\"\n", SETUP_PASS);
 	WiFi.disconnect();
 	delay(100);
 	WiFi.softAPConfig(SETUP_IP_ADDR, SETUP_IP_ADDR, IPAddress(255, 255, 255, 0));
@@ -87,4 +86,12 @@ void setupMode() {
 	WiFi.mode(WIFI_MODE_AP);
 }
 
+String genRandomAppendix(int length) {
+	srand48(UTC.now());
+	String appendix = "";
+	for (int i = 0; i<length; i++) {
+		appendix += String(rand()%10);
+	}
+	return appendix;
+}
 }  // namespace utils

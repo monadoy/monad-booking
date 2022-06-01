@@ -96,6 +96,7 @@ void setup() {
 	JsonObjectConst config = configStore->getConfigJson();
 
 	if (config.begin() != config.end()) {
+		WiFi.mode(WIFI_MODE_STA);
 		Serial.println("Config loaded!");
 		esp_wifi_start();
 		utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
