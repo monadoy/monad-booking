@@ -82,6 +82,12 @@ void setup() {
 		return;
 	}
 
+	Serial.println("Boot log: ");
+	auto entries = utils::getBootLog();
+	for (int i = entries.size() - 1; i >= 0; --i) {
+		canvas.println(entries[i]);
+	}
+
 	configStore = std::make_shared<Config::ConfigStore>(LittleFS);
 
 	Serial.println("Setting up E-ink display...");
@@ -98,12 +104,18 @@ void setup() {
 	if (config.begin() != config.end()) {
 		WiFi.mode(WIFI_MODE_STA);
 		Serial.println("Config loaded!");
+
 		esp_wifi_start();
 		utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
 		setupTime(config["timezone"]);
+
+		utils::addBootLogEntry("[" + myTZ.dateTime(RFC3339) + "] normal boot");
+
 		gui::initGui(&myTZ, configStore.get());
+
 		delay(3000);
 	} else {
+		utils::addBootLogEntry("[UNKNOWN] setup boot");
 		Serial.println("No config stored");
 		Serial.println("Entering setup-mode...");
 		// Setupmode
@@ -156,13 +168,22 @@ void shutDown() {
 
 	String turnOnTimeStr = myTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
 
-	Serial.println("Shut down, wakes up at " + turnOnTimeStr);
+	const String log = "[" + myTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
+
+	Serial.println(log);
+	utils::addBootLogEntry(log);
 
 	M5.EPD.Active();
 	M5.EPD.Clear(true);
 	canvas.createCanvas(960, 540);
 	canvas.setTextSize(24);
-	canvas.drawString("Shut down, wakes up at " + turnOnTimeStr, 45, 350);
+	canvas.println();
+	canvas.println("Boot log:");
+	std::vector<String> entries = utils::getBootLog();
+	for (int i = entries.size() - 1; i >= 0; --i) {
+		canvas.println(entries[i]);
+	}
+
 	canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
 
 	delay(1000);

@@ -3,7 +3,9 @@
 
 #include <Arduino.h>
 #include <M5EPD.h>
+
 #include <memory>
+#include <vector>
 
 namespace {
 String ssid_;
@@ -85,6 +87,10 @@ bool isSetupMode();
 void setupMode();
 
 String genRandomAppendix(int length);
+
+std::vector<String> getBootLog();
+
+bool addBootLogEntry(const String& entry);
 
 }  // namespace utils
 

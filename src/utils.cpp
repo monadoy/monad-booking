@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <LittleFS.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <esp_wifi.h>
@@ -10,7 +11,7 @@ const unsigned long TIMEOUT_S = 20;
 bool isInSetupMode = false;
 const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
 const char* SETUP_SSID = "BOOKING_SETUP";
-String passwordString = ("Monad"+utils::genRandomAppendix(3)).c_str();
+String passwordString = ("Monad" + utils::genRandomAppendix(3)).c_str();
 const char* SETUP_PASS = passwordString.c_str();
 
 namespace utils {
@@ -54,25 +55,23 @@ bool isCharging() { return M5.getBatteryVoltage() > 4275; }
 
 bool isAP() {
 	wifi_mode_t mode = WiFi.getMode();
-	if(mode==WIFI_MODE_AP || mode==WIFI_MODE_APSTA){
+	if (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) {
 		return true;
 	}
 	return false;
 }
 
 String getApPassword() {
-	if(isAP()) {
+	if (isAP()) {
 		wifi_config_t conf;
-    	esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
+		esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
 		String password = reinterpret_cast<const char*>(conf.ap.password);
 		return password;
 	}
 	return "The M5Paper is not in AP mode.";
 }
 
-bool isSetupMode() {
-	return isInSetupMode;
-}
+bool isSetupMode() { return isInSetupMode; }
 
 void setupMode() {
 	isInSetupMode = true;
@@ -89,9 +88,52 @@ void setupMode() {
 String genRandomAppendix(int length) {
 	srand48(UTC.now());
 	String appendix = "";
-	for (int i = 0; i<length; i++) {
-		appendix += String(rand()%10);
+	for (int i = 0; i < length; i++) {
+		appendix += String(rand() % 10);
 	}
 	return appendix;
 }
+
+std::vector<String> getBootLog() {
+	fs::File readHandle = LittleFS.open("/boot.log", FILE_READ);
+	if (!readHandle) {
+		return std::vector<String>();
+	}
+
+	std::vector<String> entries{};
+	String line;
+	while (true) {
+		line = readHandle.readStringUntil('\n');
+		if (line.isEmpty())
+			break;
+		entries.push_back(std::move(line));
+	}
+
+	if (entries.size() > 9) {
+		entries.erase(entries.begin());
+	}
+
+	return entries;
+}
+
+bool addBootLogEntry(const String& entry) {
+	auto entries = getBootLog();
+
+	if (entries.size() > 11) {
+		entries.erase(entries.begin());
+	}
+
+	entries.push_back(entry);
+
+	fs::File writeHandle = LittleFS.open("/boot.log", FILE_WRITE);
+	if (!writeHandle) {
+		return false;
+	}
+
+	for (const String& entry : entries) {
+		writeHandle.println(entry);
+	}
+	return true;
+}
+
 }  // namespace utils
