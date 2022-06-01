@@ -80,6 +80,10 @@ bool isAP();
 
 String getApPassword();
 
+bool isSetupMode();
+
+void setupMode();
+
 }  // namespace utils
 
 #endif

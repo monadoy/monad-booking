@@ -30,15 +30,10 @@ const char* IANA_TZ = "Europe/Helsinki";
 Timezone myTZ;
 
 M5EPD_Canvas canvas(&M5.EPD);
-
-const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
-const char* SETUP_SSID = "BOOKING_SETUP";
 const char* PARAM_MESSAGE = "message";
 
 // Config store
 Preferences preferences;
-
-bool isSetupMode = false;
 
 #define MICROS_PER_MILLI 1000
 #define MILLIS_PER_SEC 1000
@@ -53,7 +48,6 @@ std::array<uint8_t, 2> onHours{7, 19};
 std::shared_ptr<Config::ConfigStore> configStore = nullptr;
 
 bool restoreWifiConfig();
-void setupMode();
 
 struct tm timeinfo;
 
@@ -109,26 +103,16 @@ void setup() {
 		gui::initGui(&myTZ, configStore.get());
 		delay(3000);
 	} else {
-		isSetupMode = true;
 		Serial.println("No config stored");
 		Serial.println("Entering setup-mode...");
 		// Setupmode
-		setupMode();
+		utils::setupMode();
 		// Initialize Configserver
 		// TODO: this is currently thrown away after setup() ends
 		Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
 
 		configServer->start();
 	}
-}
-
-void setupMode() {
-	Serial.printf("Starting Access Point at \"%s\"\n", SETUP_SSID);
-	WiFi.disconnect();
-	delay(100);
-	WiFi.softAPConfig(SETUP_IP_ADDR, SETUP_IP_ADDR, IPAddress(255, 255, 255, 0));
-	WiFi.softAP(SETUP_SSID);
-	WiFi.mode(WIFI_MODE_AP);
 }
 
 bool shouldShutDown() {
@@ -239,7 +223,7 @@ void sleep() {
 }
 
 void loop() {
-	if (isSetupMode)
+	if (utils::isSetupMode())
 		return;
 
 	gui::loopGui();

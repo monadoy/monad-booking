@@ -6,6 +6,10 @@
 
 const unsigned long TIMEOUT_S = 20;
 
+bool isInSetupMode = false;
+const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
+const char* SETUP_SSID = "BOOKING_SETUP";
+const char* SETUP_PASS = "salasanatesti";
 namespace utils {
 void connectWiFi(const String& ssid, const String& password) {
 	ssid_ = ssid;
@@ -56,11 +60,26 @@ bool isAP() {
 String getApPassword() {
 	if(isAP()) {
 		wifi_config_t conf;
-    	esp_wifi_get_config((wifi_interface_t)WIFI_IF_STA, &conf);
-		String password = reinterpret_cast<const char*>(conf.sta.password);
+    	esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
+		String password = reinterpret_cast<const char*>(conf.ap.password);
 		return password;
 	}
 	return "The M5Paper is not in AP mode.";
+}
+
+bool isSetupMode() {
+	return isInSetupMode;
+}
+
+void setupMode() {
+	isInSetupMode = true;
+
+	Serial.printf("Starting Access Point at \"%s\"\n", SETUP_SSID);
+	WiFi.disconnect();
+	delay(100);
+	WiFi.softAPConfig(SETUP_IP_ADDR, SETUP_IP_ADDR, IPAddress(255, 255, 255, 0));
+	WiFi.softAP(SETUP_SSID, SETUP_PASS);
+	WiFi.mode(WIFI_MODE_AP);
 }
 
 }  // namespace utils

@@ -505,15 +505,19 @@ void toSetupScreen() {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
 	utils::ensureWiFi();
-	String configData = "Wifin SSID: "+WiFi.SSID()+"\nLaitteen IP: "+WiFi.localIP().toString();
-	if(utils::isAP()){
-		configData+="\nAP:n salasana on: " + utils::getApPassword();
+	String configData
+	    = "Wifin SSID: " + WiFi.SSID() + "\nLaitteen IP: " + WiFi.localIP().toString();
+	if (!utils::isSetupMode()) {
+		utils::setupMode();
+	}
+	if (utils::isAP()) {
+		configData += "\nAP:n salasana on: " + utils::getApPassword();
 	} else {
-		configData+="\n"+utils::getApPassword();
+		configData += "\n" + utils::getApPassword();
 	}
 	Serial.print(configData);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
-
+	WiFi.softAPIP();
 	updateScreen();
 }
 
