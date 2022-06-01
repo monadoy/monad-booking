@@ -152,27 +152,7 @@ time_t calculateTurnOnTimeUTC() {
 	return myTZ.tzTime(ezt::makeTime(tm));
 }
 
-void shutDown() {
-	time_t nowUTC = UTC.now();
-
-	tmElements_t tm;
-	ezt::breakTime(nowUTC, tm);
-
-	RTC_Date date(tm.Wday, tm.Month, tm.Day, tm.Year - 1900);
-	RTC_Time time(tm.Hour, tm.Minute, tm.Second);
-
-	M5.RTC.setDate(&date);
-	M5.RTC.setTime(&time);
-
-	time_t turnOnTimeUTC = calculateTurnOnTimeUTC();
-
-	String turnOnTimeStr = myTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
-
-	const String log = "[" + myTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
-
-	Serial.println(log);
-	utils::addBootLogEntry(log);
-
+void showBootLog() {
 	M5.EPD.Active();
 	M5.EPD.Clear(true);
 	canvas.createCanvas(960, 540);
@@ -187,6 +167,28 @@ void shutDown() {
 	canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
 
 	delay(1000);
+}
+
+void shutDown() {
+	time_t nowUTC = UTC.now();
+
+	tmElements_t tm;
+	ezt::breakTime(nowUTC, tm);
+
+	RTC_Date date(tm.Wday, tm.Month, tm.Day, tm.Year - 1900);
+	RTC_Time time(tm.Hour, tm.Minute, tm.Second);
+	M5.RTC.setDate(&date);
+	M5.RTC.setTime(&time);
+
+	time_t turnOnTimeUTC = calculateTurnOnTimeUTC();
+
+	String turnOnTimeStr = myTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
+
+	const String log = "[" + myTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
+	Serial.println(log);
+	utils::addBootLogEntry(log);
+
+	showBootLog();
 
 	tmElements_t tmOn;
 	ezt::breakTime(turnOnTimeUTC, tmOn);
