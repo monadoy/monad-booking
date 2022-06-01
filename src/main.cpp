@@ -85,7 +85,7 @@ void setup() {
 	Serial.println("Boot log: ");
 	auto entries = utils::getBootLog();
 	for (int i = entries.size() - 1; i >= 0; --i) {
-		canvas.println(entries[i]);
+		Serial.println(entries[i]);
 	}
 
 	configStore = std::make_shared<Config::ConfigStore>(LittleFS);
