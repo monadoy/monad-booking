@@ -6,7 +6,9 @@
 #include <esp_wifi.h>
 #include <ezTime.h>
 
-const unsigned long TIMEOUT_S = 20;
+#include <atomic>
+
+const unsigned long TIMEOUT_S = 60;
 
 bool isInSetupMode = false;
 const IPAddress SETUP_IP_ADDR(192, 168, 69, 1);
@@ -14,7 +16,20 @@ const char* SETUP_SSID = "BOOKING_SETUP";
 String passwordString = ("Monad" + utils::genRandomAppendix(3)).c_str();
 const char* SETUP_PASS = passwordString.c_str();
 
+String ssid_;
+String password_;
+bool disconnectRegistered = false;
+std::atomic<bool> wifiSleep(false);
+
 namespace utils {
+void onDisconnect(WiFiEvent_t event, WiFiEventInfo_t info) {
+	Serial.println("WIFI Disconnected");
+	if (!wifiSleep) {
+		Serial.println("Reconnecting");
+		WiFi.begin();
+	}
+}
+
 void connectWiFi(const String& ssid, const String& password) {
 	ssid_ = ssid;
 	password_ = password;
@@ -22,15 +37,24 @@ void connectWiFi(const String& ssid, const String& password) {
 	auto startTime = millis();
 	Serial.print("Connecting WiFi...");
 
+	if (wifiSleep) {
+		wifiSleep = false;
+		esp_wifi_start();
+	}
+
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(ssid_.c_str(), password_.c_str());
-	WiFi.setAutoReconnect(false);
+
+	if (!disconnectRegistered) {
+		disconnectRegistered = true;
+		WiFi.onEvent(onDisconnect, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+	}
 
 	unsigned long start = millis();
 
 	while (!WiFi.isConnected() && millis() <= start + TIMEOUT_S * 1000) {
-		delay(100);
-		Serial.print(".");
+		delay(50);
+		Serial.print(WiFi.status());
 	}
 	if (millis() > start + TIMEOUT_S * 1000) {
 		Serial.println("WiFi connect timed out");
@@ -48,6 +72,13 @@ void ensureWiFi() {
 		Serial.print("Ensure WiFi: current status: ");
 		Serial.println(WiFi.status());
 		connectWiFi(ssid_, password_);
+	}
+}
+
+void sleepWiFi() {
+	if (!wifiSleep) {
+		wifiSleep = true;
+		esp_wifi_stop();
 	}
 }
 

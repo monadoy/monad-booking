@@ -7,11 +7,6 @@
 #include <memory>
 #include <vector>
 
-namespace {
-String ssid_;
-String password_;
-}  // namespace
-
 namespace utils {
 
 /**
@@ -75,6 +70,8 @@ struct Result {
 void connectWiFi(const String& ssid, const String& password);
 
 void ensureWiFi();
+
+void sleepWiFi();
 
 bool isCharging();
 

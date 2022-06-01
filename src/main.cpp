@@ -215,14 +215,12 @@ void sleep() {
 
 	Serial.flush();
 
-	esp_wifi_stop();
+	utils::sleepWiFi();
 
 	// Light sleep and wait for timer or touch interrupt
 	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
 	esp_sleep_enable_timer_wakeup(sleepTime);
 	esp_light_sleep_start();
-
-	esp_wifi_start();
 
 	Serial.print("Wakeup cause: ");
 	auto cause = esp_sleep_get_wakeup_cause();
