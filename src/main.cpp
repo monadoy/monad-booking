@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <M5EPD.h>
-#include <Preferences.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <esp_wifi.h>
@@ -17,11 +16,6 @@
 // Format the filesystem automatically if not formatted already
 #define FORMAT_LITTLEFS_IF_FAILED true
 
-#define CONFIG_NAME "configuration"
-
-// Uncomment this to load config variables from secrets.h
-#define DEVMODE 1
-
 #define USE_EXTERNAL_SERIAL true
 
 // Provide official timezone names
@@ -30,10 +24,6 @@ const char* IANA_TZ = "Europe/Helsinki";
 Timezone myTZ;
 
 M5EPD_Canvas canvas(&M5.EPD);
-const char* PARAM_MESSAGE = "message";
-
-// Config store
-Preferences preferences;
 
 #define MICROS_PER_MILLI 1000
 #define MILLIS_PER_SEC 1000
@@ -49,8 +39,6 @@ std::shared_ptr<Config::ConfigStore> configStore = nullptr;
 
 bool restoreWifiConfig();
 
-struct tm timeinfo;
-
 void setupTime(const String& IANATimeZone) {
 	Serial.println("Setting up time");
 
@@ -60,8 +48,6 @@ void setupTime(const String& IANATimeZone) {
 	if (!myTZ.setCache(String("timezones"), IANATimeZone))
 		myTZ.setLocation(IANATimeZone);
 }
-
-void printLocalTime() { Serial.println(myTZ.dateTime(RFC3339)); }
 
 void setup() {
 #ifdef USE_EXTERNAL_SERIAL
@@ -73,7 +59,6 @@ void setup() {
 
 	Serial.println("========== Monad Booking ==========");
 	Serial.println("Booting up...");
-	preferences.begin(CONFIG_NAME);
 
 	Serial.println("Setting up LittleFS...");
 	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
@@ -90,8 +75,6 @@ void setup() {
 
 	Serial.println("Setting up RTC...");
 	M5.RTC.begin();
-
-	Serial.println("Loading Configuration...");
 
 	JsonObjectConst config = configStore->getConfigJson();
 
