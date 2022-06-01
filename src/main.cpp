@@ -253,7 +253,8 @@ void loop() {
 	delay(100);
 
 	while (millis() >= wakeUntilMillis) {
-		if (shouldShutDown() && !utils::isCharging()) {
+		// Don't shut down if battery is charging or completely full
+		if (shouldShutDown() && M5.getBatteryVoltage() > 4200) {
 			shutDown();
 		}
 
