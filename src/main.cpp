@@ -158,7 +158,7 @@ void shutDown() {
 	tmElements_t tm;
 	ezt::breakTime(nowUTC, tm);
 
-	RTC_Date date(tm.Wday, tm.Month, tm.Day, tm.Year);
+	RTC_Date date(tm.Wday, tm.Month, tm.Day, tm.Year - 1900);
 	RTC_Time time(tm.Hour, tm.Minute, tm.Second);
 
 	M5.RTC.setDate(&date);
@@ -191,7 +191,7 @@ void shutDown() {
 	tmElements_t tmOn;
 	ezt::breakTime(turnOnTimeUTC, tmOn);
 
-	M5.shutdown(RTC_Date(tmOn.Wday, tmOn.Month, tmOn.Day, tmOn.Year),
+	M5.shutdown(RTC_Date(tmOn.Wday, tmOn.Month, tmOn.Day, tmOn.Year - 1900),
 	            RTC_Time(tmOn.Hour, tmOn.Minute, tmOn.Second));
 }
 
