@@ -220,7 +220,18 @@ void hideFreeConfirmationButtons(bool isHide) {
 
 void hideFreeRoomButton(bool isHide) {
 	btns[BUTTON_FREEROOM]->SetHide(isHide);
-	btns[BUTTON_CONTINUE]->SetHide(isHide);
+	/* if(isHide) {
+		btns[BUTTON_CONTINUE]->SetHide(true);
+	} else {
+		if(nextEvent) {
+			uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
+			if (deltaTime <= 15) {
+				btns[BUTTON_CONTINUE]->SetHide(true);
+			} else {
+				btns[BUTTON_CONTINUE]->SetHide(false);
+			}
+		}
+	} */
 }
 
 void showConfirmBooking(uint16_t time) {
@@ -638,10 +649,11 @@ void createButtons() {
 	btns[BUTTON_FREEROOM]->Bind(EPDGUI_Button::EVENT_RELEASED, freeRoomButton);
 
 	// continue current booking
-	btns[BUTTON_CONTINUE] = new EPDGUI_Button("Jatka varausta", 330, 399, 242, 77, 0, 15, 15, true);
+	btns[BUTTON_CONTINUE] = new EPDGUI_Button("+15", 330, 399, 135, 77, 0, 15, 15, true);
 	EPDGUI_AddObject(btns[BUTTON_CONTINUE]);
 	btns[BUTTON_CONTINUE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CONTINUE]);
 	btns[BUTTON_CONTINUE]->Bind(EPDGUI_Button::EVENT_RELEASED, continueButton);
+	btns[BUTTON_CONTINUE]->SetHide(true);
 
 	// setup mode
 	btns[BUTTON_SETUP] = new EPDGUI_Button("Setupmode", 684, 399, 212, 77, 15, 0, 0, true);
