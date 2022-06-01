@@ -82,12 +82,6 @@ void setup() {
 		return;
 	}
 
-	Serial.println("Boot log: ");
-	auto entries = utils::getBootLog();
-	for (int i = entries.size() - 1; i >= 0; --i) {
-		Serial.println(entries[i]);
-	}
-
 	configStore = std::make_shared<Config::ConfigStore>(LittleFS);
 
 	Serial.println("Setting up E-ink display...");
@@ -125,6 +119,12 @@ void setup() {
 		Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
 
 		configServer->start();
+	}
+
+	Serial.println("Boot log: ");
+	auto entries = utils::getBootLog();
+	for (int i = entries.size() - 1; i >= 0; --i) {
+		Serial.println(entries[i]);
 	}
 }
 
