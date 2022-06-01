@@ -121,7 +121,7 @@ bool shouldShutDown() {
 	tmElements_t tm;
 	ezt::breakTime(t, tm);
 
-	return std::any_of(offDays.begin(), offDays.end(), [&](uint8_t d) { return d == tm.Day; })
+	return std::any_of(offDays.begin(), offDays.end(), [&](uint8_t d) { return d == tm.Wday; })
 	       || tm.Hour < onHours[0] || tm.Hour >= onHours[1];
 }
 
@@ -130,10 +130,12 @@ time_t calculateTurnOnTimeUTC() {
 
 	tmElements_t tm;
 	ezt::breakTime(now, tm);
+	if (tm.Hour > onHours[0]) {
+		tm.Day += 1;
+	}
 	tm.Hour = onHours[0];
 	tm.Minute = 5;
 	tm.Second = 0;
-	tm.Day += 1;
 
 	return myTZ.tzTime(ezt::makeTime(tm));
 }
