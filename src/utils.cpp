@@ -109,10 +109,6 @@ std::vector<String> getBootLog() {
 		entries.push_back(std::move(line));
 	}
 
-	if (entries.size() > 9) {
-		entries.erase(entries.begin());
-	}
-
 	return entries;
 }
 
