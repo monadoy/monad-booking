@@ -239,7 +239,7 @@ void loop() {
 
 	while (millis() >= wakeUntilMillis) {
 		// Don't shut down if battery is charging or completely full
-		if (shouldShutDown() && M5.getBatteryVoltage() > 4200) {
+		if (shouldShutDown() && M5.getBatteryVoltage() < 4200) {
 			shutDown();
 		}
 
