@@ -684,6 +684,15 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
 	lbls[LABEL_RESOURCE]->AddText(resourceName);
 
+	// book event label
+	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
+	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
+
+	// next event label
+	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
+
 	// next event creator label
 	lbls[LABEL_NEXT_EVENT_CREATOR]
 	    = new EPDGUI_Textbox(701, 246, 239, 40, 3, 15, FONT_SIZE_NORMAL, false);
@@ -704,20 +713,6 @@ void createRegularLabels() {
 	lbls[LABEL_CURRENT_EVENT_DESC]
 	    = new EPDGUI_Textbox(80, 297, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
-
-	// current event time label
-	lbls[LABEL_CURRENT_EVENT_TIME]
-	    = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, true);
-	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
-
-	// book event label
-	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, true);
-	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
-	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
-
-	// next event label
-	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, true);
-	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
 
 	// current event creator label
 	lbls[LABEL_CONFIRM_BOOKING]
@@ -760,6 +755,11 @@ void createBoldLabels() {
 	// current event time label
 	lbls[LABEL_CONFIRM_TIME] = new EPDGUI_Textbox(144, 244, 456, 77, 0, 15, FONT_SIZE_CLOCK, true);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
+
+	// current event time label
+	lbls[LABEL_CURRENT_EVENT_TIME]
+	    = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, true);
+	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
 }
 
 }  // namespace
@@ -804,19 +804,29 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasNextEvent.createCanvas(308, 540);
-
-	M5EPD_Canvas font(&M5.EPD);
-	font.loadFont(interboldttf, sizeof(interboldttf));
-	font.createRender(FONT_SIZE_BUTTON, 64);
+	
+	Serial.println("Starting font creation...");
+	M5EPD_Canvas boldfont(&M5.EPD);
+	boldfont.setTextFont(1);
+	boldfont.loadFont(interboldttf, sizeof(interboldttf));
+	Serial.println("Canvas created and bold loaded...");
+	boldfont.createRender(FONT_SIZE_BUTTON, 64);
+	boldfont.createRender(FONT_SIZE_TITLE, 128);
+	boldfont.createRender(FONT_SIZE_CLOCK, 128);
+	boldfont.createRender(FONT_SIZE_NORMAL, 64);
+	boldfont.createRender(FONT_SIZE_HEADER, 64);
+	Serial.println("Renders created for bold font");
+	createRegularLabels();
+	createBoldLabels();
 	createButtons();
 
+	M5EPD_Canvas font(&M5.EPD);
+	font.setTextFont(2);
 	font.loadFont(interregularttf, sizeof(interregularttf));
+	Serial.println("Canvas created and regular loaded...");
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);
-	font.createRender(FONT_SIZE_TITLE, 128);
-	font.createRender(FONT_SIZE_CLOCK, 128);
-	createBoldLabels();
-	createRegularLabels();
+	Serial.println("Renders created for regular font");
 
 	toMainScreen();
 }
