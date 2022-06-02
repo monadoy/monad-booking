@@ -8,10 +8,11 @@
 
 #include "calendarApi.h"
 #include "configServer.h"
-#include "interboldttf.h"
-#include "interregularttf.h"
 
 namespace {
+
+String interBold = "/interbold.ttf";
+String interRegular = "/interregular.ttf";
 
 EPDGUI_Button* btns[BUTTON_SIZE];
 EPDGUI_Textbox* lbls[LABEL_SIZE];
@@ -741,6 +742,7 @@ void createRegularLabels() {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 }
 
+
 void createBoldLabels() {
 	// current booking status label
 	lbls[LABEL_CURRENT_BOOKING]
@@ -808,7 +810,7 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	Serial.println("Starting font creation...");
 	M5EPD_Canvas boldfont(&M5.EPD);
 	boldfont.setTextFont(1);
-	boldfont.loadFont(interboldttf, sizeof(interboldttf));
+	boldfont.loadFont(interBold, LittleFS);
 	Serial.println("Canvas created and bold loaded...");
 	boldfont.createRender(FONT_SIZE_BUTTON, 64);
 	boldfont.createRender(FONT_SIZE_TITLE, 128);
@@ -822,7 +824,7 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 
 	M5EPD_Canvas font(&M5.EPD);
 	font.setTextFont(2);
-	font.loadFont(interregularttf, sizeof(interregularttf));
+	font.loadFont(interRegular, LittleFS);
 	Serial.println("Canvas created and regular loaded...");
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);

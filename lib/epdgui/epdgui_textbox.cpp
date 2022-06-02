@@ -1,8 +1,5 @@
 #include "epdgui_textbox.h"
 
-#include "interboldttf.h"
-#include "interregularttf.h"
-
 uint32_t EPDGUI_Textbox::_textbox_touching_id = 0;
 
 EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16_t color,
