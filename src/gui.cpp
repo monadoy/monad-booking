@@ -51,6 +51,10 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 	}
 }
 
+void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) {
+	object->Draw(mode);
+}
+
 void EPDGUI_Process(void) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
@@ -575,7 +579,7 @@ void hideLoading(bool isHide) {
 	Serial.println("Hideloading called");
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
-	EPDGUI_Draw(UPDATE_MODE_NONE);
+	EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
 	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU);
 }
 
