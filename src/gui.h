@@ -5,6 +5,7 @@
 #include <epdgui_button.h>
 #include <epdgui_textbox.h>
 #include <ezTime.h>
+#include <M5EPD_Driver.h>
 
 #include "configServer.h"
 

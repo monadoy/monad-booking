@@ -9,6 +9,7 @@
 #include "calendarApi.h"
 #include "configServer.h"
 
+
 namespace {
 
 String interBold = "/interbold.ttf";
@@ -170,12 +171,15 @@ void updateScreen() {
 	Serial.println(millis()-beginTime);
 }
 
+
 // hides the next event on the right side
 void hideNextBooking(bool isHide) {
 	if (isHide) {
-		canvasNextEvent.fillRect(0, 0, 308, 540, 0);
+		/* canvasNextEvent.fillRect(0, 0, 308, 540, 0); */
+		canvasNextEvent.fillCanvas(0);
 	} else {
-		canvasNextEvent.fillRect(0, 0, 308, 540, 3);
+		/* canvasNextEvent.fillRect(0, 0, 308, 540, 3); */
+		canvasNextEvent.fillCanvas(3);
 	}
 	// top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
@@ -303,7 +307,8 @@ void hideFreeBooking(bool isHide) {
 }
 
 void loadNextBooking() {
-	canvasNextEvent.fillRect(0, 0, 308, 540, 3);
+	/* canvasNextEvent.fillRect(0, 0, 308, 540, 3); */
+	canvasNextEvent.fillCanvas(3);
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->setColors(3, 15);
 	}
@@ -331,7 +336,8 @@ void loadNextBooking() {
 }
 
 void loadNextFree() {
-	canvasNextEvent.fillRect(0, 0, 308, 540, 0);
+	/* canvasNextEvent.fillRect(0, 0, 308, 540, 0); */
+	canvasNextEvent.fillCanvas(0);
 	// set up the top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->setColors(0, 15);
@@ -361,7 +367,8 @@ void hideCurrentBookingLabels(bool isHide) {
 }
 
 void loadCurrentBooking() {
-	canvasCurrentEvent.fillRect(0, 0, 652, 540, 15);
+	canvasCurrentEvent.fillCanvas(15);
+	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 15); */
 	lbls[LABEL_CLOCK_MID]->setColors(15, 0);
 	lbls[LABEL_RESOURCE]->setColors(15, 0);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(15, 0);
@@ -391,11 +398,11 @@ void loadCurrentBooking() {
 	hideConfirmBooking();
 	hideFreeRoomButton(false);
 	hideCurrentBookingLabels(false);
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 }
 
 void loadCurrentFree() {
-	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+	canvasCurrentEvent.fillCanvas(0);
+	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
 	lbls[LABEL_RESOURCE]->setColors(0, 15);
 	lbls[LABEL_RESOURCE]->SetText(resourceName);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
@@ -439,7 +446,8 @@ void toFreeBooking() {
 	currentScreen = SCREEN_FREEING;
 	hideMainButtons(true);
 	hideMainLabels(true);
-	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
+	canvasCurrentEvent.fillCanvas(0);
 	hideFreeRoomButton(true);
 	hideNextBooking(true);
 	hideCurrentBookingLabels(true);
@@ -519,7 +527,8 @@ void toMainScreen() {
 
 void toSettingsScreen() {
 	currentScreen = SCREEN_SETTINGS;
-	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
+	canvasCurrentEvent.fillCanvas(0);
 	hideMainLabels(true);
 	hideMainButtons(true);
 	hideNextBooking(true);
@@ -535,7 +544,8 @@ void toSettingsScreen() {
 
 void toSetupScreen() {
 	currentScreen = SCREEN_SETUP;
-	canvasCurrentEvent.fillRect(0, 0, 652, 540, 0);
+	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
+	canvasCurrentEvent.fillCanvas(0);
 
 	btns[BUTTON_SETUP]->SetHide(true);
 	btns[BUTTON_CANCELBOOKING]->SetHide(true);
@@ -543,18 +553,22 @@ void toSetupScreen() {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
 	utils::ensureWiFi();
+	String wifiSSID = WiFi.SSID();
+	String wifiPass = utils::getApPassword();
+	const String qrString = "WIFI:S:"+wifiSSID+";T:WPA;P:"+wifiPass+";;";
 	String configData
-	    = "Wifin SSID: " + WiFi.SSID() + "\nLaitteen IP: " + WiFi.localIP().toString();
+	    = "Wifin SSID: " + wifiSSID + "\nLaitteen IP: " + WiFi.localIP().toString();
 	if (!utils::isSetupMode()) {
 		utils::setupMode();
 	}
 	if (utils::isAP()) {
-		configData += "\nAP:n salasana on: " + utils::getApPassword();
+		configData += "\nAP:n salasana on: " + wifiPass;
 	} else {
-		configData += "\n" + utils::getApPassword();
+		configData += "\n" + wifiPass;
 	}
 	Serial.print(configData);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
+	canvasCurrentEvent.qrcode(qrString, 80, 309, 250, 7);
 	updateScreen();
 }
 
@@ -604,7 +618,6 @@ void hideLoading(bool isHide) {
 	Serial.println("Hideloading called");
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	if(!isHide) {
-		canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
 		M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
 	}
