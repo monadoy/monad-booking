@@ -155,11 +155,19 @@ void updateStatus() {
 }
 
 void updateScreen() {
+	int beginTime = millis();
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
-	EPDGUI_Process();
+	Serial.print("Pushing took ");
+	Serial.println(millis()-beginTime);
+	beginTime = millis();
 	EPDGUI_Draw(UPDATE_MODE_NONE);
+	Serial.print("Drawing took ");
+	Serial.println(millis()-beginTime);
+	beginTime = millis();
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+	Serial.print("Updatefull took ");
+	Serial.println(millis()-beginTime);
 }
 
 // hides the next event on the right side
@@ -320,10 +328,6 @@ void loadNextBooking() {
 	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
 		lbls[i]->SetHide(false);
 	}
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
-	EPDGUI_Process();
-	EPDGUI_Draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 }
 
 void loadNextFree() {
@@ -345,10 +349,6 @@ void loadNextFree() {
 	lbls[LABEL_NEXT_EVENT]->SetHide(false);
 	lbls[LABEL_NEXT_EVENT]->setColors(0, 15);
 	lbls[LABEL_NEXT_EVENT]->SetText("Ei seuraavia\nvarauksia");
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
-	EPDGUI_Process();
-	EPDGUI_Draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 }
 
 void hideCurrentBookingLabels(bool isHide) {
@@ -412,7 +412,6 @@ void loadCurrentFree() {
 	hideMainLabels(false);
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
 	btns[BUTTON_SETTINGS]->SetHide(false);
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 }
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
@@ -511,7 +510,11 @@ void toMainScreen() {
 	} else {
 		loadNextBooking();
 	}
+	updateScreen();
+	int beginTime = millis();
 	M5.EPD.Sleep();
+	Serial.print("Sleeping took ");
+	Serial.println(millis()-beginTime);
 }
 
 void toSettingsScreen() {
@@ -600,9 +603,11 @@ void setupButton(epdgui_args_vector_t& args) { toSetupScreen(); }
 void hideLoading(bool isHide) {
 	Serial.println("Hideloading called");
 	lbls[LABEL_LOADING]->SetHide(isHide);
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
-	EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
+	if(!isHide) {
+		canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
+		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
+		M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
+	}
 }
 
 void createButtons() {
