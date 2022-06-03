@@ -60,7 +60,8 @@ const uint16_t FONT_SIZE_TITLE = 64;
 enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETUP, SCREEN_SIZE };
 
 void EPDGUI_AddObject(EPDGUI_Base* object);
-void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_GC16);
+void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode);
+void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_NONE);
 void EPDGUI_Process(void);
 void EPDGUI_Process(int16_t x, int16_t y);
 

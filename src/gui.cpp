@@ -101,16 +101,26 @@ bool checkEventEquality(std::shared_ptr<calapi::Event> event1,
 }
 
 void updateStatus() {
+	int beforeTime = millis();
 	int beginTime = millis();
 	Serial.println("Updating status...");
 	M5.EPD.Active();
 	hideLoading(false);
+	int loadingActive = millis()-beginTime;
+	beginTime = millis();
 
 	utils::ensureWiFi();
+	int ensureTime = millis()-beginTime;
+	beginTime = millis();
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
+	int httpTime = millis()-beginTime;
+	beginTime = millis();
+	
 
 	hideLoading(true);
+	int loadingNotactive = millis()-beginTime;
+	beginTime = millis();
 
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
@@ -127,9 +137,21 @@ void updateStatus() {
 		Serial.println(statusRes.err()->message);
 		M5.EPD.Sleep();
 	}
+	int screenUpdate = millis()-beginTime;
+	Serial.print("Loading active: ");
+	Serial.println(loadingActive);
+	Serial.print("Ensure WiFi: ");
+	Serial.println(ensureTime);
+	Serial.print("Fetching HTTP ");
+	Serial.println(httpTime);
+	Serial.print("Loading deactive: ");
+	Serial.println(loadingNotactive);
+	Serial.print("Screen update: ");
+	Serial.println(screenUpdate);
+	
 	Serial.print("Status update took ");
-	Serial.print(millis()-beginTime);
-	Serial.println("milliseconds");
+	Serial.print(millis()-beforeTime);
+	Serial.println(" milliseconds");
 }
 
 void updateScreen() {
@@ -379,8 +401,8 @@ void loadCurrentFree() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Vapaa");
 	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
-	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
-	hideMainButtons(false);
+	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i")); 
+	hideMainButtons(false); //
 	hideFreeRoomButton(true);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
@@ -580,7 +602,7 @@ void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 	EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU);
+	M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
 }
 
 void createButtons() {
