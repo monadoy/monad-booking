@@ -1,14 +1,9 @@
-#include "gui.h"
-
-#include <WiFi.h>
-
 #include <list>
 #include <map>
-#include <stack>
-
+#include "gui.h"
+#include <WiFi.h>
 #include "calendarApi.h"
 #include "configServer.h"
-
 
 namespace {
 
@@ -74,7 +69,6 @@ String getBatteryPercent() {
 	if (utils::isCharging()) {
 		return "USB";
 	}
-
 	auto clamped = std::min(std::max(M5.getBatteryVoltage(), BAT_LOW), BAT_HIGH);
 	int perc = (float)(clamped - BAT_LOW) / (float)(BAT_HIGH - BAT_LOW) * 100.0f;
 	return String(perc) + "%";
@@ -175,10 +169,8 @@ void updateScreen() {
 // hides the next event on the right side
 void hideNextBooking(bool isHide) {
 	if (isHide) {
-		/* canvasNextEvent.fillRect(0, 0, 308, 540, 0); */
 		canvasNextEvent.fillCanvas(0);
 	} else {
-		/* canvasNextEvent.fillRect(0, 0, 308, 540, 3); */
 		canvasNextEvent.fillCanvas(3);
 	}
 	// top bar
@@ -277,11 +269,13 @@ void hideFreeRoomButton(bool isHide) {
 	} */
 }
 
-void showConfirmBooking(uint16_t time) {
-	lbls[LABEL_CONFIRM_BOOKING]->SetHide(false);
-	lbls[LABEL_CONFIRM_TIME]->SetHide(false);
-	lbls[LABEL_CONFIRM_TIME]->SetText(guimyTZ->dateTime("G:i") + " - "
-	                                  + guimyTZ->dateTime(guimyTZ->now() + time, "G:i"));
+void hideConfirmBooking(uint16_t time, bool isHide) {
+	lbls[LABEL_CONFIRM_BOOKING]->SetHide(isHide);
+	lbls[LABEL_CONFIRM_TIME]->SetHide(isHide);
+	if(!isHide){
+		lbls[LABEL_CONFIRM_TIME]->SetText(guimyTZ->dateTime("G:i") + " - "
+										+ guimyTZ->dateTime(guimyTZ->now() + time, "G:i"));
+	}
 }
 
 void hideMainLabels(bool isHide) {
@@ -289,11 +283,6 @@ void hideMainLabels(bool isHide) {
 	lbls[LABEL_RESOURCE]->SetHide(isHide);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(isHide);
 	lbls[LABEL_BOOK_EVENT]->SetHide(isHide);
-}
-
-void hideConfirmBooking() {
-	lbls[LABEL_CONFIRM_BOOKING]->SetHide(true);
-	lbls[LABEL_CONFIRM_TIME]->SetHide(true);
 }
 
 void hideFreeBooking(bool isHide) {
@@ -307,7 +296,6 @@ void hideFreeBooking(bool isHide) {
 }
 
 void loadNextBooking() {
-	/* canvasNextEvent.fillRect(0, 0, 308, 540, 3); */
 	canvasNextEvent.fillCanvas(3);
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->setColors(3, 15);
@@ -336,7 +324,6 @@ void loadNextBooking() {
 }
 
 void loadNextFree() {
-	/* canvasNextEvent.fillRect(0, 0, 308, 540, 0); */
 	canvasNextEvent.fillCanvas(0);
 	// set up the top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
@@ -368,7 +355,6 @@ void hideCurrentBookingLabels(bool isHide) {
 
 void loadCurrentBooking() {
 	canvasCurrentEvent.fillCanvas(15);
-	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 15); */
 	lbls[LABEL_CLOCK_MID]->setColors(15, 0);
 	lbls[LABEL_RESOURCE]->setColors(15, 0);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(15, 0);
@@ -395,14 +381,13 @@ void loadCurrentBooking() {
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
 	hideFreeBooking(true);
-	hideConfirmBooking();
+	hideConfirmBooking(0, true);
 	hideFreeRoomButton(false);
 	hideCurrentBookingLabels(false);
 }
 
 void loadCurrentFree() {
 	canvasCurrentEvent.fillCanvas(0);
-	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
 	lbls[LABEL_RESOURCE]->setColors(0, 15);
 	lbls[LABEL_RESOURCE]->SetText(resourceName);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
@@ -414,7 +399,7 @@ void loadCurrentFree() {
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
 	hideFreeBooking(true);
-	hideConfirmBooking();
+	hideConfirmBooking(0, true);
 	hideCurrentBookingLabels(true);
 	hideMainLabels(false);
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
@@ -438,7 +423,7 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 	hideMainLabels(true);
 	hideNextBooking(true);
 	hideBookingConfirmationButtons(false);
-	showConfirmBooking(timeToBeBooked);
+	hideConfirmBooking(timeToBeBooked, false);
 	updateScreen();
 }
 
@@ -446,7 +431,6 @@ void toFreeBooking() {
 	currentScreen = SCREEN_FREEING;
 	hideMainButtons(true);
 	hideMainLabels(true);
-	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
 	canvasCurrentEvent.fillCanvas(0);
 	hideFreeRoomButton(true);
 	hideNextBooking(true);
@@ -459,6 +443,7 @@ void toFreeBooking() {
 void makeBooking(uint16_t time) {
 	hideLoading(false);
 	utils::ensureWiFi();
+	int beginTime = millis();
 	calapi::Result<calapi::Event> eventRes
 	    = calapi::insertEvent(token, *guimyTZ, calendarId, UTC.now(), UTC.now() + time);
 
@@ -470,11 +455,14 @@ void makeBooking(uint16_t time) {
 		Serial.println(eventRes.err()->message);
 	}
 	hideLoading(true);
+	Serial.print("makebooking took ");
+	Serial.println(millis()-beginTime);
 }
 
 void deleteBooking() {
 	hideLoading(false);
 	utils::ensureWiFi();
+	int beginTime = millis();
 	calapi::Result<calapi::Event> endedEventRes
 	    = calapi::endEvent(token, *guimyTZ, calendarId, currentEvent->id);
 
@@ -486,6 +474,8 @@ void deleteBooking() {
 		Serial.println(endedEventRes.err()->message);
 	}
 	hideLoading(true);
+	Serial.print("mdeletebooking took ");
+	Serial.println(millis()-beginTime);
 }
 
 void hideSettings(bool isHide) {
@@ -518,6 +508,7 @@ void toMainScreen() {
 	} else {
 		loadNextBooking();
 	}
+	M5.EPD.Active();
 	updateScreen();
 	int beginTime = millis();
 	M5.EPD.Sleep();
@@ -527,7 +518,6 @@ void toMainScreen() {
 
 void toSettingsScreen() {
 	currentScreen = SCREEN_SETTINGS;
-	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
 	canvasCurrentEvent.fillCanvas(0);
 	hideMainLabels(true);
 	hideMainButtons(true);
@@ -544,7 +534,6 @@ void toSettingsScreen() {
 
 void toSetupScreen() {
 	currentScreen = SCREEN_SETUP;
-	/* canvasCurrentEvent.fillRect(0, 0, 652, 540, 0); */
 	canvasCurrentEvent.fillCanvas(0);
 
 	btns[BUTTON_SETUP]->SetHide(true);
@@ -576,7 +565,6 @@ void settingsButton(epdgui_args_vector_t& args) {
 	if (currentScreen == SCREEN_MAIN) {
 		toSettingsScreen();
 	} else {
-		M5.EPD.Active();
 		toMainScreen();
 	}
 }
@@ -615,7 +603,6 @@ void continueButton(epdgui_args_vector_t& args) {}
 void setupButton(epdgui_args_vector_t& args) { toSetupScreen(); }
 
 void hideLoading(bool isHide) {
-	Serial.println("Hideloading called");
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	if(!isHide) {
 		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
@@ -745,7 +732,6 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_CREATOR]);
 
 	// next event desc label
-	// TODO: dynamically change text formatting
 	lbls[LABEL_NEXT_EVENT_DESC]
 	    = new EPDGUI_Textbox(701, 279, 231, 87, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_DESC]);
@@ -892,13 +878,12 @@ void loopGui() {
 			M5.EPD.Active();
 			if (is_finger_up) {
 				EPDGUI_Process();
-				M5.EPD.Sleep();
 				lastActiveTime = millis();
 			} else {
 				EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
-				M5.EPD.Sleep();
 				lastActiveTime = 0;
 			}
+			M5.EPD.Sleep();
 		}
 
 		M5.TP.flush();
