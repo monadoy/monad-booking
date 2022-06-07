@@ -125,13 +125,15 @@ void updateStatus() {
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
 
-		int newBtnIndex = configureMainButtonPos();
-		bool updateLeft = checkEventEquality(currentEvent, ok->currentEvent)&&currentBtnIndex==newBtnIndex;
+		bool leftEventsEqual = checkEventEquality(currentEvent, ok->currentEvent);
 		bool updateRight = checkEventEquality(nextEvent, ok->nextEvent);
 
-		currentBtnIndex = newBtnIndex;
 		nextEvent = ok->nextEvent;
 		currentEvent = ok->currentEvent;
+		int newBtnIndex = configureMainButtonPos(false);
+		bool buttonsEqual = currentBtnIndex==newBtnIndex;
+		bool updateLeft = leftEventsEqual&&buttonsEqual;
+		currentBtnIndex = newBtnIndex;
 		if (currentScreen == SCREEN_MAIN) {
 			toMainScreen(!updateLeft, !updateRight);
 		}
@@ -197,7 +199,7 @@ void hideNextBooking(bool isHide) {
 	}
 }
 
-int configureMainButtonPos() {
+int configureMainButtonPos(bool isHide) {
 	int btnIndex = 4;
 	if (nextEvent == nullptr) {
 		btnIndex = 4;
@@ -223,15 +225,19 @@ int configureMainButtonPos() {
 			                              button_positions[btnIndex].second);
 		}
 	}
+	// configure buttons to be shown
 	for (int i = BUTTON_15MIN; i < BUTTON_15MIN + btnIndex; i++) {
 		btns[i]->SetPos(button_positions[i - 1].first, button_positions[i - 1].second);
-		btns[i]->SetHide(false);
+		btns[i]->SetHide(!isHide);
 	}
+	// hide buttons which cant be pressed
 	if (btnIndex != 4) {
 		for (int i = BUTTON_15MIN + btnIndex; i < BUTTON_CONFIRMBOOKING; i++) {
-			btns[i]->SetHide(true);
+			btns[i]->SetHide(isHide);
 		}
 	}
+	Serial.print("Button index is ");
+	Serial.println(btnIndex);
 	return btnIndex;
 }
 
@@ -241,7 +247,7 @@ void hideMainButtons(bool isHide) {
 			btns[i]->SetHide(isHide);
 		}
 	} else {
-		configureMainButtonPos();
+		configureMainButtonPos(true);
 		btns[BUTTON_SETTINGS]->SetHide(false);
 	}
 	if (nextEvent != nullptr && currentScreen == SCREEN_MAIN && currentEvent == nullptr) {

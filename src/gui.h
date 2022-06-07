@@ -72,7 +72,7 @@ void updateStatus();
 void updateScreen(bool pushLeft, bool pushRight);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
-int configureMainButtonPos();
+int configureMainButtonPos(bool isHide);
 void hideMainButtons(bool isHide);
 time_t roundToFive(time_t endTime);
 void hideBookingConfirmationButtons(bool isHide);
