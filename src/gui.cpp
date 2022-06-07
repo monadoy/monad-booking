@@ -553,34 +553,6 @@ void toSettingsScreen() {
 	updateScreen(true, true);
 }
 
-void toSetupScreen() {
-	currentScreen = SCREEN_SETUP;
-	canvasCurrentEvent.fillCanvas(0);
-
-	btns[BUTTON_SETUP]->SetHide(true);
-	btns[BUTTON_CANCELBOOKING]->SetHide(true);
-
-	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
-	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
-	utils::ensureWiFi();
-	String wifiSSID = WiFi.SSID();
-	String wifiPass = utils::getApPassword();
-	const String qrString = "WIFI:S:" + wifiSSID + ";T:WPA;P:" + wifiPass + ";;";
-	String configData = "Wifin SSID: " + wifiSSID + "\nLaitteen IP: " + WiFi.localIP().toString();
-	if (!utils::isSetupMode()) {
-		utils::setupMode();
-	}
-	if (utils::isAP()) {
-		configData += "\nAP:n salasana on: " + wifiPass;
-	} else {
-		configData += "\n" + wifiPass;
-	}
-	Serial.print(configData);
-	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
-	canvasCurrentEvent.qrcode(qrString, 80, 309, 250, 7);
-	updateScreen(true, true);
-}
-
 void settingsButton(epdgui_args_vector_t& args) {
 	if (currentScreen == SCREEN_MAIN) {
 		toSettingsScreen();
@@ -618,7 +590,7 @@ void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
 void continueButton(epdgui_args_vector_t& args) {}
 
-void setupButton(epdgui_args_vector_t& args) { toSetupScreen(); }
+void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
 void hideLoading(bool isHide) {
 	if (isHide) {
@@ -937,6 +909,34 @@ void clearDebug() {
 	lbls[LABEL_ERROR]->SetText("");
 	lbls[LABEL_ERROR]->SetHide(true);
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+}
+
+void toSetupScreen() {
+	currentScreen = SCREEN_SETUP;
+	canvasCurrentEvent.fillCanvas(0);
+
+	btns[BUTTON_SETUP]->SetHide(true);
+	btns[BUTTON_CANCELBOOKING]->SetHide(true);
+
+	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
+	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
+	utils::ensureWiFi();
+	String wifiSSID = WiFi.SSID();
+	String wifiPass = utils::getApPassword();
+	const String qrString = "WIFI:S:" + wifiSSID + ";T:WPA;P:" + wifiPass + ";;";
+	String configData = "Wifin SSID: " + wifiSSID + "\nLaitteen IP: " + WiFi.localIP().toString();
+	if (!utils::isSetupMode()) {
+		utils::setupMode();
+	}
+	if (utils::isAP()) {
+		configData += "\nAP:n salasana on: " + wifiPass;
+	} else {
+		configData += "\n" + wifiPass;
+	}
+	Serial.print(configData);
+	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
+	canvasCurrentEvent.qrcode(qrString, 80, 309, 250, 7);
+	updateScreen(true, true);
 }
 
 void updateGui() { updateStatus(); }

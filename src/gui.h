@@ -94,7 +94,6 @@ void hideSettings(bool isHide);
 
 void toMainScreen(bool updateLeft, bool updateRight);
 void toSettingsScreen();
-void toSetupScreen();
 
 void settingsButton(epdgui_args_vector_t& args);
 void fifteenButton(epdgui_args_vector_t& args);
@@ -122,5 +121,6 @@ void loopGui();
 void debug(String err);
 void clearDebug();
 void updateGui();
+void toSetupScreen();
 } // namespace gui
 #endif

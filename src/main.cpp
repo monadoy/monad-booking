@@ -97,6 +97,8 @@ void setup() {
 		Serial.println("Entering setup-mode...");
 		// Setupmode
 		utils::setupMode();
+		gui::initGui(&myTZ, configStore.get());
+		gui::toSetupScreen();
 		// Initialize Configserver
 		// TODO: this is currently thrown away after setup() ends
 		Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
