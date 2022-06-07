@@ -69,10 +69,10 @@ void EPDGUI_Process(int16_t x, int16_t y);
 String getBatteryPercent();
 String getWifiStatus();
 void updateStatus();
-void updateScreen();
+void updateScreen(bool pushLeft, bool pushRight);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
-void configureMainButtonPos();
+int configureMainButtonPos();
 void hideMainButtons(bool isHide);
 time_t roundToFive(time_t endTime);
 void hideBookingConfirmationButtons(bool isHide);
@@ -92,7 +92,7 @@ void makeBooking(uint16_t time);
 void deleteBooking();
 void hideSettings(bool isHide);
 
-void toMainScreen();
+void toMainScreen(bool updateLeft, bool updateRight);
 void toSettingsScreen();
 void toSetupScreen();
 

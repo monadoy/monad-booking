@@ -1,7 +1,10 @@
+#include "gui.h"
+
+#include <WiFi.h>
+
 #include <list>
 #include <map>
-#include "gui.h"
-#include <WiFi.h>
+
 #include "calendarApi.h"
 #include "configServer.h"
 
@@ -28,6 +31,7 @@ const uint32_t BAT_LOW = 3300;
 const uint32_t BAT_HIGH = 4200;
 
 uint16_t currentScreen = SCREEN_MAIN;
+uint16_t currentBtnIndex = 4;
 
 std::list<EPDGUI_Base*> epdgui_object_list;
 uint32_t obj_id = 1;
@@ -47,9 +51,7 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 	}
 }
 
-void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) {
-	object->Draw(mode);
-}
+void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) { object->Draw(mode); }
 
 void EPDGUI_Process(void) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
@@ -84,14 +86,18 @@ String getWifiStatus() {
 bool checkEventEquality(std::shared_ptr<calapi::Event> event1,
                         std::shared_ptr<calapi::Event> event2) {
 	if (!!event1 != !!event2) {
+		Serial.println("1");
 		return false;
 	}
 	if (!event1 && !event2) {
+		Serial.println("2");
 		return true;
 	}
 	if (*event1 == *event2) {
+		Serial.println("3");
 		return true;
 	}
+	Serial.println("4");
 	return false;
 }
 
@@ -101,30 +107,33 @@ void updateStatus() {
 	Serial.println("Updating status...");
 	M5.EPD.Active();
 	hideLoading(false);
-	int loadingActive = millis()-beginTime;
+	int loadingActive = millis() - beginTime;
 	beginTime = millis();
 
 	utils::ensureWiFi();
-	int ensureTime = millis()-beginTime;
+	int ensureTime = millis() - beginTime;
 	beginTime = millis();
 	calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
-	int httpTime = millis()-beginTime;
+	int httpTime = millis() - beginTime;
 	beginTime = millis();
-	
 
 	hideLoading(true);
-	int loadingNotactive = millis()-beginTime;
+	int loadingNotactive = millis() - beginTime;
 	beginTime = millis();
 
 	if (statusRes.isOk()) {
 		auto ok = statusRes.ok();
 
+		int newBtnIndex = configureMainButtonPos();
+		bool updateLeft = checkEventEquality(currentEvent, ok->currentEvent)&&currentBtnIndex==newBtnIndex;
+		bool updateRight = checkEventEquality(nextEvent, ok->nextEvent);
+
+		currentBtnIndex = newBtnIndex;
 		nextEvent = ok->nextEvent;
 		currentEvent = ok->currentEvent;
-
 		if (currentScreen == SCREEN_MAIN) {
-			toMainScreen();
+			toMainScreen(!updateLeft, !updateRight);
 		}
 
 	} else {
@@ -132,7 +141,7 @@ void updateStatus() {
 		Serial.println(statusRes.err()->message);
 		M5.EPD.Sleep();
 	}
-	int screenUpdate = millis()-beginTime;
+	int screenUpdate = millis() - beginTime;
 	Serial.print("Loading active: ");
 	Serial.println(loadingActive);
 	Serial.print("Ensure WiFi: ");
@@ -143,28 +152,33 @@ void updateStatus() {
 	Serial.println(loadingNotactive);
 	Serial.print("Screen update: ");
 	Serial.println(screenUpdate);
-	
+
 	Serial.print("Status update took ");
-	Serial.print(millis()-beforeTime);
+	Serial.print(millis() - beforeTime);
 	Serial.println(" milliseconds");
 }
 
-void updateScreen() {
+void updateScreen(bool pushLeft, bool pushRight) {
 	int beginTime = millis();
-	canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
-	canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
+	if (pushLeft) {
+		canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
+		Serial.println("Pushing current event background");
+	}
+	if (pushRight) {
+		canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
+		Serial.println("Pushing next event background");
+	}
 	Serial.print("Pushing took ");
-	Serial.println(millis()-beginTime);
+	Serial.println(millis() - beginTime);
 	beginTime = millis();
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 	Serial.print("Drawing took ");
-	Serial.println(millis()-beginTime);
+	Serial.println(millis() - beginTime);
 	beginTime = millis();
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 	Serial.print("Updatefull took ");
-	Serial.println(millis()-beginTime);
+	Serial.println(millis() - beginTime);
 }
-
 
 // hides the next event on the right side
 void hideNextBooking(bool isHide) {
@@ -183,7 +197,7 @@ void hideNextBooking(bool isHide) {
 	}
 }
 
-void configureMainButtonPos() {
+int configureMainButtonPos() {
 	int btnIndex = 4;
 	if (nextEvent == nullptr) {
 		btnIndex = 4;
@@ -218,6 +232,7 @@ void configureMainButtonPos() {
 			btns[i]->SetHide(true);
 		}
 	}
+	return btnIndex;
 }
 
 void hideMainButtons(bool isHide) {
@@ -272,9 +287,9 @@ void hideFreeRoomButton(bool isHide) {
 void hideConfirmBooking(uint16_t time, bool isHide) {
 	lbls[LABEL_CONFIRM_BOOKING]->SetHide(isHide);
 	lbls[LABEL_CONFIRM_TIME]->SetHide(isHide);
-	if(!isHide){
+	if (!isHide) {
 		lbls[LABEL_CONFIRM_TIME]->SetText(guimyTZ->dateTime("G:i") + " - "
-										+ guimyTZ->dateTime(guimyTZ->now() + time, "G:i"));
+		                                  + guimyTZ->dateTime(guimyTZ->now() + time, "G:i"));
 	}
 }
 
@@ -393,8 +408,8 @@ void loadCurrentFree() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Vapaa");
 	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
-	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i")); 
-	hideMainButtons(false); //
+	lbls[LABEL_CLOCK_MID]->SetText(guimyTZ->dateTime("G:i"));
+	hideMainButtons(false);  //
 	hideFreeRoomButton(true);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
@@ -424,7 +439,7 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 	hideNextBooking(true);
 	hideBookingConfirmationButtons(false);
 	hideConfirmBooking(timeToBeBooked, false);
-	updateScreen();
+	updateScreen(true, true);
 }
 
 void toFreeBooking() {
@@ -437,7 +452,7 @@ void toFreeBooking() {
 	hideCurrentBookingLabels(true);
 	hideFreeConfirmationButtons(false);
 	hideFreeBooking(false);
-	updateScreen();
+	updateScreen(true, true);
 }
 
 void makeBooking(uint16_t time) {
@@ -456,7 +471,7 @@ void makeBooking(uint16_t time) {
 	}
 	hideLoading(true);
 	Serial.print("makebooking took ");
-	Serial.println(millis()-beginTime);
+	Serial.println(millis() - beginTime);
 }
 
 void deleteBooking() {
@@ -475,7 +490,7 @@ void deleteBooking() {
 	}
 	hideLoading(true);
 	Serial.print("mdeletebooking took ");
-	Serial.println(millis()-beginTime);
+	Serial.println(millis() - beginTime);
 }
 
 void hideSettings(bool isHide) {
@@ -493,7 +508,7 @@ void hideSettings(bool isHide) {
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 }
 
-void toMainScreen() {
+void toMainScreen(bool updateLeft, bool updateRight) {
 	currentScreen = SCREEN_MAIN;
 	hideSettings(true);
 
@@ -509,11 +524,11 @@ void toMainScreen() {
 		loadNextBooking();
 	}
 	M5.EPD.Active();
-	updateScreen();
+	updateScreen(updateLeft, updateRight);
 	int beginTime = millis();
 	M5.EPD.Sleep();
 	Serial.print("Sleeping took ");
-	Serial.println(millis()-beginTime);
+	Serial.println(millis() - beginTime);
 }
 
 void toSettingsScreen() {
@@ -529,7 +544,7 @@ void toSettingsScreen() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 
-	updateScreen();
+	updateScreen(true, true);
 }
 
 void toSetupScreen() {
@@ -544,9 +559,8 @@ void toSetupScreen() {
 	utils::ensureWiFi();
 	String wifiSSID = WiFi.SSID();
 	String wifiPass = utils::getApPassword();
-	const String qrString = "WIFI:S:"+wifiSSID+";T:WPA;P:"+wifiPass+";;";
-	String configData
-	    = "Wifin SSID: " + wifiSSID + "\nLaitteen IP: " + WiFi.localIP().toString();
+	const String qrString = "WIFI:S:" + wifiSSID + ";T:WPA;P:" + wifiPass + ";;";
+	String configData = "Wifin SSID: " + wifiSSID + "\nLaitteen IP: " + WiFi.localIP().toString();
 	if (!utils::isSetupMode()) {
 		utils::setupMode();
 	}
@@ -558,14 +572,14 @@ void toSetupScreen() {
 	Serial.print(configData);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
 	canvasCurrentEvent.qrcode(qrString, 80, 309, 250, 7);
-	updateScreen();
+	updateScreen(true, true);
 }
 
 void settingsButton(epdgui_args_vector_t& args) {
 	if (currentScreen == SCREEN_MAIN) {
 		toSettingsScreen();
 	} else {
-		toMainScreen();
+		toMainScreen(true, true);
 	}
 }
 
@@ -584,16 +598,14 @@ void tillNextButton(epdgui_args_vector_t& args) {
 
 void confirmBookingButton(epdgui_args_vector_t& args) {
 	makeBooking(timeToBeBooked);
-	toMainScreen();
+	toMainScreen(true, true);
 }
 
-void cancelButton(epdgui_args_vector_t& args) {
-	toMainScreen();
-}
+void cancelButton(epdgui_args_vector_t& args) { toMainScreen(true, true); }
 
 void confirmFreeButton(epdgui_args_vector_t& args) {
 	deleteBooking();
-	toMainScreen();
+	toMainScreen(true, true);
 }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
@@ -603,8 +615,18 @@ void continueButton(epdgui_args_vector_t& args) {}
 void setupButton(epdgui_args_vector_t& args) { toSetupScreen(); }
 
 void hideLoading(bool isHide) {
-	lbls[LABEL_LOADING]->SetHide(isHide);
-	if(!isHide) {
+	if (isHide) {
+		if (currentEvent && currentScreen == SCREEN_MAIN) {
+			lbls[LABEL_LOADING]->setColors(15, 15);
+		} else {
+			lbls[LABEL_LOADING]->setColors(0, 0);
+		}
+		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
+		M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
+		lbls[LABEL_LOADING]->SetHide(isHide);
+	} else {
+		lbls[LABEL_LOADING]->SetHide(isHide);
+		lbls[LABEL_LOADING]->setColors(0, 15);
 		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
 		M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
 	}
@@ -860,7 +882,7 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	createRegularLabels();
 
 	M5.EPD.Active();
-	toMainScreen();
+	toMainScreen(true, true);
 }
 
 // Variables to store update-data from loop
