@@ -1,4 +1,7 @@
-const char* GOOGLE_API_FULL_CHAIN_CERT
+#ifndef CERT_H
+#define CERT_H
+
+const char* const GOOGLE_API_FULL_CHAIN_CERT
     = "-----BEGIN CERTIFICATE-----\n"
       "MIIGEDCCBPigAwIBAgIQEw49vCzgVUUKI2tIdoSCmTANBgkqhkiG9w0BAQsFADBG\n"
       "MQswCQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExM\n"
@@ -118,3 +121,5 @@ const char* GOOGLE_API_FULL_CHAIN_CERT
       "DKqC5JlR3XC321Y9YeRq4VzW9v493kHMB65jUr9TU/Qr6cf9tveCX4XSQRjbgbME\n"
       "HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==\n"
       "-----END CERTIFICATE-----\n";
+
+#endif
