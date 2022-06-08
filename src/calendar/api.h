@@ -49,7 +49,7 @@ using Result = utils::Result<T, Error>;
 class API {
   public:
 	virtual ~API() = default;
-	virtual void refreshAuth() = 0;
+	virtual bool refreshAuth() = 0;
 	virtual Result<CalendarStatus> fetchCalendarStatus() = 0;
 };
 
