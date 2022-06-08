@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "SafeTimezone.h"
 #include "configServer.h"
 #include "gui.h"
 #include "utils.h"
@@ -22,6 +23,8 @@
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 const char* IANA_TZ = "Europe/Helsinki";
 Timezone myTZ;
+SafeTimezone* safeMyTZ;
+SafeTimezone* safeUTC;
 
 M5EPD_Canvas canvas(&M5.EPD);
 
@@ -66,6 +69,9 @@ void setup() {
 		Serial.println("Please ensure your partition layout has spiffs partition defined");
 		return;
 	}
+
+	safeMyTZ = new SafeTimezone(myTZ);
+	safeUTC = new SafeTimezone(UTC);
 
 	configStore = std::make_shared<Config::ConfigStore>(LittleFS);
 
@@ -114,7 +120,7 @@ void setup() {
 }
 
 bool shouldShutDown() {
-	time_t t = myTZ.now();
+	time_t t = safeMyTZ->now();
 	tmElements_t tm;
 	ezt::breakTime(t, tm);
 
@@ -123,7 +129,7 @@ bool shouldShutDown() {
 }
 
 time_t calculateTurnOnTimeUTC() {
-	time_t now = myTZ.now();
+	time_t now = safeMyTZ->now();
 
 	tmElements_t tm;
 	ezt::breakTime(now, tm);
@@ -134,7 +140,7 @@ time_t calculateTurnOnTimeUTC() {
 	tm.Minute = 5;
 	tm.Second = 0;
 
-	return myTZ.tzTime(ezt::makeTime(tm));
+	return safeMyTZ->tzTime(ezt::makeTime(tm));
 }
 
 void showBootLog() {
@@ -167,9 +173,9 @@ void shutDown() {
 
 	time_t turnOnTimeUTC = calculateTurnOnTimeUTC();
 
-	String turnOnTimeStr = myTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
+	String turnOnTimeStr = safeMyTZ->dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
 
-	const String log = "[" + myTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
+	const String log = "[" + safeMyTZ->dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
 	Serial.println(log);
 	utils::addBootLogEntry(log);
 
