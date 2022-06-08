@@ -9,6 +9,10 @@
 
 namespace utils {
 
+struct Error {
+	String message;
+};
+
 /**
  * Contains either a successful result or an error.
  * Check first which value is contained with functions isOk() or isErr().
