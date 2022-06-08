@@ -157,7 +157,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 
 	status->name = doc["summary"].as<String>();
 	JsonArray items = doc["items"].as<JsonArray>();
-	time_t now = _utc.now();
+	now = _utc.now();
 
 	for (JsonObject item : items) {
 		std::shared_ptr<Event> event = extractEvent(item);
