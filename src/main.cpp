@@ -22,6 +22,8 @@
 // Provide official timezone names
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 const char* IANA_TZ = "Europe/Helsinki";
+
+// TODO: Force everyone to use thread safe version
 Timezone myTZ;
 SafeTimezone* safeMyTZ;
 SafeTimezone* safeUTC;
