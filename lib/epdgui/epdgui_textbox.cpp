@@ -127,9 +127,9 @@ void EPDGUI_Textbox::Draw(M5EPD_Canvas* canvas) {
 
 void EPDGUI_Textbox::Bind(int16_t event, void (*func_cb)(epdgui_args_vector_t&)) {}
 
-void EPDGUI_Textbox::UpdateState(int16_t x, int16_t y) {
+bool EPDGUI_Textbox::UpdateState(int16_t x, int16_t y) {
 	if (!_isenable) {
-		return;
+		return false;
 	}
 
 	int16_t state = _state;
@@ -143,6 +143,7 @@ void EPDGUI_Textbox::UpdateState(int16_t x, int16_t y) {
 	}
 
 	SetState(state);
+	return false;
 }
 
 void EPDGUI_Textbox::SetState(int16_t state) {

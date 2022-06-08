@@ -99,11 +99,11 @@ void EPDGUI_Switch::Bind(int16_t state, void (* func_cb)(epdgui_args_vector_t&))
     this->_func_cb_array[state] = func_cb;
 }
 
-void EPDGUI_Switch::UpdateState(int16_t x, int16_t y)
+bool EPDGUI_Switch::UpdateState(int16_t x, int16_t y)
 {
     if(!_isenable || _ishide)
     {
-        return;
+        return false;
     }
 
     bool is_in_area = isInBox(x, y);
@@ -134,6 +134,7 @@ void EPDGUI_Switch::UpdateState(int16_t x, int16_t y)
             }
         }
     }
+    return false;
 }
 
 void EPDGUI_Switch::setState(int16_t state)

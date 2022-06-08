@@ -1,6 +1,4 @@
 #include "epdgui_button.h"
-#include "interregularttf.h"
-#include "interboldttf.h"
 
 EPDGUI_Button::EPDGUI_Button(int16_t x, int16_t y, int16_t w, int16_t h): 
 EPDGUI_Base(x, y, w, h)
@@ -31,13 +29,6 @@ EPDGUI_Base(x, y, w, h)
     
     this->_CanvasNormal = new M5EPD_Canvas(&M5.EPD);
     this->_CanvasPressed = new M5EPD_Canvas(&M5.EPD);
-    /* if(_use_bold){
-        this->_CanvasNormal->loadFont(interboldttf, sizeof(interboldttf));
-        this->_CanvasPressed->loadFont(interboldttf, sizeof(interboldttf));
-    } else {
-        this->_CanvasNormal->loadFont(interregularttf, sizeof(interregularttf));
-        this->_CanvasPressed->loadFont(interregularttf, sizeof(interregularttf));
-    } */
 
     if(!_CanvasNormal->isRenderExist(_size)){
         _CanvasNormal->createRender(_size, 120);
@@ -160,11 +151,11 @@ void EPDGUI_Button::Bind(int16_t event, void (* func_cb)(epdgui_args_vector_t&))
     }
 }
 
-void EPDGUI_Button::UpdateState(int16_t x, int16_t y)
+bool EPDGUI_Button::UpdateState(int16_t x, int16_t y)
 {
     if(!_isenable || _ishide)
     {
-        return;
+        return false;
     }
 
     bool is_in_area = isInBox(x, y);
@@ -180,7 +171,9 @@ void EPDGUI_Button::UpdateState(int16_t x, int16_t y)
             {
                 _pressed_cb(_pressed_cb_args);
             }
+            
         }
+        return true;
     }
     else
     {
@@ -193,6 +186,7 @@ void EPDGUI_Button::UpdateState(int16_t x, int16_t y)
                 _released_cb(_released_cb_args);
             }
         }
+        return false;
     }
 }
 

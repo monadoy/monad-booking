@@ -12,7 +12,7 @@ public:
     void Draw(m5epd_update_mode_t mode);
     void Draw(M5EPD_Canvas* canvas);
     void Bind(int16_t event, void (* func_cb)(epdgui_args_vector_t&));
-    void UpdateState(int16_t x, int16_t y);
+    bool UpdateState(int16_t x, int16_t y);
 
     void Add(EPDGUI_Switch* object) {_object_list.push_back(object);}
     void SetExclusive(bool isExclusive) {_is_exclusive = isExclusive;}

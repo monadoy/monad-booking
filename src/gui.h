@@ -63,8 +63,8 @@ enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETU
 void EPDGUI_AddObject(EPDGUI_Base* object);
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode);
 void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_NONE);
-void EPDGUI_Process(void);
-void EPDGUI_Process(int16_t x, int16_t y);
+bool EPDGUI_Process(void);
+bool EPDGUI_Process(int16_t x, int16_t y);
 
 String getBatteryPercent();
 String getWifiStatus();

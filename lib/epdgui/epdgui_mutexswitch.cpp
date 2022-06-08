@@ -34,11 +34,12 @@ void EPDGUI_MutexSwitch::Bind(int16_t event, void (* func_cb)(epdgui_args_vector
 
 }
 
-void EPDGUI_MutexSwitch::UpdateState(int16_t x, int16_t y)
+bool EPDGUI_MutexSwitch::UpdateState(int16_t x, int16_t y)
 {
+    return false; // this is deprecated but used nowhere
     if(!_isenable)
     {
-        return;
+        return false;
     }
 
     std::list<EPDGUI_Switch*>::iterator pressed_sw = _object_list.end();
@@ -61,12 +62,12 @@ void EPDGUI_MutexSwitch::UpdateState(int16_t x, int16_t y)
 
     if(!_is_exclusive)
     {
-        return;
+        return false;
     }
 
     if(pressed_sw == _object_list.end())
     {
-        return;
+        return false;
     }
 
     for(std::list<EPDGUI_Switch*>::iterator p = _object_list.begin(); p != _object_list.end(); p++)

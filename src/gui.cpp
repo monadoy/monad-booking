@@ -36,6 +36,8 @@ uint16_t currentBtnIndex = 4;
 std::list<EPDGUI_Base*> epdgui_object_list;
 uint32_t obj_id = 1;
 
+bool needToPutSleep = true;
+
 std::vector<std::pair<int, int>> button_positions
     = {{80, 306}, {223, 306}, {371, 306}, {80, 399}, {223, 399}};
 
@@ -53,18 +55,28 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) { object->Draw(mode); }
 
-void EPDGUI_Process(void) {
+bool EPDGUI_Process(void) {
+	bool isGoingToSleep = false;
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
-		(*p)->UpdateState(-1, -1);
+		bool screenGoingToUpdate = (*p)->UpdateState(-1, -1);
+		if(screenGoingToUpdate) {
+			isGoingToSleep = true;
+		}
 	}
+	return isGoingToSleep;
 }
 
-void EPDGUI_Process(int16_t x, int16_t y) {
+bool EPDGUI_Process(int16_t x, int16_t y) {
+	bool isGoingToSleep = false;
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
-		(*p)->UpdateState(x, y);
+		bool screenGoingToUpdate = (*p)->UpdateState(x, y);
+		if(screenGoingToUpdate) {
+			isGoingToSleep = true;
+		}
 	}
+	return isGoingToSleep;
 }
 
 String getBatteryPercent() {
@@ -643,40 +655,40 @@ void createButtons() {
 
 	// book till next event button
 	btns[BUTTON_TILLNEXT]
-	    = new EPDGUI_Button("Seuraavaan tapahtumaan", 223, 399, 365, 77, 15, 0, 0, true);
+	    = new EPDGUI_Button("SEURAAVAAN ASTI", 223, 399, 365, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_TILLNEXT]);
 	btns[BUTTON_TILLNEXT]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_TILLNEXT]);
 	btns[BUTTON_TILLNEXT]->Bind(EPDGUI_Button::EVENT_RELEASED, tillNextButton);
 
 	// confirm booking button
 	btns[BUTTON_CONFIRMBOOKING]
-	    = new EPDGUI_Button("Varaa huone", 684, 399, 212, 77, 15, 0, 0, true);
+	    = new EPDGUI_Button("VARAA HUONE", 684, 399, 232, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_CONFIRMBOOKING]);
 	btns[BUTTON_CONFIRMBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
 	                                     btns[BUTTON_CONFIRMBOOKING]);
 	btns[BUTTON_CONFIRMBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, confirmBookingButton);
 
 	// cancel booking button
-	btns[BUTTON_CANCELBOOKING] = new EPDGUI_Button("Peruuta", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_CANCELBOOKING] = new EPDGUI_Button("PERUUTA", 521, 399, 157, 77, 0, 15, 15, true);
 	EPDGUI_AddObject(btns[BUTTON_CANCELBOOKING]);
 	btns[BUTTON_CANCELBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
 	                                    btns[BUTTON_CANCELBOOKING]);
 	btns[BUTTON_CANCELBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
 
 	// confirm booking button
-	btns[BUTTON_CONFIRMFREE] = new EPDGUI_Button("Vapauta", 684, 399, 212, 77, 15, 0, 0, true);
+	btns[BUTTON_CONFIRMFREE] = new EPDGUI_Button("VAPAUTA", 684, 399, 167, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_CONFIRMFREE]);
 	btns[BUTTON_CONFIRMFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CONFIRMFREE]);
 	btns[BUTTON_CONFIRMFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, confirmFreeButton);
 
 	// cancel booking button
-	btns[BUTTON_CANCELFREE] = new EPDGUI_Button("Peruuta", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_CANCELFREE] = new EPDGUI_Button("PERUUTA", 521, 399, 157, 77, 0, 15, 15, true);
 	EPDGUI_AddObject(btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
 
 	// free room button
-	btns[BUTTON_FREEROOM] = new EPDGUI_Button("Vapauta varaus", 80, 399, 242, 77, 0, 15, 15, true);
+	btns[BUTTON_FREEROOM] = new EPDGUI_Button("VAPAUTA VARAUS", 80, 399, 287, 77, 0, 15, 15, true);
 	EPDGUI_AddObject(btns[BUTTON_FREEROOM]);
 	btns[BUTTON_FREEROOM]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_FREEROOM]);
 	btns[BUTTON_FREEROOM]->Bind(EPDGUI_Button::EVENT_RELEASED, freeRoomButton);
@@ -689,7 +701,7 @@ void createButtons() {
 	btns[BUTTON_CONTINUE]->SetHide(true);
 
 	// setup mode
-	btns[BUTTON_SETUP] = new EPDGUI_Button("Setupmode", 684, 399, 212, 77, 15, 0, 0, true);
+	btns[BUTTON_SETUP] = new EPDGUI_Button("SETUP", 684, 399, 157, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_SETUP]);
 	btns[BUTTON_SETUP]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETUP]);
 	btns[BUTTON_SETUP]->Bind(EPDGUI_Button::EVENT_RELEASED, setupButton);
@@ -877,13 +889,15 @@ void loopGui() {
 			lastPosY = M5.TP.readFingerY(0);
 			M5.EPD.Active();
 			if (is_finger_up) {
-				EPDGUI_Process();
+				needToPutSleep = !EPDGUI_Process();
 				lastActiveTime = millis();
 			} else {
-				EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
+				needToPutSleep = !EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
 				lastActiveTime = 0;
 			}
-			M5.EPD.Sleep();
+			if(needToPutSleep) {
+				M5.EPD.Sleep();
+			}
 		}
 
 		M5.TP.flush();
