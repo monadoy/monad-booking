@@ -3,6 +3,10 @@
 #include "WiFi.h"
 #include "apiTaskEvents.h"
 
+#define API_QUEUE_LENGTH 10
+#define API_TASK_PRIORITY 5
+#define API_TASK_STACK_SIZE 2048
+
 namespace cal {
 
 void task(void* arg) {
@@ -52,8 +56,9 @@ void eventHandler(void* arg, esp_event_base_t base, int32_t id, void* eventData)
 }
 
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
-	xTaskCreate(task, "API Task", 2048, static_cast<void*>(this), 5, &_taskHandle);
-	_queueHandle = xQueueCreate(10, sizeof(APITask::QueueElement*));
+	xTaskCreate(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this), API_TASK_PRIORITY,
+	            &_taskHandle);
+	_queueHandle = xQueueCreate(API_QUEUE_LENGTH, sizeof(APITask::QueueElement*));
 
 	esp_event_handler_register(calevents::REQUEST, ESP_EVENT_ANY_ID, eventHandler,
 	                           static_cast<void*>(this));
