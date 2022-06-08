@@ -7,7 +7,7 @@
 
 namespace calevents {
 
-esp_event_base_t const REQUEST = "REQUEST";
+esp_event_base_t const REQUEST = "calevents::REQUEST";
 
 enum Request : uint32_t { REQUEST_CALENDAR_STATUS, REQUEST_INSERT, REQUEST_END };
 
@@ -20,7 +20,7 @@ struct RequestEndData {
 	String eventId;
 };
 
-esp_event_base_t const RESPONSE = "RESPONSE";
+esp_event_base_t const RESPONSE = "calevents::RESPONSE";
 
 enum Response : uint32_t { RESPONSE_CALENDAR_STATUS, RESPONSE_INSERT, RESPONSE_END };
 
