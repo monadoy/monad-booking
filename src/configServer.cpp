@@ -4,32 +4,35 @@
 
 namespace Config {
 
-void ConfigStore::loadConfig(const String& fileName) {
+void ConfigStore::loadConfig() {
 	File configFileHandle;
 
 	Serial.println("Trying to load config from flash...");
 
-	configFileHandle = this->fs_.open(fileName, FILE_READ);
+	// Release old memory if it exists
+	config_.clear();
+
+	configFileHandle = fs_.open(configFileName_ + ".msgpack", FILE_READ);
 	if (configFileHandle) {
-		auto err = deserializeMsgPack(this->config_, configFileHandle);
+		auto err = deserializeMsgPack(config_, configFileHandle);
 		if (err) {
 			Serial.print("Cannot deserialize ");
-			Serial.println(fileName);
+			Serial.println(configFileName_ + ".msgpack");
 		}
-		Serial.print(fileName);
+		Serial.print(configFileName_ + ".msgpack");
 		Serial.println(" loaded from flash");
 		return;
 	}
 
 	Serial.println("FALLBACK: Trying to load config.json from flash...");
 
-	configFileHandle = fs_.open("/config.json", FILE_READ);
+	configFileHandle = fs_.open(configFileName_ + ".json", FILE_READ);
 	if (configFileHandle) {
-		auto err = deserializeJson(this->config_, configFileHandle);
+		auto err = deserializeJson(config_, configFileHandle);
 		if (err) {
-			Serial.println("Cannot deserialize config.json");
+			Serial.println("Cannot deserialize " + configFileName_ + ".json");
 		}
-		Serial.println("/config.json loaded from flash");
+		Serial.println(configFileName_ + ".json loaded from flash");
 		return;
 	}
 
@@ -40,7 +43,7 @@ void ConfigStore::loadConfig(const String& fileName) {
 Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
 	File configFileHandle;
 
-	configFileHandle = fs_.open(this->configFileName_, FILE_WRITE);
+	configFileHandle = fs_.open(configFileName_ + ".msgpack", FILE_WRITE);
 
 	if (!configFileHandle) {
 		String errMsg = "Cannot open configfile for writing";
@@ -53,13 +56,11 @@ Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
 	serializeMsgPack(newConfig, configString);
 	configFileHandle.print(configString);
 
-	config_ = newConfig;
-
 	return Result<bool>::makeOk(std::make_shared<bool>(true));
 };
 
 Result<bool> ConfigStore::remove() {
-	this->config_.clear();
+	config_.clear();
 	auto err = fs_.remove(configFileName_);
 	return !err ? Result<bool>::makeOk(std::make_shared<bool>(true))
 	            : Result<bool>::makeErr(
@@ -68,7 +69,7 @@ Result<bool> ConfigStore::remove() {
 
 Result<String> ConfigStore::getTokenString() {
 	String tokenString = "";
-	serializeJson(this->config_["gcalsettings"]["token"], tokenString);
+	serializeJson(config_["gcalsettings"]["token"], tokenString);
 	if (tokenString.isEmpty()) {
 		return Result<String>::makeErr(
 		    std::make_shared<ConfigError_t>(ConfigError_t{.errorMessage = "Cannot get token"}));
@@ -82,37 +83,41 @@ bool ConfigServer::canHandle(AsyncWebServerRequest* request) {
 
 void ConfigServer::handleRequest(AsyncWebServerRequest* request) {
 	AsyncResponseStream* response = request->beginResponseStream("application/json");
-	auto config = this->configStore_->getConfigJson();
+	auto config = configStore_->getConfigJson();
 	serializeJson(config, *response);
 	request->send(response);
 };
 
 void ConfigServer::start() {
-	this->server_ = new AsyncWebServer(this->port_);
-	this->server_->addHandler(this);
+	server_ = new AsyncWebServer(port_);
+	server_->addHandler(this);
 
 	AsyncCallbackJsonWebHandler* configHandler = new AsyncCallbackJsonWebHandler(
 	    "/config", [&](AsyncWebServerRequest* request, JsonVariant& configJson) {
 		    // TODO: Probably good idea to validate the config before writing, somehow
 		    Serial.println("Writing new config to filesystem...");
 
-		    auto result = this->configStore_->saveConfig(configJson);
+		    auto result = configStore_->saveConfig(configJson);
+
+		    // Load config to keep internal state updated
+		    configStore_->loadConfig();
+
 		    result.isOk() ? request->send(204)
 		                  : request->send(500, "application/json",
 		                                  "{\"error\":\"" + result.err()->errorMessage + "\"}");
 	    });
 
-	this->server_->addHandler(configHandler);
+	server_->addHandler(configHandler);
 
-	this->server_->serveStatic("/", LittleFS, "/webroot/")
+	server_->serveStatic("/", LittleFS, "/webroot/")
 	    .setDefaultFile("index.html")
 	    .setCacheControl("max-age=60");
 
-	this->server_->onNotFound([](AsyncWebServerRequest* request) {
+	server_->onNotFound([](AsyncWebServerRequest* request) {
 		request->send(404, "application/json", "{\"error\":\"Path does not exist\"}");
 	});
 
-	this->server_->begin();
+	server_->begin();
 };
 
 }  // namespace Config

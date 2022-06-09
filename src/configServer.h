@@ -31,18 +31,18 @@ class ConfigStore {
 	/**
 	 * Load existing configuration from flash to memory, if any any
 	 */
-	ConfigStore(fs::FS& fs, String configFileName = "/config.msgpack")
+	ConfigStore(fs::FS& fs, String configFileName = "/config")
 	    : fs_(fs), configFileName_(configFileName) {
-		this->loadConfig(configFileName);
+		loadConfig();
 	};
 	/**
 	 * Returns constant reference to the configuration object
 	 */
-	JsonObjectConst getConfigJson() { return this->config_.as<JsonObjectConst>(); };
+	JsonObjectConst getConfigJson() { return config_.as<JsonObjectConst>(); };
 	/**
 	 * Load configuration form flash and discard previously loaded config, if any
 	 */
-	void loadConfig(const String& fileName);
+	void loadConfig();
 	/**
 	 * Save configuration to flash and discard previously loaded config, if any
 	 */
