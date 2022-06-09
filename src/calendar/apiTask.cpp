@@ -53,6 +53,11 @@ void task(void* arg) {
 
 void eventHandler(void* arg, esp_event_base_t base, int32_t id, void* eventData) {
 	APITask* apiTask = static_cast<APITask*>(arg);
+
+	APITask::QueueElement* data = new APITask::QueueElement{(calevents::Request)id, eventData};
+
+	Serial.println("API Task: enqueueing item");
+	xQueueSend(apiTask->_queueHandle, (void*)&data, 0);
 }
 
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
