@@ -144,23 +144,6 @@ time_t calculateTurnOnTimeUTC() {
 	return safeMyTZ->tzTime(ezt::makeTime(tm));
 }
 
-void showBootLog() {
-	M5.EPD.Active();
-	M5.EPD.Clear(true);
-	canvas.createCanvas(960, 540);
-	canvas.setTextSize(24);
-	canvas.println();
-	canvas.println("Boot log:");
-	std::vector<String> entries = utils::getBootLog();
-	for (int i = entries.size() - 1; i >= 0; --i) {
-		canvas.println(entries[i]);
-	}
-
-	canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-
-	delay(1000);
-}
-
 void shutDown() {
 	time_t nowUTC = UTC.now();
 
@@ -180,7 +163,7 @@ void shutDown() {
 	Serial.println(log);
 	utils::addBootLogEntry(log);
 
-	showBootLog();
+	gui::showBootLog();
 
 	tmElements_t tmOn;
 	ezt::breakTime(turnOnTimeUTC, tmOn);

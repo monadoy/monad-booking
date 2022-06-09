@@ -513,7 +513,7 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 700, 150);
 		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + guimyTZ->dateTime(RFC3339));
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
@@ -558,7 +558,7 @@ void toSettingsScreen() {
 	hideCurrentBookingLabels(true);
 	hideFreeRoomButton(true);
 	hideSettings(false);
-	btns[BUTTON_SETTINGS]->SetHide(true);
+	btns[BUTTON_SETTINGS]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 
@@ -568,6 +568,8 @@ void toSettingsScreen() {
 void settingsButton(epdgui_args_vector_t& args) {
 	if (currentScreen == SCREEN_MAIN) {
 		toSettingsScreen();
+	} else if(currentScreen==SCREEN_SETTINGS){
+		gui::showBootLog();
 	} else {
 		toMainScreen(true, true);
 	}
@@ -779,7 +781,7 @@ void createRegularLabels() {
 	lbls[LABEL_ERROR]->SetHide(true);
 
 	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(80, 158, 500, 150, 0, 15, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 158, 700, 150, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 
@@ -971,6 +973,30 @@ void toSetupScreen() {
 	Serial.print(configData);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
 	canvasCurrentEvent.qrcode(qrString, 80, 309, 250, 7);
+	updateScreen(true, true);
+}
+
+void showBootLog() {
+	currentScreen = SCREEN_BOOTLOG;
+	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	     p != epdgui_object_list.end(); p++) {
+		(*p)->SetHide(true);
+	}
+	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
+	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
+	btns[BUTTON_SETTINGS]->SetHide(false);
+	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
+	lbls[LABEL_CURRENT_BOOKING]->SetPos(40, 92);
+	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(40, 180, 700, 460);
+	lbls[LABEL_SETTINGS_STARTUP]->SetText("");
+	canvasCurrentEvent.fillCanvas(0);
+	canvasNextEvent.fillCanvas(0);
+	std::vector<String> entries = utils::getBootLog();
+	for (int i = entries.size() - 1; i >= 0; --i) {
+		lbls[LABEL_SETTINGS_STARTUP]->AddText(entries[i]+"\n");
+	}
+
 	updateScreen(true, true);
 }
 

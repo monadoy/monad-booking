@@ -58,7 +58,7 @@ const uint16_t FONT_SIZE_HEADER = 32;
 const uint16_t FONT_SIZE_CLOCK = 44;
 const uint16_t FONT_SIZE_TITLE = 64;
 
-enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETUP, SCREEN_SIZE };
+enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETUP, SCREEN_SIZE, SCREEN_BOOTLOG };
 
 void EPDGUI_AddObject(EPDGUI_Base* object);
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode);
@@ -122,5 +122,6 @@ void debug(String err);
 void clearDebug();
 void updateGui();
 void toSetupScreen();
+void showBootLog();
 } // namespace gui
 #endif
