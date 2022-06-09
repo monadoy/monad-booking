@@ -5,7 +5,7 @@
 
 #define API_QUEUE_LENGTH 10
 #define API_TASK_PRIORITY 5
-#define API_TASK_STACK_SIZE 2048
+#define API_TASK_STACK_SIZE 8192
 
 namespace cal {
 
