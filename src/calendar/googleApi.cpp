@@ -176,7 +176,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	return Result<CalendarStatus>::makeOk(status);
 };
 
-utils::Result<Token, utils::Error> parseToken(const JsonObjectConst& obj) {
+utils::Result<Token, utils::Error> GoogleAPI::parseToken(const JsonObjectConst& obj) {
 	if (!obj) {
 		return utils::Result<Token, utils::Error>::makeErr(
 		    new utils::Error{"Token parse failed, token is null"});
