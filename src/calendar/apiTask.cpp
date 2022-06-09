@@ -12,9 +12,13 @@ namespace cal {
 void task(void* arg) {
 	APITask* apiTask = static_cast<APITask*>(arg);
 
+	Serial.print("API Task created");
+
 	for (;;) {
 		APITask::QueueElement* req;
+		Serial.print("API Task: waiting for queue receive");
 		xQueueReceive(apiTask->_queueHandle, &req, portMAX_DELAY);
+		Serial.print("API Task: queue item received");
 
 		if (!WiFi.isConnected()) {
 			// TODO: ask for wifi
@@ -63,10 +67,22 @@ void eventHandler(void* arg, esp_event_base_t base, int32_t id, void* eventData)
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
 	xTaskCreate(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this), API_TASK_PRIORITY,
 	            &_taskHandle);
+
 	_queueHandle = xQueueCreate(API_QUEUE_LENGTH, sizeof(APITask::QueueElement*));
 
-	esp_event_handler_register(calevents::REQUEST, ESP_EVENT_ANY_ID, eventHandler,
-	                           static_cast<void*>(this));
+	if (_queueHandle != NULL) {
+		Serial.println("API Task: queue created");
+	} else {
+		Serial.println("API Task: queue create failed");
+	}
+
+	esp_err_t err = esp_event_handler_register(calevents::REQUEST, ESP_EVENT_ANY_ID, eventHandler,
+	                                           static_cast<void*>(this));
+	if (!err) {
+		Serial.println("API Task: Event handler registered");
+	} else {
+		Serial.println("API Task: Event handler register failed 0x" + String((int)err, 16));
+	}
 }
 
 }  // namespace cal
