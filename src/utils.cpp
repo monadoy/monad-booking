@@ -86,10 +86,7 @@ bool isCharging() { return M5.getBatteryVoltage() > 4275; }
 
 bool isAP() {
 	wifi_mode_t mode = WiFi.getMode();
-	if (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) {
-		return true;
-	}
-	return false;
+	return mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA;
 }
 
 String getApPassword() {

@@ -60,7 +60,7 @@ bool EPDGUI_Process(void) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		bool screenGoingToUpdate = (*p)->UpdateState(-1, -1);
-		if(screenGoingToUpdate) {
+		if (screenGoingToUpdate) {
 			isGoingToSleep = true;
 		}
 	}
@@ -72,7 +72,7 @@ bool EPDGUI_Process(int16_t x, int16_t y) {
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		bool screenGoingToUpdate = (*p)->UpdateState(x, y);
-		if(screenGoingToUpdate) {
+		if (screenGoingToUpdate) {
 			isGoingToSleep = true;
 		}
 	}
@@ -143,8 +143,8 @@ void updateStatus() {
 		nextEvent = ok->nextEvent;
 		currentEvent = ok->currentEvent;
 		int newBtnIndex = configureMainButtonPos(false);
-		bool buttonsEqual = currentBtnIndex==newBtnIndex;
-		bool updateLeft = leftEventsEqual&&buttonsEqual;
+		bool buttonsEqual = currentBtnIndex == newBtnIndex;
+		bool updateLeft = leftEventsEqual && buttonsEqual;
 		currentBtnIndex = newBtnIndex;
 		if (currentScreen == SCREEN_MAIN) {
 			toMainScreen(!updateLeft, !updateRight);
@@ -654,8 +654,7 @@ void createButtons() {
 	btns[BUTTON_90MIN]->Bind(EPDGUI_Button::EVENT_RELEASED, ninetyButton);
 
 	// book till next event button
-	btns[BUTTON_TILLNEXT]
-	    = new EPDGUI_Button("SEURAAVAAN ASTI", 223, 399, 365, 77, 15, 0, 0, true);
+	btns[BUTTON_TILLNEXT] = new EPDGUI_Button("SEURAAVAAN ASTI", 223, 399, 365, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_TILLNEXT]);
 	btns[BUTTON_TILLNEXT]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_TILLNEXT]);
 	btns[BUTTON_TILLNEXT]->Bind(EPDGUI_Button::EVENT_RELEASED, tillNextButton);
@@ -810,7 +809,7 @@ void createBoldLabels() {
 
 namespace gui {
 
-void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
+void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup) {
 	guimyTZ = _myTZ;
 	auto res = configStore->getTokenString();
 	if (res.isOk()) {
@@ -823,8 +822,10 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	JsonObjectConst config = configStore->getConfigJson();
 
 	calendarId = config["gcalsettings"]["calendarid"].as<String>();
-	utils::ensureWiFi();
-	calapi::Result<calapi::CalendarStatus> statusRes
+	if (!loadSetup)
+	{
+		utils::ensureWiFi();
+		calapi::Result<calapi::CalendarStatus> statusRes
 	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
 
 	if (statusRes.isOk()) {
@@ -844,7 +845,7 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	} else {
 		Serial.print("Result ERROR: ");
 		Serial.println(statusRes.err()->message);
-	}
+	}}
 
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasNextEvent.createCanvas(308, 540);
@@ -872,7 +873,25 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore) {
 	createRegularLabels();
 
 	M5.EPD.Active();
-	toMainScreen(true, true);
+	if(loadSetup) {
+		Serial.println("Going to setupscreen");
+		hideMainLabels(true);
+		hideMainButtons(true);
+		hideNextBooking(true);
+		hideCurrentBookingLabels(true);
+		hideFreeRoomButton(true);
+		hideSettings(false);
+		hideFreeConfirmationButtons(true);
+		hideBookingConfirmationButtons(true);
+		btns[BUTTON_SETTINGS]->SetHide(true);
+		lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
+		lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
+		toSetupScreen();
+		updateScreen(true, true);
+	} else {
+		toMainScreen(true, true);
+	}
+	
 }
 
 // Variables to store update-data from loop
@@ -895,7 +914,7 @@ void loopGui() {
 				needToPutSleep = !EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
 				lastActiveTime = 0;
 			}
-			if(needToPutSleep) {
+			if (needToPutSleep) {
 				M5.EPD.Sleep();
 			}
 		}
@@ -934,7 +953,9 @@ void toSetupScreen() {
 
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
-	utils::ensureWiFi();
+	if (!utils::isAP()) {
+		utils::ensureWiFi();
+	}
 	String wifiSSID = WiFi.SSID();
 	String wifiPass = utils::getApPassword();
 	const String qrString = "WIFI:S:" + wifiSSID + ";T:WPA;P:" + wifiPass + ";;";

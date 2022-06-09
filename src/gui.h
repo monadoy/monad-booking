@@ -116,7 +116,7 @@ void createBoldLabels();
 }
 
 namespace gui {
-void initGui(Timezone* _myTZ, Config::ConfigStore* configStore);
+void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup);
 void loopGui();
 void debug(String err);
 void clearDebug();

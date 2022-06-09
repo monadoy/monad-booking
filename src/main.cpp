@@ -96,7 +96,7 @@ void setup() {
 
 		utils::addBootLogEntry("[" + myTZ.dateTime(RFC3339) + "] normal boot");
 
-		gui::initGui(&myTZ, configStore.get());
+		gui::initGui(&myTZ, configStore.get(), false);
 
 		delay(3000);
 	} else {
@@ -105,8 +105,7 @@ void setup() {
 		Serial.println("Entering setup-mode...");
 		// Setupmode
 		utils::setupMode();
-		gui::initGui(&myTZ, configStore.get());
-		gui::toSetupScreen();
+		gui::initGui(&myTZ, configStore.get(), true);
 		// Initialize Configserver
 		// TODO: this is currently thrown away after setup() ends
 		Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
