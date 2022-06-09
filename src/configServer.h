@@ -22,8 +22,8 @@ template <typename T>
 using Result = utils::Result<T, ConfigError_t>;
 
 /**
- * Configuration management 
- * 
+ * Configuration management
+ *
  * Load, save and handle the configuration
  */
 class ConfigStore {
@@ -33,7 +33,7 @@ class ConfigStore {
 	 */
 	ConfigStore(fs::FS& fs, String configFileName = "/config.msgpack")
 	    : fs_(fs), configFileName_(configFileName) {
-		this->loadConfigFromFlash(configFileName);
+		this->loadConfig(configFileName);
 	};
 	/**
 	 * Returns constant reference to the configuration object
@@ -42,11 +42,11 @@ class ConfigStore {
 	/**
 	 * Load configuration form flash and discard previously loaded config, if any
 	 */
-	void loadConfigFromFlash(const String& fileName);
+	void loadConfig(const String& fileName);
 	/**
 	 * Save configuration to flash and discard previously loaded config, if any
 	 */
-	Result<bool> saveConfigToFlash(JsonVariantConst newConfig);
+	Result<bool> saveConfig(JsonVariantConst newConfig);
 	/**
 	 * Return contents of the token.json as string
 	 */

@@ -4,7 +4,7 @@
 
 namespace Config {
 
-void ConfigStore::loadConfigFromFlash(const String& fileName) {
+void ConfigStore::loadConfig(const String& fileName) {
 	File configFileHandle;
 
 	Serial.println("Trying to load config from flash...");
@@ -37,7 +37,7 @@ void ConfigStore::loadConfigFromFlash(const String& fileName) {
 	Serial.println("No existing config file found on flash");
 };
 
-Result<bool> ConfigStore::saveConfigToFlash(JsonVariantConst newConfig) {
+Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
 	File configFileHandle;
 
 	configFileHandle = fs_.open(this->configFileName_, FILE_WRITE);
@@ -52,6 +52,8 @@ Result<bool> ConfigStore::saveConfigToFlash(JsonVariantConst newConfig) {
 	String configString = "";
 	serializeMsgPack(newConfig, configString);
 	configFileHandle.print(configString);
+
+	config_ = newConfig;
 
 	return Result<bool>::makeOk(std::make_shared<bool>(true));
 };
@@ -94,7 +96,7 @@ void ConfigServer::start() {
 		    // TODO: Probably good idea to validate the config before writing, somehow
 		    Serial.println("Writing new config to filesystem...");
 
-		    auto result = this->configStore_->saveConfigToFlash(configJson);
+		    auto result = this->configStore_->saveConfig(configJson);
 		    result.isOk() ? request->send(204)
 		                  : request->send(500, "application/json",
 		                                  "{\"error\":\"" + result.err()->errorMessage + "\"}");
