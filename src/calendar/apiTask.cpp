@@ -71,6 +71,11 @@ void APITask::insertEvent(time_t startTime, time_t endTime) {
 	        new QueueFuncInsertEvent([=]() { return _api->insertEvent(startTime, endTime); }));
 }
 
+void APITask::enqueue(RequestType rt, void* func) {
+	QueueElement* data = new QueueElement{rt, func};
+	xQueueSend(_queueHandle, (void*)&data, 0);
+};
+
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
 	xTaskCreate(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this), API_TASK_PRIORITY,
 	            &_taskHandle);

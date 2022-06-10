@@ -41,10 +41,7 @@ class APITask {
 	QueueHandle_t _queueHandle;
 
   private:
-	void enqueue(RequestType rt, void* func) {
-		QueueElement* data = new QueueElement{rt, func};
-		xQueueSend(_queueHandle, (void*)&data, 0);
-	};
+	void enqueue(RequestType rt, void* func);
 	TaskHandle_t _taskHandle;
 };  // namespace cal
 
