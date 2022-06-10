@@ -513,7 +513,7 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 700, 150);
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
 		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + guimyTZ->dateTime(RFC3339));
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
@@ -568,7 +568,7 @@ void toSettingsScreen() {
 void settingsButton(epdgui_args_vector_t& args) {
 	if (currentScreen == SCREEN_MAIN) {
 		toSettingsScreen();
-	} else if(currentScreen==SCREEN_SETTINGS){
+	} else if (currentScreen == SCREEN_SETTINGS) {
 		gui::showBootLog();
 	} else {
 		toMainScreen(true, true);
@@ -781,7 +781,7 @@ void createRegularLabels() {
 	lbls[LABEL_ERROR]->SetHide(true);
 
 	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(80, 158, 700, 150, 0, 15, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 158, 500, 150, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 
@@ -824,30 +824,30 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup) 
 	JsonObjectConst config = configStore->getConfigJson();
 
 	calendarId = config["gcalsettings"]["calendarid"].as<String>();
-	if (!loadSetup)
-	{
+	if (!loadSetup) {
 		utils::ensureWiFi();
 		calapi::Result<calapi::CalendarStatus> statusRes
-	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
+		    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
 
-	if (statusRes.isOk()) {
-		auto ok = statusRes.ok();
-		if (ok->currentEvent) {
-			Serial.println("Result CURRENT EVENT: ");
-			calapi::printEvent(*ok->currentEvent);
-		}
+		if (statusRes.isOk()) {
+			auto ok = statusRes.ok();
+			if (ok->currentEvent) {
+				Serial.println("Result CURRENT EVENT: ");
+				calapi::printEvent(*ok->currentEvent);
+			}
 
-		if (ok->nextEvent) {
-			Serial.println("Result NEXT EVENT: ");
-			calapi::printEvent(*ok->nextEvent);
+			if (ok->nextEvent) {
+				Serial.println("Result NEXT EVENT: ");
+				calapi::printEvent(*ok->nextEvent);
+			}
+			currentEvent = ok->currentEvent;
+			nextEvent = ok->nextEvent;
+			resourceName = ok->name;
+		} else {
+			Serial.print("Result ERROR: ");
+			Serial.println(statusRes.err()->message);
 		}
-		currentEvent = ok->currentEvent;
-		nextEvent = ok->nextEvent;
-		resourceName = ok->name;
-	} else {
-		Serial.print("Result ERROR: ");
-		Serial.println(statusRes.err()->message);
-	}}
+	}
 
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasNextEvent.createCanvas(308, 540);
@@ -875,25 +875,20 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup) 
 	createRegularLabels();
 
 	M5.EPD.Active();
-	if(loadSetup) {
+	if (loadSetup) {
 		Serial.println("Going to setupscreen");
-		hideMainLabels(true);
-		hideMainButtons(true);
-		hideNextBooking(true);
-		hideCurrentBookingLabels(true);
-		hideFreeRoomButton(true);
+		for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+		     p != epdgui_object_list.end(); p++) {
+			(*p)->SetHide(true);
+		}
 		hideSettings(false);
-		hideFreeConfirmationButtons(true);
-		hideBookingConfirmationButtons(true);
-		btns[BUTTON_SETTINGS]->SetHide(true);
 		lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 		lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 		toSetupScreen();
-		updateScreen(true, true);
+
 	} else {
 		toMainScreen(true, true);
 	}
-	
 }
 
 // Variables to store update-data from loop
@@ -921,7 +916,8 @@ void loopGui() {
 				lastActiveTime = 0;
 			}
 			// TODO: dont leave the device active after a time period
-			if (needToPutSleep && (currentScreen!=SCREEN_BOOKING && currentScreen!=SCREEN_FREEING)) {
+			if (needToPutSleep
+			    && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
 				M5.EPD.Sleep();
 			}
 		}
@@ -951,33 +947,40 @@ void clearDebug() {
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
 
-void toSetupScreen() {
+void 
+toSetupScreen() {
 	currentScreen = SCREEN_SETUP;
+
 	canvasCurrentEvent.fillCanvas(0);
 
 	btns[BUTTON_SETUP]->SetHide(true);
 	btns[BUTTON_CANCELBOOKING]->SetHide(true);
-
+	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
-	if (!utils::isAP()) {
+	String configData = "";
+
+	if (utils::isAP) {
+		configData += "Yhdistä WiFiin:\nSSID: ";
+		configData += utils::getApSSID() + "\n";
+		configData += "Salasana: ";
+		configData += utils::getApPassword() + "\n";
+		configData += "Navigoi osoitteeseen: 192.168.69.1";
+		const String qrString
+		    = "WIFI:S:" + utils::getApSSID() + ";T:WPA;P:" + utils::getApPassword() + ";;";
+		canvasNextEvent.qrcode(qrString, 0, 120, 300, 7);
+	} else {
 		utils::ensureWiFi();
+		String wifiSSID = WiFi.SSID();
+		configData += "Yhdistetty WiFiin: ";
+		configData += wifiSSID + "\nLaitteen IP: ";
+		configData += WiFi.localIP().toString();
 	}
-	String wifiSSID = WiFi.SSID();
-	String wifiPass = utils::getApPassword();
-	const String qrString = "WIFI:S:" + wifiSSID + ";T:WPA;P:" + wifiPass + ";;";
-	String configData = "Wifin SSID: " + wifiSSID + "\nLaitteen IP: " + WiFi.localIP().toString();
+
 	if (!utils::isSetupMode()) {
 		utils::setupMode();
 	}
-	if (utils::isAP()) {
-		configData += "\nAP:n salasana on: " + wifiPass;
-	} else {
-		configData += "\n" + wifiPass;
-	}
-	Serial.print(configData);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
-	canvasCurrentEvent.qrcode(qrString, 80, 309, 250, 7);
 	updateScreen(true, true);
 }
 
@@ -993,13 +996,13 @@ void showBootLog() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetPos(40, 92);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(40, 180, 700, 460);
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(40, 180, 500, 460);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
 	std::vector<String> entries = utils::getBootLog();
 	for (int i = entries.size() - 1; i >= 0; --i) {
-		lbls[LABEL_SETTINGS_STARTUP]->AddText(entries[i]+"\n");
+		lbls[LABEL_SETTINGS_STARTUP]->AddText(entries[i] + "\n");
 	}
 
 	updateScreen(true, true);

@@ -83,6 +83,8 @@ bool isAP();
 
 String getApPassword();
 
+String getApSSID();
+
 bool isSetupMode();
 
 void setupMode();

@@ -90,13 +90,17 @@ bool isAP() {
 }
 
 String getApPassword() {
-	if (isAP()) {
-		wifi_config_t conf;
-		esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
-		String password = reinterpret_cast<const char*>(conf.ap.password);
-		return password;
-	}
-	return "The M5Paper is not in AP mode.";
+	wifi_config_t conf;
+	esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
+	String password = reinterpret_cast<const char*>(conf.ap.password);
+	return password;
+}
+
+String getApSSID() {
+	wifi_config_t conf;
+	esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
+	String ssid = reinterpret_cast<const char*>(conf.ap.ssid);
+	return ssid;
 }
 
 bool isSetupMode() { return isInSetupMode; }
