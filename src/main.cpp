@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "configServer.h"
-#include "gui.h"
+#include "gui/gui.h"
 #include "safeTimezone.h"
 #include "utils.h"
 
