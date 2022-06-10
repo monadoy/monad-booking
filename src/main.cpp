@@ -9,9 +9,9 @@
 
 #include <memory>
 
-#include "SafeTimezone.h"
 #include "configServer.h"
 #include "gui.h"
+#include "safeTimezone.h"
 #include "utils.h"
 
 // Format the filesystem automatically if not formatted already
