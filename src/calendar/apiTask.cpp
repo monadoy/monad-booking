@@ -1,7 +1,6 @@
 #include "apiTask.h"
 
 #include "WiFi.h"
-#include "apiTaskEvents.h"
 
 #define API_QUEUE_LENGTH 10
 #define API_TASK_PRIORITY 5
@@ -15,13 +14,14 @@ void task(void* arg) {
 	Serial.print("API Task created");
 
 	for (;;) {
-		APITask::QueueElement* req;
+		void* reqTemp;
 		Serial.print("API Task: waiting for queue receive");
-		xQueueReceive(apiTask->_queueHandle, &req, portMAX_DELAY);
+		xQueueReceive(apiTask->_queueHandle, &reqTemp, portMAX_DELAY);
+		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 		Serial.print("API Task: queue item received");
 
 		if (!WiFi.isConnected()) {
-			// TODO: ask for wifi
+			// TODO: Find a better way to ask for wifi
 			WiFi.reconnect();
 		}
 		while (!WiFi.isConnected()) {
@@ -32,36 +32,43 @@ void task(void* arg) {
 		apiTask->_api->refreshAuth();
 
 		switch (req->type) {
-			case calevents::REQUEST_CALENDAR_STATUS: {
-				auto res = apiTask->_api->fetchCalendarStatus();
-				esp_event_post(calevents::RESPONSE, calevents::RESPONSE_CALENDAR_STATUS,
-				               new calevents::ResponseCalendarStatusData{res},
-				               sizeof(calevents::ResponseCalendarStatusData*), 0);
+			case APITask::RequestType::CALENDAR_STATUS: {
+				auto func = toSmartPtr<APITask::QueueFuncCalendarStatus>(req->func);
+				apiTask->callbackCalendarStatus((*func)());
 				break;
 			}
-				// case APITask::ReqType::END:
-				// case APITask::ReqType::INSERT:
-				// case APITask::ReqType::SIZE:
+			case APITask::RequestType::END_EVENT: {
+				auto func = toSmartPtr<APITask::QueueFuncEndEvent>(req->func);
+				apiTask->callbackEndEvent((*func)());
+				break;
+			}
+			case APITask::RequestType::INSERT_EVENT: {
+				auto func = toSmartPtr<APITask::QueueFuncInsertEvent>(req->func);
+				apiTask->callbackInsertEvent((*func)());
+				break;
+			}
 			default:
-				Serial.println("APITask: Unhandled request type " + String(req->type));
+				Serial.println("APITask: Unhandled request type " + String((uint8_t)req->type));
+				break;
 		}
-
-		if (req->params != nullptr) {
-			delete req->params;
-		}
-		delete req;
 	}
 
 	vTaskDelete(NULL);
 }
 
-void eventHandler(void* arg, esp_event_base_t base, int32_t id, void* eventData) {
-	APITask* apiTask = static_cast<APITask*>(arg);
+void APITask::fetchCalendarStatus() {
+	enqueue(RequestType::CALENDAR_STATUS,
+	        new QueueFuncCalendarStatus([=]() { return _api->fetchCalendarStatus(); }));
+}
 
-	APITask::QueueElement* data = new APITask::QueueElement{(calevents::Request)id, eventData};
+void APITask::endEvent(const String& eventId) {
+	enqueue(RequestType::END_EVENT,
+	        new QueueFuncEndEvent([=]() { return _api->endEvent(eventId); }));
+}
 
-	Serial.println("API Task: enqueueing item");
-	xQueueSend(apiTask->_queueHandle, (void*)&data, 0);
+void APITask::insertEvent(time_t startTime, time_t endTime) {
+	enqueue(RequestType::INSERT_EVENT,
+	        new QueueFuncInsertEvent([=]() { return _api->insertEvent(startTime, endTime); }));
 }
 
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
@@ -74,14 +81,6 @@ APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
 		Serial.println("API Task: queue created");
 	} else {
 		Serial.println("API Task: queue create failed");
-	}
-
-	esp_err_t err = esp_event_handler_register(calevents::REQUEST, ESP_EVENT_ANY_ID, eventHandler,
-	                                           static_cast<void*>(this));
-	if (!err) {
-		Serial.println("API Task: Event handler registered");
-	} else {
-		Serial.println("API Task: Event handler register failed 0x" + String((int)err, 16));
 	}
 }
 

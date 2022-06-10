@@ -4,8 +4,8 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-#include "SafeTimezone.h"
 #include "api.h"
+#include "safeTimezone.h"
 #include "utils.h"
 
 namespace {
@@ -25,10 +25,14 @@ class GoogleAPI : public API {
 
 	bool refreshAuth() override final;
 	Result<CalendarStatus> fetchCalendarStatus() override final;
+	Result<Event> endEvent(const String& eventId) override final;
+	Result<Event> insertEvent(time_t startTime, time_t endTime) override final;
 
 	static utils::Result<Token, utils::Error> parseToken(const JsonObjectConst& obj);
 
   private:
+	Result<Event> getEvent(const String& eventId);
+
 	Token _token;
 	SafeTimezone& _tz;
 	SafeTimezone& _utc;

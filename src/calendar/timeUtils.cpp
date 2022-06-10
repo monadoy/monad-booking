@@ -1,4 +1,4 @@
-#include "timeutils.h"
+#include "timeUtils.h"
 
 namespace timeutils {
 time_t getNextMidnight(time_t now) {

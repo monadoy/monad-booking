@@ -1,7 +1,7 @@
 #include "googleApi.h"
 
 #include "cert.h"
-#include "timeutils.h"
+#include "timeUtils.h"
 
 namespace {
 std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
@@ -87,22 +87,23 @@ bool GoogleAPI::refreshAuth() {
 		return true;
 	}
 
+	// BUILD REQUEST
 	_http.begin(_token.tokenUri, GOOGLE_API_FULL_CHAIN_CERT);
 	_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
+	// SEND REQUEST
 	int httpCode
 	    = _http.POST("client_id=" + _token.clientId + "&client_secret=" + _token.clientSecret
 	                 + "&refresh_token=" + _token.refreshToken + "&grant_type=refresh_token");
 
+	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
 	Serial.println("Received token response:\n" + responseBody + "\n");
-
 	if (httpCode != 200) {
 		Serial.println("Error on HTTP request: " + httpCode);
 		return false;
 	}
-
 	StaticJsonDocument<1024> doc;
 	DeserializationError err = deserializeJson(doc, responseBody);
 	if (err) {
@@ -111,6 +112,7 @@ bool GoogleAPI::refreshAuth() {
 		return false;
 	}
 
+	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
 	_token.unixExpiry = _utc.now() + doc["expires_in"].as<long>();
 
@@ -118,7 +120,9 @@ bool GoogleAPI::refreshAuth() {
 };
 
 Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
+	// BUILD REQUEST
 	time_t now = _tz.now();
+
 	String timeMin = _tz.dateTime(now, RFC3339);
 	timeMin.replace("+", "%2b");
 
@@ -126,6 +130,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	timeMax.replace("+", "%2b");
 
 	String timeZone = _tz.getOlson();
+
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId
 	             + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&timeZone=" + timeZone
 	             + "&maxResults=" + LIST_MAX_EVENTS
@@ -133,22 +138,22 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	             + EVENT_FIELDS + ")";
 
 	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
-
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
+	// SEND REQUEST
 	int httpCode = _http.GET();
 
+	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
-
 	Serial.println("Received event list response:\n" + responseBody + "\n");
-
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
 	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<CalendarStatus>::makeErr(err);
 
+	// PARSE JSON AS CALENDAR STATUS STRUCT
 	auto status = new CalendarStatus{
 	    .name = "",
 	    .currentEvent = nullptr,
@@ -175,6 +180,124 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 
 	return Result<CalendarStatus>::makeOk(status);
 };
+
+Result<Event> GoogleAPI::endEvent(const String& eventId) {
+	// BUILD REQUEST
+	String nowStr = _tz.dateTime(RFC3339);
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
+	             + eventId + "?fields=" + EVENT_FIELDS;
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
+
+	// CREATE PAYLOAD
+	StaticJsonDocument<256> payloadDoc;
+	payloadDoc["end"] = JsonObject{};
+	payloadDoc["end"]["dateTime"] = nowStr;
+	payloadDoc["end"]["timeZone"] = _tz.getOlson();
+	String payload = "";
+	serializeJson(payloadDoc, payload);
+
+	// SEND REQUEST
+	int httpCode = _http.PATCH(payload);
+	payload.clear();
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
+	Serial.println("Received event patch response:\n" + responseBody + "\n");
+	StaticJsonDocument<1024> doc;
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
+
+	// PARSE JSON AS EVENT STRUCT
+	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>());
+	if (!event) {
+		return Result<Event>::makeErr(
+		    new Error{.code = 0, .message = "PATCH didn't return a valid accepted event"});
+	}
+
+	return Result<Event>::makeOk(event);
+}
+
+Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
+	HTTPClient http;
+
+	// BUILD REQUEST
+	String url
+	    = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events?fields=id";
+	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	http.addHeader("Content-Type", "application/json");
+	http.addHeader("Authorization", "Bearer " + _token.accessToken);
+
+	// CREATE PAYLOAD
+	StaticJsonDocument<256> payloadDoc;
+	payloadDoc["start"] = JsonObject{};
+	payloadDoc["start"]["dateTime"] = _tz.dateTime(startTime, UTC_TIME, RFC3339);
+	payloadDoc["start"]["timeZone"] = _tz.getOlson();
+	payloadDoc["end"] = JsonObject{};
+	payloadDoc["end"]["dateTime"] = _tz.dateTime(endTime, UTC_TIME, RFC3339);
+	payloadDoc["end"]["timeZone"] = _tz.getOlson();
+	payloadDoc["summary"] = NEW_EVENT_SUMMARY;
+	String payload = "";
+	serializeJson(payloadDoc, payload);
+
+	Serial.println("Sending event insert payload:\n" + payload + "\n");
+
+	// SEND REQUEST
+	int httpCode = http.POST(payload);
+	payload.clear();
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = http.getString();
+	http.end();
+
+	Serial.println("Received event insert response:\n" + responseBody + "\n");
+	DynamicJsonDocument doc(1024);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
+
+	// PARSE JSON TO GET EVENT ID
+	String eventId = doc["id"];
+
+	// We need to fetch the room to check if the room has accepted it.
+	// It will be declined if it overlaps with an existing events.
+	return getEvent(eventId);
+}
+
+Result<Event> GoogleAPI::getEvent(const String& eventId) {
+	// BUILD REQUEST
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
+	             + eventId + "?maxAttendees=1&fields=" + EVENT_FIELDS;
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
+
+	// SEND REQUEST
+	int httpCode = _http.GET();
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
+	Serial.println("Received event get response:\n" + responseBody + "\n");
+	DynamicJsonDocument doc(1024);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
+
+	// PARSE JSON AS EVENT STRUCT
+	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>());
+	if (!event) {
+		return Result<Event>::makeErr(
+		    new Error{.code = 0, .message = "GET didn't return a valid accepted event"});
+	}
+
+	return Result<Event>::makeOk(event);
+}
 
 utils::Result<Token, utils::Error> GoogleAPI::parseToken(const JsonObjectConst& obj) {
 	if (!obj) {
