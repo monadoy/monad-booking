@@ -911,12 +911,17 @@ void loopGui() {
 			M5.EPD.Active();
 			if (is_finger_up) {
 				needToPutSleep = !EPDGUI_Process();
+				Serial.print("needPutToSleep = ");
+				Serial.println(needToPutSleep);
 				lastActiveTime = millis();
 			} else {
 				needToPutSleep = !EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
+				Serial.print("needPutToSleep = ");
+				Serial.println(needToPutSleep);
 				lastActiveTime = 0;
 			}
-			if (needToPutSleep) {
+			// TODO: dont leave the device active after a time period
+			if (needToPutSleep && (currentScreen!=SCREEN_BOOKING && currentScreen!=SCREEN_FREEING)) {
 				M5.EPD.Sleep();
 			}
 		}
