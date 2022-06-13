@@ -7,6 +7,7 @@
 
 #include "calendar/calendarApi.h"
 #include "configServer.h"
+#include "safeTimezone.h"
 
 namespace {
 
@@ -20,7 +21,8 @@ M5EPD_Canvas canvasNextEvent(&M5.EPD);
 
 std::shared_ptr<calapi::Event> currentEvent = nullptr;
 std::shared_ptr<calapi::Event> nextEvent = nullptr;
-Timezone* guimyTZ;
+SafeTimezone* guimyTZ;
+SafeTimezone* safeUTC;
 
 calapi::Token token;
 String calendarId = "";
@@ -125,8 +127,9 @@ void updateStatus() {
 	utils::ensureWiFi();
 	int ensureTime = millis() - beginTime;
 	beginTime = millis();
-	calapi::Result<calapi::CalendarStatus> statusRes
-	    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
+	// TODO call model instead
+	/* calapi::Result<calapi::CalendarStatus> statusRes
+	    = calapi::fetchCalendarStatus(token, guimyTZ, calendarId);
 	int httpTime = millis() - beginTime;
 	beginTime = millis();
 
@@ -135,27 +138,27 @@ void updateStatus() {
 	beginTime = millis();
 
 	if (statusRes.isOk()) {
-		auto ok = statusRes.ok();
+	    auto ok = statusRes.ok();
 
-		bool leftEventsEqual = checkEventEquality(currentEvent, ok->currentEvent);
-		bool updateRight = checkEventEquality(nextEvent, ok->nextEvent);
+	    bool leftEventsEqual = checkEventEquality(currentEvent, ok->currentEvent);
+	    bool updateRight = checkEventEquality(nextEvent, ok->nextEvent);
 
-		nextEvent = ok->nextEvent;
-		currentEvent = ok->currentEvent;
-		int newBtnIndex = configureMainButtonPos(false);
-		bool buttonsEqual = currentBtnIndex == newBtnIndex;
-		bool updateLeft = leftEventsEqual && buttonsEqual;
-		currentBtnIndex = newBtnIndex;
-		if (currentScreen == SCREEN_MAIN) {
-			toMainScreen(!updateLeft, !updateRight);
-		}
+	    nextEvent = ok->nextEvent;
+	    currentEvent = ok->currentEvent;
+	    int newBtnIndex = configureMainButtonPos(false);
+	    bool buttonsEqual = currentBtnIndex == newBtnIndex;
+	    bool updateLeft = leftEventsEqual && buttonsEqual;
+	    currentBtnIndex = newBtnIndex;
+	    if (currentScreen == SCREEN_MAIN) {
+	        toMainScreen(!updateLeft, !updateRight);
+	    }
 
 	} else {
-		Serial.print("Result ERROR: ");
-		Serial.println(statusRes.err()->message);
-		M5.EPD.Sleep();
-	}
-	int screenUpdate = millis() - beginTime;
+	    Serial.print("Result ERROR: ");
+	    Serial.println(statusRes.err()->message);
+	    M5.EPD.Sleep();
+	} */
+	/* int screenUpdate = millis() - beginTime;
 	Serial.print("Loading active: ");
 	Serial.println(loadingActive);
 	Serial.print("Ensure WiFi: ");
@@ -169,7 +172,7 @@ void updateStatus() {
 
 	Serial.print("Status update took ");
 	Serial.print(millis() - beforeTime);
-	Serial.println(" milliseconds");
+	Serial.println(" milliseconds"); */
 }
 
 void updateScreen(bool pushLeft, bool pushRight) {
@@ -216,7 +219,7 @@ int configureMainButtonPos(bool isHide) {
 	if (nextEvent == nullptr) {
 		btnIndex = 4;
 	} else {
-		int timeTillNext = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
+		int timeTillNext = int(difftime(nextEvent->unixStartTime, safeUTC->now()) / SECS_PER_MIN);
 		Serial.println("Time till next booking");
 		Serial.println(timeTillNext);
 		if (timeTillNext < 15) {
@@ -292,10 +295,8 @@ void hideFreeRoomButton(bool isHide) {
 	    btns[BUTTON_CONTINUE]->SetHide(true);
 	} else {
 	    if(nextEvent) {
-	        uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
-	        if (deltaTime <= 15) {
-	            btns[BUTTON_CONTINUE]->SetHide(true);
-	        } else {
+	        uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, safeUTC->now()) /
+	SECS_PER_MIN); if (deltaTime <= 15) { btns[BUTTON_CONTINUE]->SetHide(true); } else {
 	            btns[BUTTON_CONTINUE]->SetHide(false);
 	        }
 	    }
@@ -440,16 +441,16 @@ void loadCurrentFree() {
 }
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
-	time_t endTime = roundToFive(UTC.now() + SECS_PER_MIN * time);
+	time_t endTime = roundToFive(safeUTC->now() + SECS_PER_MIN * time);
 	if (nextEvent != nullptr) {
 		if (isTillNext || endTime >= nextEvent->unixStartTime) {
 			timeToBeBooked = SECS_PER_MIN * time;
 		} else {
 			Serial.print("Time to be booked: "), Serial.println(timeToBeBooked);
-			timeToBeBooked = endTime - UTC.now();
+			timeToBeBooked = endTime - safeUTC->now();
 		}
 	} else {
-		timeToBeBooked = endTime - UTC.now();
+		timeToBeBooked = endTime - safeUTC->now();
 	}
 	currentScreen = SCREEN_BOOKING;
 	hideMainButtons(true);
@@ -477,16 +478,17 @@ void makeBooking(uint16_t time) {
 	hideLoading(false);
 	utils::ensureWiFi();
 	int beginTime = millis();
-	calapi::Result<calapi::Event> eventRes
-	    = calapi::insertEvent(token, *guimyTZ, calendarId, UTC.now(), UTC.now() + time);
+	/* 	calapi::Result<calapi::Event> eventRes
+	        = calapi::insertEvent(token, *guimyTZ, calendarId, safeUTC->now(), safeUTC->now() +
+	   time); */
 
-	if (eventRes.isOk()) {
-		calapi::printEvent(*eventRes.ok());
-		currentEvent = eventRes.ok();
+	/* if (eventRes.isOk()) {
+	    calapi::printEvent(*eventRes.ok());
+	    currentEvent = eventRes.ok();
 	} else {
-		Serial.print("Result ERROR: ");
-		Serial.println(eventRes.err()->message);
-	}
+	    Serial.print("Result ERROR: ");
+	    Serial.println(eventRes.err()->message);
+	} */
 	hideLoading(true);
 	Serial.print("makebooking took ");
 	Serial.println(millis() - beginTime);
@@ -496,16 +498,16 @@ void deleteBooking() {
 	hideLoading(false);
 	utils::ensureWiFi();
 	int beginTime = millis();
-	calapi::Result<calapi::Event> endedEventRes
-	    = calapi::endEvent(token, *guimyTZ, calendarId, currentEvent->id);
+	/* 	calapi::Result<calapi::Event> endedEventRes
+	        = calapi::endEvent(token, *guimyTZ, calendarId, currentEvent->id); */
 
-	if (endedEventRes.isOk()) {
-		calapi::printEvent(*endedEventRes.ok());
-		currentEvent = nullptr;
-	} else {
-		Serial.print("Result ERROR: ");
-		Serial.println(endedEventRes.err()->message);
-	}
+	/* 	if (endedEventRes.isOk()) {
+	        calapi::printEvent(*endedEventRes.ok());
+	        currentEvent = nullptr;
+	    } else {
+	        Serial.print("Result ERROR: ");
+	        Serial.println(endedEventRes.err()->message);
+	    } */
 	hideLoading(true);
 	Serial.print("mdeletebooking took ");
 	Serial.println(millis() - beginTime);
@@ -584,7 +586,7 @@ void sixtyButton(epdgui_args_vector_t& args) { toConfirmBooking(60, false); }
 void ninetyButton(epdgui_args_vector_t& args) { toConfirmBooking(90, false); }
 
 void tillNextButton(epdgui_args_vector_t& args) {
-	uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, UTC.now()) / SECS_PER_MIN);
+	uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, safeUTC->now()) / SECS_PER_MIN);
 	toConfirmBooking(deltaTime, true);
 }
 
@@ -807,48 +809,34 @@ void createBoldLabels() {
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 }
 
+void tryToPutSleep() {
+	if (needToPutSleep && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
+		M5.EPD.Sleep();
+	}
+}
+
+template <typename T>
+std::unique_ptr<T> toSmartPtr(void* ptr) {
+	return std::unique_ptr<T>(static_cast<T*>(ptr));
+}
+
 }  // namespace
 
 namespace gui {
 
-void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup) {
-	guimyTZ = _myTZ;
-	auto res = configStore->getTokenString();
-	if (res.isOk()) {
-		Serial.println(*res.ok());
-		token = calapi::parseToken(*res.ok());
-	} else {
-		throw std::runtime_error("Token not found in config");
-	}
-
+void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore) {
 	JsonObjectConst config = configStore->getConfigJson();
-
-	calendarId = config["gcalsettings"]["calendarid"].as<String>();
-	if (!loadSetup) {
-		utils::ensureWiFi();
-		calapi::Result<calapi::CalendarStatus> statusRes
-		    = calapi::fetchCalendarStatus(token, *guimyTZ, calendarId);
-
-		if (statusRes.isOk()) {
-			auto ok = statusRes.ok();
-			if (ok->currentEvent) {
-				Serial.println("Result CURRENT EVENT: ");
-				calapi::printEvent(*ok->currentEvent);
-			}
-
-			if (ok->nextEvent) {
-				Serial.println("Result NEXT EVENT: ");
-				calapi::printEvent(*ok->nextEvent);
-			}
-			currentEvent = ok->currentEvent;
-			nextEvent = ok->nextEvent;
-			resourceName = ok->name;
-		} else {
-			Serial.print("Result ERROR: ");
-			Serial.println(statusRes.err()->message);
-		}
+	bool loadSetup = config.begin() == config.end();
+	guimyTZ = _myTZ;
+	/* auto res = configStore->getTokenString();
+	if (res.isOk()) {
+	    Serial.println(*res.ok());
+	    token = calapi::parseToken(*res.ok());
+	} else {
+	    throw std::runtime_error("Token not found in config");
 	}
-
+ */
+	/* calendarId = config["gcalsettings"]["calendarid"].as<String>(); */
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasNextEvent.createCanvas(308, 540);
 
@@ -887,6 +875,7 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup) 
 		toSetupScreen();
 
 	} else {
+		// TODO: model call for fetching
 		toMainScreen(true, true);
 	}
 }
@@ -894,44 +883,6 @@ void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup) 
 // Variables to store update-data from loop
 uint32_t lastActiveTime = 0;
 uint16_t lastPosX = 0xFFFF, lastPosY = 0xFFFF;
-
-void loopGui() {
-	if (M5.TP.avaliable()) {
-		M5.TP.update();
-		bool is_finger_up = M5.TP.isFingerUp();
-		if (is_finger_up || (lastPosX != M5.TP.readFingerX(0))
-		    || (lastPosY != M5.TP.readFingerY(0))) {
-			lastPosX = M5.TP.readFingerX(0);
-			lastPosY = M5.TP.readFingerY(0);
-			M5.EPD.Active();
-			if (is_finger_up) {
-				needToPutSleep = !EPDGUI_Process();
-				Serial.print("needPutToSleep = ");
-				Serial.println(needToPutSleep);
-				lastActiveTime = millis();
-			} else {
-				needToPutSleep = !EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
-				Serial.print("needPutToSleep = ");
-				Serial.println(needToPutSleep);
-				lastActiveTime = 0;
-			}
-			// TODO: dont leave the device active after a time period
-			if (needToPutSleep
-			    && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
-				M5.EPD.Sleep();
-			}
-		}
-
-		M5.TP.flush();
-	}
-
-	if ((lastActiveTime != 0) && (millis() - lastActiveTime > 2000)) {
-		if (M5.EPD.UpdateCount() > 4) {
-			M5.EPD.ResetUpdateCount();
-		}
-		lastActiveTime = 0;
-	}
-}
 
 void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
@@ -947,8 +898,7 @@ void clearDebug() {
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
 
-void 
-toSetupScreen() {
+void toSetupScreen() {
 	currentScreen = SCREEN_SETUP;
 
 	canvasCurrentEvent.fillCanvas(0);
@@ -1009,4 +959,65 @@ void showBootLog() {
 }
 
 void updateGui() { updateStatus(); }
+
+#define GUI_QUEUE_LENGTH 50
+#define GUI_TASK_PRIORITY 5
+#define GUI_TASK_STACK_SIZE 8192 * 8
+
+void task(void* arg) {
+	GUITask* guiTask = static_cast<GUITask*>(arg);
+
+	Serial.print("GUI Task created");
+
+	for (;;) {
+		void* reqTemp;
+		Serial.print("GUI Task: waiting for queue receive");
+		xQueueReceive(guiTask->_queueHandle, &reqTemp, portMAX_DELAY);
+		auto req = toSmartPtr<GUITask::GuiQueueElement>(reqTemp);
+		Serial.print("GUI Task: queue item received");
+
+		switch (req->type) {
+			case GUITask::ActionType::SUCCESS: {
+				//guiTask->success();
+				break;
+			}
+			case GUITask::ActionType::ERROR: {
+				//guiTask->error();
+				break;
+			}
+			case GUITask::ActionType::STATE_UPDATE: {
+				//guiTask->stateChanged();
+				break;
+			}
+			case GUITask::ActionType::TOUCH_DOWN: {
+				//guiTask->touchDown();
+				break;
+			}
+			case GUITask::ActionType::TOUCH_UP: {
+				//guiTask->touchUp();
+				break;
+			}
+			default:
+				Serial.println("GUI Task: Unhandled request type " + String((uint8_t)req->type));
+				break;
+		}
+	}
+
+	vTaskDelete(NULL);
+} 
+
+GUITask::GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore) {
+	gui::initGui(_myTZ, safeUTC, configStore);
+}
+void GUITask::success(GuiRequest type, const cal::CalendarStatus& status) {}
+void GUITask::error(GuiRequest type, const cal::Error& error) {}
+void GUITask::stateChanged(const cal::CalendarStatus& status) {}
+void GUITask::touchDown(const tp_finger_t& tp) {
+	needToPutSleep = !EPDGUI_Process(tp.x, tp.y);
+	tryToPutSleep();
+}
+void GUITask::touchUp() { 
+	needToPutSleep = !EPDGUI_Process();
+	tryToPutSleep();
+}
 }  // namespace gui

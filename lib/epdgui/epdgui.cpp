@@ -45,58 +45,6 @@ void EPDGUI_Clear(void)
     epdgui_object_list.clear();
 }
 
-void EPDGUI_Run()
-{
-    uint32_t last_active_time = 0;
-    uint32_t last_fetch_update = 0;
-
-    EPDGUI_Draw(UPDATE_MODE_NONE);
-    M5.EPD.UpdateFull(UPDATE_MODE_GC16);
-    while (1)
-    {
-        if (M5.TP.avaliable())
-        {
-            M5.TP.update();
-            bool is_finger_up = M5.TP.isFingerUp();
-            if(is_finger_up || (_last_pos_x != M5.TP.readFingerX(0)) || (_last_pos_y != M5.TP.readFingerY(0)))
-            {
-                _last_pos_x = M5.TP.readFingerX(0);
-                _last_pos_y = M5.TP.readFingerY(0);
-                if(is_finger_up)
-                {
-                    EPDGUI_Process();
-                    last_active_time = millis();
-                }
-                else
-                {
-                    EPDGUI_Process(M5.TP.readFingerX(0), M5.TP.readFingerY(0));
-                    last_active_time = 0;
-                }
-            }
-            
-            M5.TP.flush();
-        }
-
-        if((last_active_time != 0) && (millis() - last_active_time > 2000))
-        {
-            if(M5.EPD.UpdateCount() > 4)
-            {
-                M5.EPD.ResetUpdateCount();
-                if(_is_auto_update)
-                {
-                    M5.EPD.UpdateFull(UPDATE_MODE_GL16);
-                }
-            }
-            last_active_time = 0;
-        }
-        if(millis() - last_fetch_update > 30000) {
-            last_fetch_update = millis();
-            Serial.println("Should fetch new event now");
-            Serial.println("resetting clock");
-        }
-    }
-}
-
 void EPDGUI_SetAutoUpdate(bool isAuto)
 {
     _is_auto_update = isAuto;

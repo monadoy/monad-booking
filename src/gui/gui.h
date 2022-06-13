@@ -6,6 +6,8 @@
 #include <epdgui_textbox.h>
 #include <ezTime.h>
 #include <M5EPD_Driver.h>
+#include "safeTimezone.h"
+#include "calendar/api.h"
 
 #include "configServer.h"
 
@@ -58,7 +60,7 @@ const uint16_t FONT_SIZE_HEADER = 32;
 const uint16_t FONT_SIZE_CLOCK = 44;
 const uint16_t FONT_SIZE_TITLE = 64;
 
-enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETUP, SCREEN_SIZE, SCREEN_BOOTLOG };
+enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETUP, SCREEN_BOOTLOG, SCREEN_SIZE };
 
 void EPDGUI_AddObject(EPDGUI_Base* object);
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode);
@@ -113,15 +115,51 @@ void hideLoading(bool isHide);
 void createButtons();
 void createRegularLabels();
 void createBoldLabels();
+void tryToPutSleep();
 }
 
 namespace gui {
-void initGui(Timezone* _myTZ, Config::ConfigStore* configStore, bool loadSetup);
+void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore);
 void loopGui();
 void debug(String err);
 void clearDebug();
 void updateGui();
 void toSetupScreen();
 void showBootLog();
+
+class GUITask {
+  public:
+	GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore);
+	enum class ActionType {
+		SUCCESS,
+		ERROR,
+		STATE_UPDATE,
+		TOUCH_DOWN,
+		TOUCH_UP
+	};
+
+	enum class GuiRequest {
+		RESERVE,
+		FREE,
+		OTHER
+	};
+	QueueHandle_t _queueHandle;
+	struct GuiQueueElement {
+		GuiQueueElement(ActionType t, void* func) : type{t}, func{func} {}
+		ActionType type;
+		void* func;
+	};
+	
+	void success(GuiRequest type, const cal::CalendarStatus& status);
+	void error(GuiRequest type, const cal::Error& error);
+	void stateChanged(const cal::CalendarStatus& status);
+	void touchDown(const tp_finger_t& tp);
+	void touchUp();
+
+private:
+	TaskHandle_t _taskHandle;
+	void enqueue(ActionType at, void* func);
+};
+
 } // namespace gui
 #endif
