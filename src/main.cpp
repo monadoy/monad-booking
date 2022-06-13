@@ -9,6 +9,8 @@
 
 #include <memory>
 
+#include "calendar/apiTask.h"
+#include "calendar/googleApi.h"
 #include "configServer.h"
 #include "gui/gui.h"
 #include "safeTimezone.h"
@@ -41,6 +43,8 @@ std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
 std::array<uint8_t, 2> onHours{7, 19};
 
 std::shared_ptr<Config::ConfigStore> configStore = nullptr;
+
+std::shared_ptr<cal::APITask> apiTask = nullptr;
 
 bool restoreWifiConfig();
 
@@ -86,32 +90,35 @@ void setup() {
 
 	JsonObjectConst config = configStore->getConfigJson();
 
-	if (config.begin() != config.end()) {
-		WiFi.mode(WIFI_MODE_STA);
-		Serial.println("Config loaded!");
+	auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
 
-		esp_wifi_start();
-		utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
-		setupTime(config["timezone"]);
-
-		utils::addBootLogEntry("[" + myTZ.dateTime(RFC3339) + "] normal boot");
-
-		gui::initGui(&myTZ, configStore.get(), false);
-
-		delay(3000);
-	} else {
-		utils::addBootLogEntry("[UNKNOWN] setup boot");
-		Serial.println("No config stored");
-		Serial.println("Entering setup-mode...");
-		// Setupmode
-		utils::setupMode();
-		gui::initGui(&myTZ, configStore.get(), true);
-		// Initialize Configserver
-		// TODO: this is currently thrown away after setup() ends
-		Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
-
-		configServer->start();
+	if (tokenRes.isErr()) {
+		Serial.println(tokenRes.err()->message);
+		return;
 	}
+
+	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), *safeMyTZ, *safeUTC,
+	                                   config["gcalsettings"]["calendarid"]};
+
+	apiTask = std::make_shared<cal::APITask>(std::unique_ptr<cal::API>(api));
+
+	esp_wifi_start();
+	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
+	setupTime(config["timezone"]);
+
+	utils::addBootLogEntry("[" + myTZ.dateTime(RFC3339) + "] normal boot");
+
+	// 	gui::initGui(&myTZ, configStore.get());
+
+	// SETUPMODE CODE
+	// utils::addBootLogEntry("[UNKNOWN] setup boot");
+	// Serial.println("No config stored");
+	// Serial.println("Entering setup-mode...");
+	// utils::setupMode();
+	// gui::toSetupScreen();
+	// Initialize Configserver
+	// Config::ConfigServer* configServer = new Config::ConfigServer(80, configStore);
+	// configServer->start();
 
 	Serial.println("Boot log: ");
 	auto entries = utils::getBootLog();
@@ -222,19 +229,21 @@ void sleep() {
 }
 
 void loop() {
-	if (utils::isSetupMode())
-		return;
+	// esp_event_post("TEST", 0, nullptr, sizeof(void*), 0);
+	// delay(100);
+	// if (utils::isSetupMode())
+	// 	return;
 
-	gui::loopGui();
+	// gui::loopGui();
 
-	delay(100);
+	// delay(100);
 
-	while (millis() >= wakeUntilMillis) {
-		// Don't shut down if battery is charging or completely full
-		if (shouldShutDown() && M5.getBatteryVoltage() < 4200) {
-			shutDown();
-		}
+	// while (millis() >= wakeUntilMillis) {
+	// 	// Don't shut down if battery is charging or completely full
+	// 	if (shouldShutDown() && M5.getBatteryVoltage() < 4200) {
+	// 		shutDown();
+	// 	}
 
-		sleep();
-	}
+	// 	sleep();
+	// }
 }
