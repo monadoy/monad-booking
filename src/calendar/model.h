@@ -15,11 +15,11 @@ class Model {
 	void registerGUITask(GUITask* task) { _guiTask = task; };
 
 	/**
-	 * Reserve event starting now and ending after minutes.
-	 * minMinutes are rounded up to the nearest five minutes as long as it doesn't overlap with the
+	 * Reserve event starting now and ending after seconds.
+	 * End time is rounded up to the nearest five minutes as long as it doesn't overlap with the
 	 * next event.
 	 */
-	void reserveEvent(int minutes);
+	void reserveEvent(int seconds);
 
 	/**
 	 * Reserve event starting now and ending when the next event starts.
