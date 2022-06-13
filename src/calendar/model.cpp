@@ -47,11 +47,13 @@ void Model::reserveEvent(int seconds) {
 }
 
 void Model::reserveEventUntilNext() {
-	std::lock_guard<std::mutex> lock(_statusMutex);
-	if (!_status->nextEvent) {
-		log_e("No next event exists.");
-		// TODO: Send error to GUI
-		return;
+	{
+		std::lock_guard<std::mutex> lock(_statusMutex);
+		if (!_status->nextEvent) {
+			log_e("No next event exists.");
+			// TODO: Send error to GUI
+			return;
+		}
 	}
 	reserveEvent(_status->nextEvent->unixStartTime - _utc.now());
 }
@@ -90,6 +92,7 @@ void Model::endCurrentEvent() {
 }
 
 void Model::_onEndEvent(const Result<Event>& result) {
+	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_d("Got end event response.");
 
 	if (result.isErr()) {
