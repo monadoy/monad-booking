@@ -15,7 +15,7 @@ class APITask {
   public:
 	APITask(std::unique_ptr<API>&& api);
 
-	enum RequestType { CALENDAR_STATUS, END_EVENT, INSERT_EVENT };
+	enum class RequestType { CALENDAR_STATUS, END_EVENT, INSERT_EVENT };
 	struct QueueElement {
 		QueueElement(RequestType t, void* func) : type{t}, func{func} {}
 		RequestType type;
