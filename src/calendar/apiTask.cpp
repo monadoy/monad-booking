@@ -77,8 +77,8 @@ void APITask::enqueue(RequestType rt, void* func) {
 };
 
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
-	xTaskCreate(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this), API_TASK_PRIORITY,
-	            &_taskHandle);
+	xTaskCreatePinnedToCore(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this),
+	                        API_TASK_PRIORITY, &_taskHandle, 0);
 
 	_queueHandle = xQueueCreate(API_QUEUE_LENGTH, sizeof(APITask::QueueElement*));
 
