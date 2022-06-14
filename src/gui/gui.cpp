@@ -1,6 +1,9 @@
-#include "gui.h"
+#include "gui/gui.h"
+
 #include <WiFi.h>
+
 #include <list>
+
 #include "configServer.h"
 #include "safeTimezone.h"
 
@@ -53,7 +56,7 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) { object->Draw(mode); }
 
-bool EPDGUI_Process(void) {
+void EPDGUI_Process(void) {
 	bool isGoingToSleep = false;
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
@@ -62,10 +65,11 @@ bool EPDGUI_Process(void) {
 			isGoingToSleep = true;
 		}
 	}
-	return isGoingToSleep;
+	needToPutSleep = !isGoingToSleep;
+	tryToPutSleep();
 }
 
-bool EPDGUI_Process(int16_t x, int16_t y) {
+void EPDGUI_Process(int16_t x, int16_t y) {
 	bool isGoingToSleep = false;
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
@@ -74,7 +78,8 @@ bool EPDGUI_Process(int16_t x, int16_t y) {
 			isGoingToSleep = true;
 		}
 	}
-	return isGoingToSleep;
+	needToPutSleep = !isGoingToSleep;
+	tryToPutSleep();
 }
 
 String getBatteryPercent() {
@@ -93,8 +98,7 @@ String getWifiStatus() {
 	return "NOT OK";
 }
 
-bool checkEventEquality(std::shared_ptr<cal::Event> event1,
-                        std::shared_ptr<cal::Event> event2) {
+bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal::Event> event2) {
 	if (!!event1 != !!event2) {
 		Serial.println("1");
 		return false;
@@ -121,8 +125,8 @@ void updateStatus(const cal::CalendarStatus& status) {
 	bool buttonsEqual = currentBtnIndex == newBtnIndex;
 	bool updateLeft = leftEventsEqual && buttonsEqual;
 	currentBtnIndex = newBtnIndex;
-    if (currentScreen == SCREEN_MAIN) {
-        toMainScreen(!updateLeft, !updateRight);
+	if (currentScreen == SCREEN_MAIN) {
+		toMainScreen(!updateLeft, !updateRight);
 	}
 }
 
@@ -428,7 +432,7 @@ void toFreeBooking() {
 
 void makeBooking(uint16_t time, bool isTillNext) {
 	hideLoading(false);
-	if(isTillNext)
+	if (isTillNext)
 		gui::_model->reserveEventUntilNext();
 	else
 		gui::_model->reserveEvent(time);
@@ -436,7 +440,7 @@ void makeBooking(uint16_t time, bool isTillNext) {
 
 void deleteBooking() {
 	hideLoading(false);
-	gui::_model->freeCurrentEvent();
+	gui::_model->endCurrentEvent();
 }
 
 void hideSettings(bool isHide) {
@@ -741,19 +745,12 @@ void tryToPutSleep() {
 	}
 }
 
-template <typename T>
-std::unique_ptr<T> toSmartPtr(void* ptr) {
-	return std::unique_ptr<T>(static_cast<T*>(ptr));
-}
-
 }  // namespace
 
 namespace gui {
 cal::Model* _model = nullptr;
 
-void registerModel(cal::Model* model) {
-	_model = model;
-}
+void registerModel(cal::Model* model) { _model = model; }
 
 void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore) {
 	JsonObjectConst config = configStore->getConfigJson();
@@ -896,23 +893,23 @@ void task(void* arg) {
 
 		switch (req->type) {
 			case GUITask::ActionType::SUCCESS: {
-				//guiTask->success();
+				req->func;
 				break;
 			}
 			case GUITask::ActionType::ERROR: {
-				//guiTask->error();
+				// guiTask->error();
 				break;
 			}
 			case GUITask::ActionType::STATE_UPDATE: {
-				//guiTask->stateChanged();
+				// guiTask->stateChanged();
 				break;
 			}
 			case GUITask::ActionType::TOUCH_DOWN: {
-				//guiTask->touchDown();
+				// guiTask->touchDown();
 				break;
 			}
 			case GUITask::ActionType::TOUCH_UP: {
-				//guiTask->touchUp();
+				// guiTask->touchUp();
 				break;
 			}
 			default:
@@ -922,31 +919,39 @@ void task(void* arg) {
 	}
 
 	vTaskDelete(NULL);
-} 
+}
 
-GUITask::GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore, cal::Model* model) {
+GUITask::GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore,
+                 cal::Model* model) {
 	gui::registerModel(model);
+	xTaskCreate(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this), GUI_TASK_PRIORITY,
+	            &_taskHandle);
+	_queueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
+
 	gui::initGui(_myTZ, safeUTC, configStore);
 }
+
 // TODO: use type -parameter
 void GUITask::success(GuiRequest type, const cal::CalendarStatus& status) {
-	updateStatus(status);
+	enqueue(ActionType::SUCCESS, new QueueFuncSuccess([=]() { return updateStatus(status); }));
 }
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
-	String errMsg = "Code " + String(error.code) + "\n" + "- " + String(error.message);
-	debug(errMsg);
+	enqueue(ActionType::ERROR, new QueueFuncError([=]() {
+		        return debug("Code " + String(error.code) + "\n" + "- " + String(error.message));
+	        }));
 }
 void GUITask::stateChanged(const cal::CalendarStatus& status) {
-	updateStatus(status);
+	enqueue(ActionType::STATE_UPDATE,
+	        new QueueFuncStateChanged([=]() { return updateStatus(status); }));
 }
 void GUITask::touchDown(const tp_finger_t& tp) {
-	needToPutSleep = !EPDGUI_Process(tp.x, tp.y);
-	tryToPutSleep();
+	enqueue(ActionType::TOUCH_DOWN,
+			new QueueFuncTouchDown([=]() { return EPDGUI_Process(tp.x, tp.y); }));
 }
-void GUITask::touchUp() { 
-	needToPutSleep = !EPDGUI_Process();
-	tryToPutSleep();
+void GUITask::touchUp() {
+	enqueue(ActionType::TOUCH_UP,
+			new QueueFuncTouchUp([=]() {return EPDGUI_Process(); }));
 }
 void GUITask::enqueue(ActionType at, void* func) {
 	GuiQueueElement* data = new GuiQueueElement{at, func};

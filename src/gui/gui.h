@@ -65,8 +65,8 @@ enum { SCREEN_MAIN, SCREEN_BOOKING, SCREEN_FREEING, SCREEN_SETTINGS, SCREEN_SETU
 void EPDGUI_AddObject(EPDGUI_Base* object);
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode);
 void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_NONE);
-bool EPDGUI_Process(void);
-bool EPDGUI_Process(int16_t x, int16_t y);
+void EPDGUI_Process(void);
+void EPDGUI_Process(int16_t x, int16_t y);
 
 String getBatteryPercent();
 String getWifiStatus();
@@ -150,6 +150,12 @@ class GUITask {
 		void* func;
 	};
 	
+	using QueueFuncSuccess = std::function<void()>;
+	using QueueFuncError = std::function<void()>;
+	using QueueFuncStateChanged = std::function<void()>;
+	using QueueFuncTouchDown = std::function<void()>;
+	using QueueFuncTouchUp = std::function<void()>;
+
 	void success(GuiRequest type, const cal::CalendarStatus& status);
 	void error(GuiRequest type, const cal::Error& error);
 	void stateChanged(const cal::CalendarStatus& status);
