@@ -14,7 +14,7 @@ Model::Model(APITask& apiTask, SafeTimezone& tz, SafeTimezone& utc)
 void Model::reserveEvent(int seconds) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 
-	log_d("Reserving event.");
+	log_i("Reserving event.");
 
 	const time_t now = _utc.now();
 
@@ -60,7 +60,7 @@ void Model::reserveEventUntilNext() {
 
 void Model::_onInsertEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
-	log_d("Got event insert response.");
+	log_i("Got event insert response.");
 
 	if (result.isErr()) {
 		log_e("%s", result.err()->message.c_str());
@@ -75,7 +75,7 @@ void Model::_onInsertEvent(const Result<Event>& result) {
 
 void Model::endCurrentEvent() {
 	std::lock_guard<std::mutex> lock(_statusMutex);
-	log_d("Ending current event.");
+	log_i("Ending current event.");
 	if (!_status->currentEvent) {
 		log_e("No current event exists to end");
 		// TODO: send error to GUI
@@ -93,7 +93,7 @@ void Model::endCurrentEvent() {
 
 void Model::_onEndEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
-	log_d("Got end event response.");
+	log_i("Got end event response.");
 
 	if (result.isErr()) {
 		log_e("%s", result.err()->message.c_str());
@@ -107,13 +107,13 @@ void Model::_onEndEvent(const Result<Event>& result) {
 }
 
 void Model::updateStatus() {
-	log_d("Fetching calendar status.");
+	log_i("Fetching calendar status.");
 	_apiTask.fetchCalendarStatus();
 }
 
 void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
-	log_d("Received calendar status.");
+	log_i("Received calendar status.");
 
 	if (result.isErr()) {
 		log_e("%s", result.err()->message.c_str());
