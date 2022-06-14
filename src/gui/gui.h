@@ -150,15 +150,11 @@ class GUITask {
 		void* func;
 	};
 	
-	using QueueFuncSuccess = std::function<void()>;
-	using QueueFuncError = std::function<void()>;
-	using QueueFuncStateChanged = std::function<void()>;
-	using QueueFuncTouchDown = std::function<void()>;
-	using QueueFuncTouchUp = std::function<void()>;
+	using QueueFunc = std::function<void()>;
 
-	void success(GuiRequest type, const cal::CalendarStatus& status);
+	void success(GuiRequest type, const cal::CalendarStatus* status);
 	void error(GuiRequest type, const cal::Error& error);
-	void stateChanged(const cal::CalendarStatus& status);
+	void stateChanged(const cal::CalendarStatus* status);
 	void touchDown(const tp_finger_t& tp);
 	void touchUp();
 

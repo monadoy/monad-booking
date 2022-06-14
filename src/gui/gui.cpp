@@ -116,12 +116,16 @@ bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal:
 	return false;
 }
 
-void updateStatus(const cal::CalendarStatus& status) {
-	bool leftEventsEqual = checkEventEquality(currentEvent, status.currentEvent);
-	bool updateRight = checkEventEquality(nextEvent, status.nextEvent);
+void updateStatus(const cal::CalendarStatus* status) {
+	bool leftEventsEqual = false;
+	bool updateRight = false;
+	if(status) {
+		bool leftEventsEqual = checkEventEquality(currentEvent, status->currentEvent);
+		bool updateRight = checkEventEquality(nextEvent, status->nextEvent);
 
-	nextEvent = status.nextEvent;
-	currentEvent = status.currentEvent;
+		nextEvent = status->nextEvent;
+		currentEvent = status->currentEvent;
+	}
 	int newBtnIndex = configureMainButtonPos(false);
 	bool buttonsEqual = currentBtnIndex == newBtnIndex;
 	bool updateLeft = leftEventsEqual && buttonsEqual;
@@ -794,7 +798,7 @@ void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* co
 		toSetupScreen();
 
 	} else {
-		_model->updateStatus();
+		_model->updateStatus(); // TODO: remove this if possible
 		toMainScreen(true, true);
 	}
 }
@@ -897,19 +901,19 @@ void task(void* arg) {
 				break;
 			}
 			case GUITask::ActionType::ERROR: {
-				// guiTask->error();
+				req->func;
 				break;
 			}
 			case GUITask::ActionType::STATE_UPDATE: {
-				// guiTask->stateChanged();
+				req->func;
 				break;
 			}
 			case GUITask::ActionType::TOUCH_DOWN: {
-				// guiTask->touchDown();
+				req->func;
 				break;
 			}
 			case GUITask::ActionType::TOUCH_UP: {
-				// guiTask->touchUp();
+				req->func;
 				break;
 			}
 			default:
@@ -924,34 +928,34 @@ void task(void* arg) {
 GUITask::GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore,
                  cal::Model* model) {
 	gui::registerModel(model);
-	xTaskCreate(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this), GUI_TASK_PRIORITY,
-	            &_taskHandle);
+	xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this), GUI_TASK_PRIORITY,
+	            &_taskHandle, 1);
 	_queueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
 
 	gui::initGui(_myTZ, safeUTC, configStore);
 }
 
 // TODO: use type -parameter
-void GUITask::success(GuiRequest type, const cal::CalendarStatus& status) {
-	enqueue(ActionType::SUCCESS, new QueueFuncSuccess([=]() { return updateStatus(status); }));
+void GUITask::success(GuiRequest type, const cal::CalendarStatus* status) {
+	enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateStatus(status); }));
 }
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
-	enqueue(ActionType::ERROR, new QueueFuncError([=]() {
+	enqueue(ActionType::ERROR, new QueueFunc([=]() {
 		        return debug("Code " + String(error.code) + "\n" + "- " + String(error.message));
 	        }));
 }
-void GUITask::stateChanged(const cal::CalendarStatus& status) {
+void GUITask::stateChanged(const cal::CalendarStatus* status) {
 	enqueue(ActionType::STATE_UPDATE,
-	        new QueueFuncStateChanged([=]() { return updateStatus(status); }));
+	        new QueueFunc([=]() { return updateStatus(status); }));
 }
 void GUITask::touchDown(const tp_finger_t& tp) {
 	enqueue(ActionType::TOUCH_DOWN,
-			new QueueFuncTouchDown([=]() { return EPDGUI_Process(tp.x, tp.y); }));
+			new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));
 }
 void GUITask::touchUp() {
 	enqueue(ActionType::TOUCH_UP,
-			new QueueFuncTouchUp([=]() {return EPDGUI_Process(); }));
+			new QueueFunc([=]() {return EPDGUI_Process(); }));
 }
 void GUITask::enqueue(ActionType at, void* func) {
 	GuiQueueElement* data = new GuiQueueElement{at, func};
