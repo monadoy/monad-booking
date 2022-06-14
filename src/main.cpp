@@ -231,22 +231,4 @@ void sleep() {
 	}
 }
 
-void loop() {
-	// esp_event_post("TEST", 0, nullptr, sizeof(void*), 0);
-	// delay(100);
-	// if (utils::isSetupMode())
-	// 	return;
-
-	// gui::loopGui();
-
-	// delay(100);
-
-	// while (millis() >= wakeUntilMillis) {
-	// 	// Don't shut down if battery is charging or completely full
-	// 	if (shouldShutDown() && M5.getBatteryVoltage() < 4200) {
-	// 		shutDown();
-	// 	}
-
-	// 	sleep();
-	// }
-}
+void loop() { vTaskDelete(NULL); }
