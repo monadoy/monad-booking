@@ -213,7 +213,7 @@ void sleep() {
 		Serial.println("Updating gui status and going back to sleep");
 
 		// When wakeup is caused by timer, a status update is due.
-		gui::updateGui();
+		//gui::updateGui(); deprecated
 
 		// Calculate the next status update timestamp based on our interval.
 		nextStatusUpdateMillis = millis() + UPDATE_STATUS_INTERVAL_MS;

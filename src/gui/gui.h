@@ -8,7 +8,7 @@
 #include <M5EPD_Driver.h>
 #include "safeTimezone.h"
 #include "calendar/api.h"
-
+#include "calendar/model.h"
 #include "configServer.h"
 
 namespace {
@@ -90,7 +90,7 @@ void loadCurrentBooking();
 void loadCurrentFree();
 void toConfirmBooking(uint16_t time, bool isTillNext);
 void toFreeBooking();
-void makeBooking(uint16_t time);
+void makeBooking(uint16_t time, bool isTillNext);
 void deleteBooking();
 void hideSettings(bool isHide);
 
@@ -119,17 +119,17 @@ void tryToPutSleep();
 }
 
 namespace gui {
+void registerModel(cal::Model* model); 
 void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore);
 void loopGui();
 void debug(String err);
 void clearDebug();
-void updateGui();
 void toSetupScreen();
 void showBootLog();
 
 class GUITask {
   public:
-	GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore);
+	GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore, cal::Model* model);
 	enum class ActionType {
 		SUCCESS,
 		ERROR,
