@@ -11,6 +11,7 @@
 
 #include "calendar/apiTask.h"
 #include "calendar/googleApi.h"
+#include "calendar/model.h"
 #include "configServer.h"
 #include "gui/gui.h"
 #include "safeTimezone.h"
@@ -42,9 +43,9 @@ std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
 
 std::array<uint8_t, 2> onHours{7, 19};
 
-std::shared_ptr<Config::ConfigStore> configStore = nullptr;
-
-std::shared_ptr<cal::APITask> apiTask = nullptr;
+std::unique_ptr<Config::ConfigStore> configStore = nullptr;
+std::unique_ptr<cal::APITask> apiTask = nullptr;
+std::unique_ptr<cal::Model> calendarModel = nullptr;
 
 bool restoreWifiConfig();
 
@@ -79,7 +80,7 @@ void setup() {
 	safeMyTZ = new SafeTimezone(myTZ);
 	safeUTC = new SafeTimezone(UTC);
 
-	configStore = std::make_shared<Config::ConfigStore>(LittleFS);
+	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
@@ -100,7 +101,9 @@ void setup() {
 	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), *safeMyTZ, *safeUTC,
 	                                   config["gcalsettings"]["calendarid"]};
 
-	apiTask = std::make_shared<cal::APITask>(std::unique_ptr<cal::API>(api));
+	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
+
+	calendarModel = utils::make_unique<cal::Model>(*apiTask, *safeMyTZ, *safeUTC);
 
 	esp_wifi_start();
 	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
