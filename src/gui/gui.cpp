@@ -21,6 +21,7 @@ std::shared_ptr<cal::Event> currentEvent = nullptr;
 std::shared_ptr<cal::Event> nextEvent = nullptr;
 SafeTimezone* guimyTZ;
 SafeTimezone* safeUTC;
+cal::Model* _model = nullptr;
 
 cal::Token token;
 String calendarId = "";
@@ -433,14 +434,14 @@ void toFreeBooking() {
 void makeBooking(uint16_t time, bool isTillNext) {
 	hideLoading(false);
 	if (isTillNext)
-		gui::_model->reserveEventUntilNext();
+		_model->reserveEventUntilNext();
 	else
-		gui::_model->reserveEvent(time);
+		_model->reserveEvent(time);
 }
 
 void deleteBooking() {
 	hideLoading(false);
-	gui::_model->endCurrentEvent();
+	_model->endCurrentEvent();
 }
 
 void hideSettings(bool isHide) {
@@ -748,7 +749,6 @@ void tryToPutSleep() {
 }  // namespace
 
 namespace gui {
-cal::Model* _model = nullptr;
 
 void registerModel(cal::Model* model) { _model = model; }
 
@@ -794,7 +794,7 @@ void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* co
 		toSetupScreen();
 
 	} else {
-		// TODO: model call for fetching
+		_model->updateStatus();
 		toMainScreen(true, true);
 	}
 }
