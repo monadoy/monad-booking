@@ -1,6 +1,7 @@
 #include "apiTask.h"
 
 #include "WiFi.h"
+#include "globals.h"
 
 #define API_QUEUE_LENGTH 10
 #define API_TASK_PRIORITY 5
@@ -17,6 +18,7 @@ void task(void* arg) {
 		void* reqTemp;
 		Serial.print("API Task: waiting for queue receive");
 		xQueueReceive(apiTask->_queueHandle, &reqTemp, portMAX_DELAY);
+		auto count = sleepManager.scopedTaskCount();
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 		Serial.print("API Task: queue item received");
 
