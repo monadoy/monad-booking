@@ -1,16 +1,28 @@
 #include "sleepManager.h"
 
-TaskCounterGuard::TaskCounterGuard(SleepManager* manager) : _manager{manager} {
+ScopedTaskCounter::ScopedTaskCounter(SleepManager* manager) : _manager{manager} {
 	_manager->incrementTaskCounter();
 }
-TaskCounterGuard::~TaskCounterGuard() { _manager->decrementTaskCounter(); }
+ScopedTaskCounter::~ScopedTaskCounter() { _manager->decrementTaskCounter(); }
 
+// Timer callbacks can't block in any way
 void timerCallback(TimerHandle_t handle) {
 	SleepManager* manager = static_cast<SleepManager*>(pvTimerGetTimerID(handle));
 
+	bool taskActive = xTimerIsTimerActive(manager->_taskActivityTimer) == pdTRUE;
+	bool touchActive = xTimerIsTimerActive(manager->_touchActivityTimer) == pdTRUE;
+
+	log_i("A timer expired, Task timer active: %d, Touch timer active: %d", taskActive,
+	      touchActive);
+
+	// If a timer is till active we don't need to do anything
+	if (taskActive || touchActive) {
+		return;
+	}
+
 	BaseType_t count = uxSemaphoreGetCount(manager->_activeTaskCounter);
 
-	log_i("Timer expired, count: %d", count);
+	log_i("All timers expired, count: %d", count);
 
 	// If active task counter is still zero after timer has expired,
 	// go to sleep.
@@ -25,15 +37,20 @@ SleepManager::SleepManager() {
 		log_e("Active task counter semaphore creation failed");
 	}
 
-	_activityTimeoutTimer
-	    = xTimerCreate("ACTIVITY_TIMEOUT", pdMS_TO_TICKS(INACTIVITY_TIMEOUT_S * 1000), pdFALSE,
-	                   (void*)this, timerCallback);
-	if (_activeTaskCounter == NULL) {
-		log_e("Activity timeout timer creation failed");
+	_touchActivityTimer = xTimerCreate("TOUCH_ACTIVITY", pdMS_TO_TICKS(TOUCH_WAKE_TIMEOUT_MS),
+	                                   pdFALSE, (void*)this, timerCallback);
+	if (_touchActivityTimer == NULL) {
+		log_e("Touch activity timer creation failed");
+	}
+
+	_taskActivityTimer = xTimerCreate("TASK_ACTIVITY", pdMS_TO_TICKS(TASK_WAKE_TIMEOUT_MS), pdFALSE,
+	                                  (void*)this, timerCallback);
+	if (_taskActivityTimer == NULL) {
+		log_e("Task activity timer creation failed");
 	}
 }
 
-TaskCounterGuard SleepManager::createTaskGuard() { return TaskCounterGuard{this}; }
+ScopedTaskCounter SleepManager::scopedTaskCount() { return ScopedTaskCounter{this}; }
 
 void SleepManager::incrementTaskCounter() {
 	if (xSemaphoreGive(_activeTaskCounter) != pdTRUE) {
@@ -53,14 +70,22 @@ void SleepManager::decrementTaskCounter() {
 	log_i("Task counter decremented, count: %d", count);
 
 	if (count == 0) {
-		if (xTimerReset(_activityTimeoutTimer, 10) != pdPASS) {
-			log_e("Activity timeout timer reset failed");
+		if (xTimerReset(_taskActivityTimer, 10) != pdPASS) {
+			log_e("Activity activity timer reset failed");
 		}
 	}
 }
 
+void SleepManager::refreshTouchWake() {
+	if (xTimerReset(_touchActivityTimer, 10) != pdPASS) {
+		log_e("Touch activity timer reset failed");
+	}
+
+	log_i("Touch wake refreshed");
+}
+
 void SleepManager::_sleep() {
-	log_i("Going to sleep...");
+	log_i("Going to sleep... not implemented yet");
 
 	// TODO: implement sleeping
 
