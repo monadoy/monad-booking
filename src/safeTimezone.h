@@ -37,6 +37,20 @@ class SafeTimezone {
 
 	String getOlson() { return tz_.getOlson(); }
 
+	bool setCache(const String name, const String key) {
+		xSemaphoreTake(handle_, portMAX_DELAY);
+		bool res = tz_.setCache(name, key);
+		xSemaphoreGive(handle_);
+		return res;
+	}
+
+	bool setLocation(const String location /* = "GeoIP" */) {
+		xSemaphoreTake(handle_, portMAX_DELAY);
+		bool res = tz_.setLocation(location);
+		xSemaphoreGive(handle_);
+		return res;
+	}
+
   private:
 	SemaphoreHandle_t handle_ = xSemaphoreCreateMutex();
 	Timezone& tz_;

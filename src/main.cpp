@@ -13,8 +13,10 @@
 #include "calendar/googleApi.h"
 #include "calendar/model.h"
 #include "configServer.h"
+#include "globals.h"
 #include "gui/gui.h"
 #include "safeTimezone.h"
+#include "sleepManager.h"
 #include "utils.h"
 
 // Format the filesystem automatically if not formatted already
@@ -25,11 +27,6 @@
 // Provide official timezone names
 // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 const char* IANA_TZ = "Europe/Helsinki";
-
-// TODO: Force everyone to use thread safe version
-Timezone myTZ;
-SafeTimezone* safeMyTZ;
-SafeTimezone* safeUTC;
 
 M5EPD_Canvas canvas(&M5.EPD);
 
@@ -55,8 +52,8 @@ void setupTime(const String& IANATimeZone) {
 	ezt::setDebug(INFO);
 	ezt::waitForSync();
 
-	if (!myTZ.setCache(String("timezones"), IANATimeZone))
-		myTZ.setLocation(IANATimeZone);
+	if (!safeMyTZ.setCache(String("timezones"), IANATimeZone))
+		safeMyTZ.setLocation(IANATimeZone);
 }
 
 void setup() {
@@ -77,9 +74,6 @@ void setup() {
 		return;
 	}
 
-	safeMyTZ = new SafeTimezone(myTZ);
-	safeUTC = new SafeTimezone(UTC);
-
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 
 	Serial.println("Setting up E-ink display...");
@@ -98,18 +92,18 @@ void setup() {
 		return;
 	}
 
-	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), *safeMyTZ, *safeUTC,
+	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), safeMyTZ, safeUTC,
 	                                   config["gcalsettings"]["calendarid"]};
 
 	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
 
-	calendarModel = utils::make_unique<cal::Model>(*apiTask, *safeMyTZ, *safeUTC);
+	calendarModel = utils::make_unique<cal::Model>(*apiTask, safeMyTZ, safeUTC);
 
 	esp_wifi_start();
 	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
 	setupTime(config["timezone"]);
 
-	utils::addBootLogEntry("[" + myTZ.dateTime(RFC3339) + "] normal boot");
+	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	// 	gui::initGui(&myTZ, configStore.get());
 
@@ -131,7 +125,7 @@ void setup() {
 }
 
 bool shouldShutDown() {
-	time_t t = safeMyTZ->now();
+	time_t t = safeMyTZ.now();
 	tmElements_t tm;
 	ezt::breakTime(t, tm);
 
@@ -140,7 +134,7 @@ bool shouldShutDown() {
 }
 
 time_t calculateTurnOnTimeUTC() {
-	time_t now = safeMyTZ->now();
+	time_t now = safeMyTZ.now();
 
 	tmElements_t tm;
 	ezt::breakTime(now, tm);
@@ -151,7 +145,7 @@ time_t calculateTurnOnTimeUTC() {
 	tm.Minute = 5;
 	tm.Second = 0;
 
-	return safeMyTZ->tzTime(ezt::makeTime(tm));
+	return safeMyTZ.tzTime(ezt::makeTime(tm));
 }
 
 void shutDown() {
@@ -167,9 +161,9 @@ void shutDown() {
 
 	time_t turnOnTimeUTC = calculateTurnOnTimeUTC();
 
-	String turnOnTimeStr = safeMyTZ->dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
+	String turnOnTimeStr = safeMyTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
 
-	const String log = "[" + safeMyTZ->dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
+	const String log = "[" + safeMyTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
 	Serial.println(log);
 	utils::addBootLogEntry(log);
 
@@ -216,7 +210,7 @@ void sleep() {
 		Serial.println("Updating gui status and going back to sleep");
 
 		// When wakeup is caused by timer, a status update is due.
-		//gui::updateGui(); deprecated
+		// gui::updateGui(); deprecated
 
 		// Calculate the next status update timestamp based on our interval.
 		nextStatusUpdateMillis = millis() + UPDATE_STATUS_INTERVAL_MS;
