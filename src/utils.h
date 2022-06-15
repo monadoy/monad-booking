@@ -10,6 +10,7 @@
 namespace utils {
 
 struct Error {
+	Error(const String& message) : message(message) {}
 	String message;
 };
 
@@ -18,7 +19,7 @@ struct Error {
  * Check first which value is contained with functions isOk() or isErr().
  * Then you can get a shared_ptr to the value with functions ok() or err().
  */
-template <typename T, typename E>
+template <typename T, typename E = Error>
 struct Result {
   private:
 	Result(std::shared_ptr<T> _ok, std::shared_ptr<E> _err) : ok_{_ok}, err_{_err} {}

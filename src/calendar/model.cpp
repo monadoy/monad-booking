@@ -11,7 +11,11 @@ Model::Model(APITask& apiTask, SafeTimezone& tz, SafeTimezone& utc)
 	_apiTask.callbackInsertEvent = std::bind(&Model::_onInsertEvent, this, _1);
 }
 
-void Model::reserveEvent(int seconds) {
+void Model::reserveEvent(const ReserveParams& params) {
+	_apiTask.insertEvent(params.startTime, params.endTime);
+}
+
+utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSeconds) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 
 	log_i("Reserving event.");
@@ -19,13 +23,12 @@ void Model::reserveEvent(int seconds) {
 	const time_t now = _utc.now();
 
 	if (_status->currentEvent) {
-		log_e("Current event already exists, can't insert more.");
-		// Current event already exists, can't reserve
-		// TODO: send error to GUI
-		return;
+		log_e("Current event already exists, can't insert another one.");
+		return utils::Result<ReserveParams>::makeErr(
+		    new utils::Error("Current event already exists, can't insert another one."));
 	}
 
-	time_t endTime = _utc.now() + seconds;
+	time_t endTime = _utc.now() + reserveSeconds;
 
 	// Round up to five minute
 	const time_t remainder = endTime % (5 * SECS_PER_MIN);
@@ -37,25 +40,23 @@ void Model::reserveEvent(int seconds) {
 
 	if (endTime < now + 30) {
 		log_e("Won't insert such a short event (%d seconds).", endTime - now);
-		// If we would create an event that is shorter than 30 seconds,
-		// just abort as this event would be useless
-		// TODO: send error to GUI
-		return;
+		return utils::Result<ReserveParams>::makeErr(new utils::Error{
+		    "Won't insert such a short event (" + String(endTime - now) + " seconds)."});
 	}
 
-	_apiTask.insertEvent(now, endTime);
+	return utils::Result<ReserveParams>::makeOk(
+	    new ReserveParams{.startTime = now, .endTime = endTime});
 }
 
-void Model::reserveEventUntilNext() {
+utils::Result<Model::ReserveParams> Model::calculateReserveUntilNextParams() {
 	{
 		std::lock_guard<std::mutex> lock(_statusMutex);
 		if (!_status->nextEvent) {
 			log_e("No next event exists.");
-			// TODO: Send error to GUI
-			return;
+			return utils::Result<ReserveParams>::makeErr(new utils::Error{"No next event exists."});
 		}
 	}
-	reserveEvent(_status->nextEvent->unixStartTime - _utc.now());
+	return calculateReserveParams(_status->nextEvent->unixStartTime - _utc.now());
 }
 
 void Model::_onInsertEvent(const Result<Event>& result) {

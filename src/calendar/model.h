@@ -3,6 +3,7 @@
 
 #include "apiTask.h"
 #include "safeTimezone.h"
+#include "utils.h"
 
 namespace cal {
 
@@ -14,17 +15,27 @@ class Model {
 
 	void registerGUITask(GUITask* task) { _guiTask = task; };
 
-	/**
-	 * Reserve event starting now and ending after seconds.
-	 * End time is rounded up to the nearest five minutes as long as it doesn't overlap with the
-	 * next event.
-	 */
-	void reserveEvent(int seconds);
+	struct ReserveParams {
+		int startTime;
+		int endTime;
+	};
 
 	/**
-	 * Reserve event starting now and ending when the next event starts.
+	 * Reserve event, use parameters from calculateReserveParams.
 	 */
-	void reserveEventUntilNext();
+	void reserveEvent(const ReserveParams& params);
+
+	/**
+	 * Calculate when to stop and start event when reserving.
+	 * Rounds up to the nearest five minutes as long as it doesn't overlap with the next event.
+	 */
+	utils::Result<ReserveParams> calculateReserveParams(int reserveSeconds);
+
+	/**
+	 * Calculate when to stop and start event when reserving.
+	 * Rounds up to the nearest five minutes as long as it doesn't overlap with the next event.
+	 */
+	utils::Result<ReserveParams> calculateReserveUntilNextParams();
 
 	/**
 	 * Set the current event to end now.
