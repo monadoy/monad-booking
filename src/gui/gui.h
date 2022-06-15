@@ -1,5 +1,5 @@
-#ifndef __GUI_H_
-#define __GUI_H_
+#ifndef GUI_H
+#define GUI_H
 
 #include <epdgui_base.h>
 #include <epdgui_button.h>
@@ -33,7 +33,6 @@ enum {
 enum {
 	LABEL_CLOCK_UP,
 	LABEL_BATTERY,
-	LABEL_WIFI,
 	LABEL_CLOCK_MID,
 	LABEL_RESOURCE,
 	LABEL_CURRENT_BOOKING,
@@ -76,7 +75,6 @@ void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
 int configureMainButtonPos(bool isHide);
 void hideMainButtons(bool isHide);
-time_t roundToFive(time_t endTime);
 void hideBookingConfirmationButtons(bool isHide);
 void hideFreeConfirmationButtons(bool isHide);
 void hideFreeRoomButton(bool isHide);
@@ -90,7 +88,7 @@ void loadCurrentBooking();
 void loadCurrentFree();
 void toConfirmBooking(uint16_t time, bool isTillNext);
 void toFreeBooking();
-void makeBooking(uint16_t time, bool isTillNext);
+void makeBooking(const cal::Model::ReserveParams& params);
 void deleteBooking();
 void hideSettings(bool isHide);
 
@@ -116,11 +114,11 @@ void createButtons();
 void createRegularLabels();
 void createBoldLabels();
 void tryToPutSleep();
-}
+} // namespace
 
 namespace gui {
 void registerModel(cal::Model* model); 
-void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore);
+void initGui(Config::ConfigStore* configStore);
 void loopGui();
 void debug(String err);
 void clearDebug();
@@ -129,7 +127,7 @@ void showBootLog();
 
 class GUITask {
   public:
-	GUITask(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore, cal::Model* model);
+	GUITask(Config::ConfigStore* configStore, cal::Model* model);
 	enum class ActionType {
 		SUCCESS,
 		ERROR,
@@ -151,11 +149,40 @@ class GUITask {
 	};
 	
 	using QueueFunc = std::function<void()>;
+	/**
+	 * @brief Called when operation is executed successfully
+	 * 
+	 * @param type What kind of operation was executed
+	 * @param status Current calendar status
+	 */
+	void success(GuiRequest type, cal::CalendarStatus* status);
 
-	void success(GuiRequest type, const cal::CalendarStatus* status);
+	/**
+	 * @brief Called when operation caused error
+	 * 
+	 * @param type What kind of operation caused the error
+	 * @param error Error to show
+	 */
 	void error(GuiRequest type, const cal::Error& error);
-	void stateChanged(const cal::CalendarStatus* status);
+
+	/**
+	 * @brief Gui has to update current state.
+	 * 
+	 * @param status nullptr if nothing changed, otherwise changed event
+	 */
+	void stateChanged(cal::CalendarStatus* status);
+
+	/**
+	 * @brief Touch down event
+	 * 
+	 * @param tp struct to hold data from touch press.
+	 */
 	void touchDown(const tp_finger_t& tp);
+
+	/**
+	 * @brief Touch up event
+	 * 
+	 */
 	void touchUp();
 
 private:
