@@ -92,12 +92,11 @@ void setup() {
 		return;
 	}
 
-	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), safeMyTZ, safeUTC,
-	                                   config["gcalsettings"]["calendarid"]};
+	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), config["gcalsettings"]["calendarid"]};
 
 	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
 
-	calendarModel = utils::make_unique<cal::Model>(*apiTask, safeMyTZ, safeUTC);
+	calendarModel = utils::make_unique<cal::Model>(*apiTask);
 
 	esp_wifi_start();
 	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);

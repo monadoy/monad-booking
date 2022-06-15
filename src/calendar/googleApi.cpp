@@ -1,6 +1,7 @@
 #include "googleApi.h"
 
 #include "cert.h"
+#include "globals.h"
 #include "timeUtils.h"
 
 namespace {
@@ -76,13 +77,12 @@ const int EVENT_MAX_SIZE = 1024;
 
 const int EVENT_LIST_MAX_SIZE = LIST_MAX_EVENTS * EVENT_MAX_SIZE;
 
-GoogleAPI::GoogleAPI(const Token& token, SafeTimezone& tz, SafeTimezone& utc,
-                     const String& calendarId)
-    : _token{token}, _tz{tz}, _utc{utc}, _calendarId{calendarId} {};
+GoogleAPI::GoogleAPI(const Token& token, const String& calendarId)
+    : _token{token}, _calendarId{calendarId} {};
 
 bool GoogleAPI::refreshAuth() {
 	Serial.println("Refreshing token...");
-	if (_token.unixExpiry + 60 > _utc.now()) {
+	if (_token.unixExpiry + 60 > safeUTC.now()) {
 		Serial.println("Token doesn't need refreshing");
 		return true;
 	}
@@ -114,22 +114,22 @@ bool GoogleAPI::refreshAuth() {
 
 	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
-	_token.unixExpiry = _utc.now() + doc["expires_in"].as<long>();
+	_token.unixExpiry = safeUTC.now() + doc["expires_in"].as<long>();
 
 	return true;
 };
 
 Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	// BUILD REQUEST
-	time_t now = _tz.now();
+	time_t now = safeMyTZ.now();
 
-	String timeMin = _tz.dateTime(now, RFC3339);
+	String timeMin = safeMyTZ.dateTime(now, RFC3339);
 	timeMin.replace("+", "%2b");
 
-	String timeMax = _tz.dateTime(timeutils::getNextMidnight(now), RFC3339);
+	String timeMax = safeMyTZ.dateTime(timeutils::getNextMidnight(now), RFC3339);
 	timeMax.replace("+", "%2b");
 
-	String timeZone = _tz.getOlson();
+	String timeZone = safeMyTZ.getOlson();
 
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId
 	             + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&timeZone=" + timeZone
@@ -162,7 +162,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 
 	status->name = doc["summary"].as<String>();
 	JsonArray items = doc["items"].as<JsonArray>();
-	now = _utc.now();
+	now = safeUTC.now();
 
 	for (JsonObject item : items) {
 		std::shared_ptr<Event> event = extractEvent(item);
@@ -183,7 +183,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 
 Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	// BUILD REQUEST
-	String nowStr = _tz.dateTime(RFC3339);
+	String nowStr = safeMyTZ.dateTime(RFC3339);
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
 	             + eventId + "?fields=" + EVENT_FIELDS;
 	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
@@ -194,7 +194,7 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	StaticJsonDocument<256> payloadDoc;
 	payloadDoc["end"] = JsonObject{};
 	payloadDoc["end"]["dateTime"] = nowStr;
-	payloadDoc["end"]["timeZone"] = _tz.getOlson();
+	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
 	String payload = "";
 	serializeJson(payloadDoc, payload);
 
@@ -235,11 +235,11 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
 	payloadDoc["start"] = JsonObject{};
-	payloadDoc["start"]["dateTime"] = _tz.dateTime(startTime, UTC_TIME, RFC3339);
-	payloadDoc["start"]["timeZone"] = _tz.getOlson();
+	payloadDoc["start"]["dateTime"] = safeMyTZ.dateTime(startTime, UTC_TIME, RFC3339);
+	payloadDoc["start"]["timeZone"] = safeMyTZ.getOlson();
 	payloadDoc["end"] = JsonObject{};
-	payloadDoc["end"]["dateTime"] = _tz.dateTime(endTime, UTC_TIME, RFC3339);
-	payloadDoc["end"]["timeZone"] = _tz.getOlson();
+	payloadDoc["end"]["dateTime"] = safeMyTZ.dateTime(endTime, UTC_TIME, RFC3339);
+	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
 	payloadDoc["summary"] = NEW_EVENT_SUMMARY;
 	String payload = "";
 	serializeJson(payloadDoc, payload);

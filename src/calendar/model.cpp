@@ -2,9 +2,10 @@
 
 #include <esp_log.h>
 
+#include "globals.h"
+
 namespace cal {
-Model::Model(APITask& apiTask, SafeTimezone& tz, SafeTimezone& utc)
-    : _apiTask{apiTask}, _tz{tz}, _utc{utc} {
+Model::Model(APITask& apiTask) : _apiTask{apiTask} {
 	using namespace std::placeholders;
 	_apiTask.callbackCalendarStatus = std::bind(&Model::_onCalendarStatus, this, _1);
 	_apiTask.callbackEndEvent = std::bind(&Model::_onEndEvent, this, _1);
@@ -20,7 +21,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 
 	log_i("Reserving event.");
 
-	const time_t now = _utc.now();
+	const time_t now = safeUTC.now();
 
 	if (_status->currentEvent) {
 		log_e("Current event already exists, can't insert another one.");
@@ -28,7 +29,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 		    new utils::Error("Current event already exists, can't insert another one."));
 	}
 
-	time_t endTime = _utc.now() + reserveSeconds;
+	time_t endTime = now + reserveSeconds;
 
 	// Round up to five minute
 	const time_t remainder = endTime % (5 * SECS_PER_MIN);
@@ -56,7 +57,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveUntilNextParams() {
 			return utils::Result<ReserveParams>::makeErr(new utils::Error{"No next event exists."});
 		}
 	}
-	return calculateReserveParams(_status->nextEvent->unixStartTime - _utc.now());
+	return calculateReserveParams(_status->nextEvent->unixStartTime - safeUTC.now());
 }
 
 void Model::_onInsertEvent(const Result<Event>& result) {
@@ -83,7 +84,7 @@ void Model::endCurrentEvent() {
 		return;
 	}
 
-	if (!_status->currentEvent->unixEndTime <= _utc.now()) {
+	if (!_status->currentEvent->unixEndTime <= safeUTC.now()) {
 		log_e("Won't end current event as it already ended");
 		// TODO: send error to GUI
 		return;

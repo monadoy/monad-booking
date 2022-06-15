@@ -11,7 +11,7 @@ class GUITask;
 
 class Model {
   public:
-	Model(APITask& apiTask, SafeTimezone& tz, SafeTimezone& utc);
+	Model(APITask& apiTask);
 
 	void registerGUITask(GUITask* task) { _guiTask = task; };
 
@@ -61,8 +61,6 @@ class Model {
 
 	APITask& _apiTask;
 	GUITask* _guiTask = nullptr;
-	SafeTimezone& _tz;
-	SafeTimezone& _utc;
 };
 }  // namespace cal
 

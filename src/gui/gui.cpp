@@ -437,10 +437,10 @@ void toFreeBooking() {
 
 void makeBooking(uint16_t time, bool isTillNext) {
 	hideLoading(false);
-	if (isTillNext)
-		_model->reserveEventUntilNext();
-	else
-		_model->reserveEvent(time);
+	// if (isTillNext)
+	// 	_model->reserveEventUntilNext();
+	// else
+	// 	_model->reserveEvent(time);
 }
 
 void deleteBooking() {
