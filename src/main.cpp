@@ -42,6 +42,7 @@ std::array<uint8_t, 2> onHours{7, 19};
 
 std::unique_ptr<Config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
+std::unique_ptr<gui::GUITask> guiTask = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
 
 bool restoreWifiConfig();
@@ -97,6 +98,8 @@ void setup() {
 	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
 
 	calendarModel = utils::make_unique<cal::Model>(*apiTask);
+	guiTask = utils::make_unique<gui::GUITask>(configStore.get(), calendarModel.get());
+	calendarModel->updateStatus();
 
 	esp_wifi_start();
 	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);

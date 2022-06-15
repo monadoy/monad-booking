@@ -708,14 +708,13 @@ void tryToPutSleep() {
 		M5.EPD.Sleep();
 	}
 }
-
 }  // namespace
 
 namespace gui {
 
 void registerModel(cal::Model* model) { _model = model; }
 
-void initGui(SafeTimezone* _myTZ, SafeTimezone* safeUTC, Config::ConfigStore* configStore) {
+void initGui(Config::ConfigStore* configStore) {
 	JsonObjectConst config = configStore->getConfigJson();
 	bool loadSetup = config.begin() == config.end();
 	canvasCurrentEvent.createCanvas(652, 540);

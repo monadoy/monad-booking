@@ -69,7 +69,7 @@ void EPDGUI_Process(int16_t x, int16_t y);
 
 String getBatteryPercent();
 String getWifiStatus();
-void updateStatus();
+void updateStatus(const cal::CalendarStatus* status);
 void updateScreen(bool pushLeft, bool pushRight);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
@@ -184,6 +184,12 @@ class GUITask {
 	 * 
 	 */
 	void touchUp();
+
+	/**
+	 * @brief event to load setup
+	 * 
+	 */
+	void loadSetup();
 
 private:
 	TaskHandle_t _taskHandle;
