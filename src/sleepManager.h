@@ -3,7 +3,13 @@
 #include <Arduino.h>
 #include <ezTime.h>
 
-#define SLEEP_MANAGER_MAX_TASKS 10
+#include <vector>
+
+#define SLEEP_MANAGER_MAX_TASK_COUNT 20
+
+#define SLEEP_MANAGER_TASK_STACK_SIZE 1024 * 4
+#define SLEEP_MANAGER_TASK_PRIORITY 10
+#define SLEEP_MANAGER_TASK_QUEUE_SIZE 10
 
 // How long to keep awake after touch event
 #define TOUCH_WAKE_TIMEOUT_MS 15 * 1000
@@ -29,11 +35,23 @@ class ScopedTaskCounter {
 /**
  * Handles going to sleep and waking up to touch or reccurring timer.
  * Makes us sleep when there are no active tasks and there hasn't been a touch input in some time.
- * Tasks
+ * Members starting with underlines indicate pseudo private members because tasks can't access truly
+ * private members.
  */
 class SleepManager {
   public:
 	SleepManager();
+
+	enum class Action : size_t {
+		/*
+		 * Timer callback is executed every TIMER_CALLBACK_INTERVAL_S. Device will
+		 * wake up from sleep to ensure that the callback is executed in a timely manner. If already
+		 * woken, we will wait until just before sleeping.
+		 */
+		INTERVAL,
+		SLEEP,
+		SIZE
+	};
 
 	/**
 	 * Convenient RAII task count.
@@ -49,25 +67,47 @@ class SleepManager {
 	void decrementTaskCounter();
 
 	/**
-	 * Refresh touch wake timer to prevent going to sleep too early.
+	 * Refresh touch wake timer to prevent going to sleep while user is using the GUI.
 	 */
 	void refreshTouchWake();
+
+	enum class Callback : size_t {
+		/*
+		 * Is called on both touch and timer wake up
+		 * and happens before them.
+		 */
+		AFTER_WAKE,
+		AFTER_WAKE_TOUCH,
+		AFTER_WAKE_TIMER,
+		BEFORE_SLEEP,
+		ON_INTERVAL,
+		SIZE
+	};
+
+	/*
+	 * WARNING!
+	 * Register these before incrementing any task counters,
+	 * otherwise there will be race conditions!!
+	 */
+	void registerCallback(Callback type, const std::function<void()>& cb);
+	std::array<std::vector<std::function<void()>>, (size_t)Callback::SIZE> _callbacks{};
+	void _dispatchCallbacks(Callback type);
 
 	// TODO: callbacks for waking to touch and sleep
 	// TODO: shutdown for the night if needed
 
-	void _sleep();
-	SemaphoreHandle_t _activeTaskCounter;
+	enum class WakeReason { TOUCH, TIMER };
+	WakeReason _sleep();
 
-	/*
-	 * Timer callback that is executed every TIMER_CALLBACK_INTERVAL_S.
-	 * Device will wake up from sleep to ensure that the callback is executed in a timely manner.
-	 * If already woken, we will wait until just before sleeping.
-	 */
-	void registerTimerCallback();
+	void _enqueue(Action action);
+
+	SemaphoreHandle_t _activeTaskCounter;
 
 	TimerHandle_t _touchActivityTimer;
 	TimerHandle_t _taskActivityTimer;
+
+	QueueHandle_t _queueHandle;
+	TaskHandle_t _taskHandle;
 };
 
 #endif

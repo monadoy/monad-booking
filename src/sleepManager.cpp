@@ -5,6 +5,40 @@ ScopedTaskCounter::ScopedTaskCounter(SleepManager* manager) : _manager{manager} 
 }
 ScopedTaskCounter::~ScopedTaskCounter() { _manager->decrementTaskCounter(); }
 
+typedef SleepManager SM;
+
+void task(void* arg) {
+	SM* manager = static_cast<SM*>(arg);
+
+	log_i("Task created");
+
+	for (;;) {
+		SM::Action action;
+		xQueueReceive(manager->_queueHandle, &action, portMAX_DELAY);
+
+		switch (action) {
+			case SM::Action::SLEEP: {
+				manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
+
+				const SM::WakeReason wakeReason = manager->_sleep();
+
+				manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE);
+				if (wakeReason == SM::WakeReason::TIMER)
+					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TIMER);
+				else if (wakeReason == SM::WakeReason::TOUCH)
+					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TOUCH);
+
+				break;
+			}
+			default:
+				log_e("unhandled action %d", (size_t)action);
+				break;
+		}
+	}
+
+	vTaskDelete(NULL);
+}
+
 // Timer callbacks can't block in any way
 void timerCallback(TimerHandle_t handle) {
 	SleepManager* manager = static_cast<SleepManager*>(pvTimerGetTimerID(handle));
@@ -27,12 +61,22 @@ void timerCallback(TimerHandle_t handle) {
 	// If active task counter is still zero after timer has expired,
 	// go to sleep.
 	if (count == 0) {
-		manager->_sleep();
+		manager->_enqueue(SleepManager::Action::SLEEP);
 	}
 }
 
+void SleepManager::_enqueue(Action action) { xQueueSend(_queueHandle, (void*)&action, 0); }
+
 SleepManager::SleepManager() {
-	_activeTaskCounter = xSemaphoreCreateCounting(SLEEP_MANAGER_MAX_TASKS, 0);
+	xTaskCreate(task, "SleepManager Task", SLEEP_MANAGER_TASK_STACK_SIZE, static_cast<void*>(this),
+	            SLEEP_MANAGER_TASK_PRIORITY, &_taskHandle);
+
+	_queueHandle = xQueueCreate(SLEEP_MANAGER_TASK_QUEUE_SIZE, sizeof(Action));
+	if (_queueHandle == NULL) {
+		Serial.println("SleepManager Task: queue create failed");
+	}
+
+	_activeTaskCounter = xSemaphoreCreateCounting(SLEEP_MANAGER_MAX_TASK_COUNT, 0);
 	if (_activeTaskCounter == NULL) {
 		log_e("Active task counter semaphore creation failed");
 	}
@@ -60,6 +104,7 @@ void SleepManager::incrementTaskCounter() {
 
 	log_i("Task counter incremented, count: %d", uxSemaphoreGetCount(_activeTaskCounter));
 }
+
 void SleepManager::decrementTaskCounter() {
 	if (xSemaphoreTake(_activeTaskCounter, 10) != pdTRUE) {
 		log_e("Task counter decrement failed");
@@ -84,8 +129,16 @@ void SleepManager::refreshTouchWake() {
 	log_i("Touch wake refreshed");
 }
 
-void SleepManager::_sleep() {
-	log_i("Going to sleep... not implemented yet");
+void SleepManager::registerCallback(Callback type, const std::function<void()>& cb) {
+	_callbacks[(size_t)type].push_back(cb);
+}
+
+void SleepManager::_dispatchCallbacks(Callback type) {
+	for (const auto& cb : _callbacks[(size_t)type]) cb();
+}
+
+SleepManager::WakeReason SleepManager::_sleep() {
+	log_i("Going to sleep... (NOT IMPLEMENTED YET)");
 
 	// TODO: implement sleeping
 
@@ -126,4 +179,6 @@ void SleepManager::_sleep() {
 	// 	// Stay awake for a moment to process long touches
 	// 	wakeUntilMillis = millis() + WAKE_TIME_MS;
 	// }
+
+	return WakeReason::TIMER;
 }
