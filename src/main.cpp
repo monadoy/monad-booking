@@ -86,6 +86,10 @@ void setup() {
 
 	JsonObjectConst config = configStore->getConfigJson();
 
+	esp_wifi_start();
+	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
+	setupTime(config["timezone"]);
+
 	auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
 
 	if (tokenRes.isErr()) {
@@ -102,10 +106,6 @@ void setup() {
 	calendarModel->registerGUITask(guiTask.get());
 
 	calendarModel->updateStatus();
-
-	esp_wifi_start();
-	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
-	setupTime(config["timezone"]);
 
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
