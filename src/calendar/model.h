@@ -5,15 +5,17 @@
 #include "safeTimezone.h"
 #include "utils.h"
 
-namespace cal {
-
+namespace gui {
 class GUITask;
+}  // namespace gui
+
+namespace cal {
 
 class Model {
   public:
 	Model(APITask& apiTask);
 
-	void registerGUITask(GUITask* task) { _guiTask = task; };
+	void registerGUITask(gui::GUITask* task) { _guiTask = task; };
 
 	struct ReserveParams {
 		int startTime;
@@ -54,13 +56,16 @@ class Model {
 
 	bool _areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const;
 
+	template <typename T>
+	bool _handleError(size_t reqType, const Result<T>& result);
+
 	// Protects _status;
 	std::mutex _statusMutex;
 	// Remember to protect with mutex as multiple tasks call functions of Model.
 	std::shared_ptr<CalendarStatus> _status = std::make_shared<CalendarStatus>();
 
 	APITask& _apiTask;
-	GUITask* _guiTask = nullptr;
+	gui::GUITask* _guiTask = nullptr;
 };
 }  // namespace cal
 

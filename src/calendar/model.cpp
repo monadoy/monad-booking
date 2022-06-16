@@ -3,8 +3,22 @@
 #include <esp_log.h>
 
 #include "globals.h"
+#include "gui/gui.h"
 
 namespace cal {
+
+typedef gui::GUITask::GuiRequest GuiReq;
+
+template <typename T>
+bool Model::_handleError(size_t reqType, const Result<T>& result) {
+	if (result.isErr()) {
+		log_e("%s", result.err()->message.c_str());
+		_guiTask->error((GuiReq)reqType, *result.err());
+		return true;
+	}
+	return false;
+}
+
 Model::Model(APITask& apiTask) : _apiTask{apiTask} {
 	using namespace std::placeholders;
 	_apiTask.callbackCalendarStatus = std::bind(&Model::_onCalendarStatus, this, _1);
@@ -64,15 +78,12 @@ void Model::_onInsertEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Got event insert response.");
 
-	if (result.isErr()) {
-		log_e("%s", result.err()->message.c_str());
-		// TODO: send error to GUI
+	if (_handleError((size_t)GuiReq::RESERVE, result))
 		return;
-	}
 
 	_status->currentEvent = result.ok();
 
-	// TODO: send new event to UI
+	_guiTask->success(GuiReq::RESERVE, _status.get());
 }
 
 void Model::endCurrentEvent() {
@@ -80,13 +91,13 @@ void Model::endCurrentEvent() {
 	log_i("Ending current event.");
 	if (!_status->currentEvent) {
 		log_e("No current event exists to end");
-		// TODO: send error to GUI
+		_guiTask->error(GuiReq::FREE, Error("No current event exists to end"));
 		return;
 	}
 
 	if (!_status->currentEvent->unixEndTime <= safeUTC.now()) {
 		log_e("Won't end current event as it already ended");
-		// TODO: send error to GUI
+		_guiTask->error(GuiReq::FREE, Error("Won't end current event as it already ended"));
 		return;
 	}
 
@@ -97,15 +108,12 @@ void Model::_onEndEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Got end event response.");
 
-	if (result.isErr()) {
-		log_e("%s", result.err()->message.c_str());
-		// TODO: send error to GUI
+	if (_handleError((size_t)GuiReq::FREE, result))
 		return;
-	}
 
 	_status->currentEvent = nullptr;
 
-	// TODO: send new non-event to GUI
+	_guiTask->success(GuiReq::FREE, _status.get());
 }
 
 void Model::updateStatus() {
@@ -117,11 +125,8 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Received calendar status.");
 
-	if (result.isErr()) {
-		log_e("%s", result.err()->message.c_str());
-		// TODO: send error to GUI
+	if (_handleError((size_t)GuiReq::OTHER, result))
 		return;
-	}
 
 	auto newStatus = result.ok();
 
@@ -130,26 +135,23 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 	               || _status->name != newStatus->name;
 
 	// Don't send an update to GUI if nothing changed
-	if (!changed)
+	if (!changed) {
+		_guiTask->success(GuiReq::OTHER, nullptr);
 		return;
+	}
 
 	_status = newStatus;
 
-	// TODO: send new status to GUI
-	// TODO: what about the situation where nothing changes and no update is sent
-	// but GUI should still update clock?
+	_guiTask->success(GuiReq::OTHER, _status.get());
 }
 
 bool Model::_areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const {
-	if (!!event1 != !!event2) {
+	if (!!event1 != !!event2)
 		return false;
-	}
-	if (!event1 && !event2) {
+	if (!event1 && !event2)
 		return true;
-	}
-	if (*event1 == *event2) {
+	if (*event1 == *event2)
 		return true;
-	}
 	return false;
 }
 }  // namespace cal

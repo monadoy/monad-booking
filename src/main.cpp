@@ -99,6 +99,8 @@ void setup() {
 
 	calendarModel = utils::make_unique<cal::Model>(*apiTask);
 	guiTask = utils::make_unique<gui::GUITask>(configStore.get(), calendarModel.get());
+	calendarModel->registerGUITask(guiTask.get());
+
 	calendarModel->updateStatus();
 
 	esp_wifi_start();

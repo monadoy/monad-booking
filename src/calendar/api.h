@@ -33,6 +33,8 @@ struct Event {
 };
 
 struct Error {
+	Error(const String& message) : message(message), code(0) {}
+	Error(int code, const String& message) : message(message), code(code) {}
 	int code;
 	String message;
 };
