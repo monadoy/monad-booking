@@ -766,7 +766,7 @@ void initGui(Config::ConfigStore* configStore) {
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	hideLoading(true);
-	debug("Code " + enumToString(type) + " " + String(error.code) + "\n" + "- "
+	debug("Code " + enumToString(type)+ " " + String(error.code) + "\n" + "- "
 	      + String(error.message));
 }
 
@@ -777,6 +777,9 @@ String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done 
 			break;
 		case GUITask::GuiRequest::FREE:
 			return "FREEING";
+			break;
+		case GUITask::GuiRequest::MODEL:
+			return "MODEL";
 			break;
 		default:
 			return "OTHER";

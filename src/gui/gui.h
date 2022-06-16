@@ -138,8 +138,12 @@ class GUITask {
 	enum class GuiRequest {
 		RESERVE,
 		FREE,
-		OTHER
-	};
+		MODEL,
+		OTHER,
+		SIZE };
+	
+	/* std::array<String, (size_t)GuiRequest::SIZE> guiRequestStrings{"RESERVE", "FREE", "OTHER", "MODEL"}; */
+	
 	QueueHandle_t _queueHandle;
 	struct GuiQueueElement {
 		GuiQueueElement(ActionType t, void* func) : type{t}, func{func} {}
