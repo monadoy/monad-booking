@@ -5,8 +5,8 @@
 #include <list>
 
 #include "configServer.h"
-#include "safeTimezone.h"
 #include "globals.h"
+#include "safeTimezone.h"
 
 namespace {
 
@@ -110,10 +110,11 @@ bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal:
 	return false;
 }
 
-void updateStatus(const cal::CalendarStatus* status) {
+void updateStatus(cal::CalendarStatus* statusCopy) {
 	bool leftEventsEqual = false;
 	bool updateRight = false;
-	if (status) {
+	if (statusCopy) {
+		auto status = toSmartPtr<cal::CalendarStatus>(statusCopy);
 		bool leftEventsEqual = checkEventEquality(currentEvent, status->currentEvent);
 		bool updateRight = checkEventEquality(nextEvent, status->nextEvent);
 
@@ -375,9 +376,10 @@ void loadCurrentFree() {
 }
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
-	tillNext = isTillNext; // TODO: remove this
-	auto res = isTillNext ? _model->calculateReserveUntilNextParams() : _model->calculateReserveParams(time*SECS_PER_MIN);
-	if(res.isOk()) {
+	tillNext = isTillNext;  // TODO: remove this
+	auto res = isTillNext ? _model->calculateReserveUntilNextParams()
+	                      : _model->calculateReserveParams(time * SECS_PER_MIN);
+	if (res.isOk()) {
 		reserveParamsPtr = res.ok();
 	}
 
@@ -708,6 +710,17 @@ void tryToPutSleep() {
 		M5.EPD.Sleep();
 	}
 }
+void debug(String err) {
+	lbls[LABEL_ERROR]->SetHide(false);
+	lbls[LABEL_ERROR]->SetText(err);
+	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+}
+
+void clearDebug() {
+	lbls[LABEL_ERROR]->SetText("");
+	lbls[LABEL_ERROR]->SetHide(true);
+	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+}
 }  // namespace
 
 namespace gui {
@@ -748,20 +761,27 @@ void initGui(Config::ConfigStore* configStore) {
 		lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 		lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 		toSetupScreen();
-
 	}
 }
 
-void debug(String err) {
-	lbls[LABEL_ERROR]->SetHide(false);
-	lbls[LABEL_ERROR]->SetText(err);
-	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
+	hideLoading(true);
+	debug("Code " + enumToString(type) + " " + String(error.code) + "\n" + "- "
+	      + String(error.message));
 }
 
-void clearDebug() {
-	lbls[LABEL_ERROR]->SetText("");
-	lbls[LABEL_ERROR]->SetHide(true);
-	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done with an array
+	switch (type) {
+		case GUITask::GuiRequest::RESERVE:
+			return "RESERVE";
+			break;
+		case GUITask::GuiRequest::FREE:
+			return "FREEING";
+			break;
+		default:
+			return "OTHER";
+			break;
+	}
 }
 
 void toSetupScreen() {
@@ -846,8 +866,7 @@ void task(void* arg) {
 	vTaskDelete(NULL);
 }
 
-GUITask::GUITask(Config::ConfigStore* configStore,
-                 cal::Model* model) {
+GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
 	gui::registerModel(model);
 	xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
 	                        GUI_TASK_PRIORITY, &_taskHandle, 1);
@@ -858,16 +877,26 @@ GUITask::GUITask(Config::ConfigStore* configStore,
 
 // TODO: use type -parameter
 void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
-	enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateStatus(status); }));
+	if (!status)
+		enqueue(ActionType::STATE_UPDATE, new QueueFunc([=]() { return updateStatus(nullptr); }));
+	else {
+		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
+		enqueue(ActionType::STATE_UPDATE,
+		        new QueueFunc([=]() { return updateStatus(statusCopy); }));
+	}
 }
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
-	enqueue(ActionType::ERROR, new QueueFunc([=]() {
-		        return debug("Code " + String(error.code) + "\n" + "- " + String(error.message));
-	        }));
+	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
 }
 void GUITask::stateChanged(cal::CalendarStatus* status) {
-	enqueue(ActionType::STATE_UPDATE, new QueueFunc([=]() { return updateStatus(status); }));
+	if (!status)
+		enqueue(ActionType::STATE_UPDATE, new QueueFunc([=]() { return updateStatus(nullptr); }));
+	else {
+		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
+		enqueue(ActionType::STATE_UPDATE,
+		        new QueueFunc([=]() { return updateStatus(statusCopy); }));
+	}
 }
 void GUITask::touchDown(const tp_finger_t& tp) {
 	enqueue(ActionType::TOUCH_DOWN, new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));

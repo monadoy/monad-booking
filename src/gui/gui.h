@@ -69,7 +69,7 @@ void EPDGUI_Process(int16_t x, int16_t y);
 
 String getBatteryPercent();
 String getWifiStatus();
-void updateStatus(const cal::CalendarStatus* status);
+void updateStatus(cal::CalendarStatus* status);
 void updateScreen(bool pushLeft, bool pushRight);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
@@ -114,14 +114,13 @@ void createButtons();
 void createRegularLabels();
 void createBoldLabels();
 void tryToPutSleep();
+void debug(String err);
+void clearDebug();
 } // namespace
 
 namespace gui {
 void registerModel(cal::Model* model); 
 void initGui(Config::ConfigStore* configStore);
-void loopGui();
-void debug(String err);
-void clearDebug();
 void toSetupScreen();
 void showBootLog();
 
@@ -195,6 +194,9 @@ private:
 	TaskHandle_t _taskHandle;
 	void enqueue(ActionType at, void* func);
 };
+
+void displayError(gui::GUITask::GuiRequest type, const cal::Error& error);
+String enumToString(gui::GUITask::GuiRequest type);
 
 } // namespace gui
 #endif
