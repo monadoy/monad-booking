@@ -11,16 +11,15 @@ std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
-		return std::shared_ptr<cal::Error>(new cal::Error{
-		    .code = 0, .message = "deserializeJson() failed with code " + String(err.f_str())});
+		return std::shared_ptr<cal::Error>(
+		    new cal::Error{"deserializeJson() failed with code " + String(err.f_str())});
 	}
 
 	if (httpCode != 200) {
 		Serial.println("Error in HTTP request: " + httpCode);
 		return std::shared_ptr<cal::Error>(
-		    new cal::Error{.code = httpCode,
-		                   .message = "Error in HTTP request: " + String(httpCode) + ", "
-		                              + doc["error"]["message"].as<String>()});
+		    new cal::Error{httpCode, "Error in HTTP request: " + String(httpCode) + ", "
+		                                 + doc["error"]["message"].as<String>()});
 	}
 
 	return nullptr;
@@ -215,8 +214,7 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	// PARSE JSON AS EVENT STRUCT
 	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>());
 	if (!event) {
-		return Result<Event>::makeErr(
-		    new Error{.code = 0, .message = "PATCH didn't return a valid accepted event"});
+		return Result<Event>::makeErr(new Error{"PATCH didn't return a valid accepted event"});
 	}
 
 	return Result<Event>::makeOk(event);
@@ -292,8 +290,7 @@ Result<Event> GoogleAPI::getEvent(const String& eventId) {
 	// PARSE JSON AS EVENT STRUCT
 	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>());
 	if (!event) {
-		return Result<Event>::makeErr(
-		    new Error{.code = 0, .message = "GET didn't return a valid accepted event"});
+		return Result<Event>::makeErr(new Error{"GET didn't return a valid accepted event"});
 	}
 
 	return Result<Event>::makeOk(event);
