@@ -112,7 +112,6 @@ void updateStatus(cal::CalendarStatus* statusCopy) {
 	bool updateRight = false;
 	if (statusCopy) {
 		auto status = toSmartPtr<cal::CalendarStatus>(statusCopy);
-		log_i("Updating status currently...");
 		bool leftEventsEqual = checkEventEquality(currentEvent, status->currentEvent);
 		bool updateRight = checkEventEquality(nextEvent, status->nextEvent);
 		resourceName = status->name;
@@ -124,7 +123,6 @@ void updateStatus(cal::CalendarStatus* statusCopy) {
 	bool updateLeft = leftEventsEqual && buttonsEqual;
 	currentBtnIndex = newBtnIndex;
 	if (currentScreen == SCREEN_MAIN) {
-		log_i("Going to Main screen");
 		toMainScreen(!updateLeft, !updateRight);
 	}
 }
@@ -163,7 +161,6 @@ int configureMainButtonPos(bool isHide) {
 		btnIndex = 4;
 	} else {
 		int timeTillNext = int(difftime(nextEvent->unixStartTime, safeUTC.now()) / SECS_PER_MIN);
-		log_i("Time till next booking");
 		if (timeTillNext < 15) {
 			btnIndex = 0;
 		} else if (timeTillNext < 30) {
@@ -380,7 +377,9 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 	if (res.isOk()) {
 		reserveParamsPtr = res.ok();
 	}
-
+	timeToBeBooked = difftime(reserveParamsPtr->endTime, reserveParamsPtr->startTime);
+	Serial.print("Time to be booked is ");
+	Serial.println(timeToBeBooked);
 	currentScreen = SCREEN_BOOKING;
 	hideMainButtons(true);
 	hideMainLabels(true);
@@ -747,6 +746,7 @@ void initGui(Config::ConfigStore* configStore) {
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
 	createRegularLabels();
+	/* M5.TP.onTouch(GUITask::touchDown, ) */
 
 	M5.EPD.Active();
 	if (loadSetup) {
@@ -759,10 +759,7 @@ void initGui(Config::ConfigStore* configStore) {
 		lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 		lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 		toSetupScreen();
-	} /* else { // TODO: remove this else entirely
-	    _model->updateStatus();
-	    toMainScreen(true, true);
-	} */
+	}
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
@@ -854,7 +851,7 @@ void showBootLog() {
 	updateScreen(true, true);
 }
 
-#define GUI_QUEUE_LENGTH 2
+#define GUI_QUEUE_LENGTH 15
 #define GUI_TASK_PRIORITY 5
 #define GUI_TASK_STACK_SIZE 4096
 
@@ -886,15 +883,9 @@ void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
 
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
-	log_i("GUI ERROR");
 	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
 }
 
-void GUITask::stateChanged(GuiRequest type, cal::CalendarStatus* status) {
-	cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
-	enqueue(ActionType::STATE_UPDATE,
-	        new QueueFunc([=]() { return updateGui(GuiRequest::UPDATE, statusCopy); }));
-}
 void GUITask::touchDown(const tp_finger_t& tp) {
 	enqueue(ActionType::TOUCH_DOWN, new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));
 }

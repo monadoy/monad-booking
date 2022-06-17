@@ -126,7 +126,6 @@ class GUITask {
 	enum class ActionType {
 		SUCCESS,
 		ERROR,
-		STATE_UPDATE,
 		TOUCH_DOWN,
 		TOUCH_UP
 	};
@@ -164,13 +163,6 @@ class GUITask {
 	 * @param error Error to show
 	 */
 	void error(GuiRequest type, const cal::Error& error);
-
-	/**
-	 * @brief Gui has to update current state.
-	 * 
-	 * @param status nullptr if nothing changed, otherwise changed event
-	 */
-	void stateChanged(GuiRequest type, cal::CalendarStatus* status);
 
 	/**
 	 * @brief Touch down event
