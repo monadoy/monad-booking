@@ -170,12 +170,14 @@ class GUITask {
 	 * @param tp struct to hold data from touch press.
 	 */
 	void touchDown(const tp_finger_t& tp);
+	std::function<void(const tp_finger_t &)> callbackTouchDown;
 
-	/**
+	/** 
 	 * @brief Touch up event
 	 * 
 	 */
 	void touchUp();
+	std::function<void()> callbackTouchUp;
 
 	/**
 	 * @brief event to load setup

@@ -746,7 +746,6 @@ void initGui(Config::ConfigStore* configStore) {
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
 	createRegularLabels();
-	/* M5.TP.onTouch(GUITask::touchDown, ) */
 
 	M5.EPD.Active();
 	if (loadSetup) {
@@ -889,15 +888,21 @@ void GUITask::error(GuiRequest type, const cal::Error& error) {
 void GUITask::touchDown(const tp_finger_t& tp) {
 	enqueue(ActionType::TOUCH_DOWN, new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));
 }
+
 void GUITask::touchUp() {
 	enqueue(ActionType::TOUCH_UP, new QueueFunc([=]() { return EPDGUI_Process(); }));
 }
+
 void GUITask::enqueue(ActionType at, void* func) {
 	GuiQueueElement* data = new GuiQueueElement{at, func};
 	xQueueSend(_guiQueueHandle, (void*)&data, 0);
 };
 
 GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
+	using namespace std::placeholders;
+	this->callbackTouchDown = std::bind(&GUITask::touchDown, this, _1);
+	this->callbackTouchUp = std::bind(&GUITask::touchUp, this);
+	M5.TP.onTouch(GUITask::callbackTouchDown, GUITask::callbackTouchUp);
 	BaseType_t xReturned;
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
 	xReturned = xTaskCreatePinnedToCore(task,
