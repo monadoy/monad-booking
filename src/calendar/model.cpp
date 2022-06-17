@@ -125,7 +125,7 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Received calendar status.");
 
-	if (_handleError((size_t)GuiReq::MODEL, result))
+	if (_handleError((size_t)GuiReq::UPDATE, result))
 		return;
 
 	auto newStatus = result.ok();
@@ -136,13 +136,13 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 
 	// Don't send an update to GUI if nothing changed
 	if (!changed) {
-		_guiTask->success(GuiReq::MODEL, nullptr);
+		_guiTask->success(GuiReq::UPDATE, nullptr);
 		return;
 	}
 
 	_status = newStatus;
 
-	_guiTask->success(GuiReq::MODEL, _status.get());
+	_guiTask->success(GuiReq::UPDATE, _status.get());
 }
 
 bool Model::_areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const {
