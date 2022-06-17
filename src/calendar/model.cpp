@@ -24,6 +24,21 @@ Model::Model(APITask& apiTask) : _apiTask{apiTask} {
 	_apiTask.callbackCalendarStatus = std::bind(&Model::_onCalendarStatus, this, _1);
 	_apiTask.callbackEndEvent = std::bind(&Model::_onEndEvent, this, _1);
 	_apiTask.callbackInsertEvent = std::bind(&Model::_onInsertEvent, this, _1);
+
+	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() {
+		time_t now = safeUTC.now();
+		if (_nextStatusUpdate <= now) {
+			updateStatus();  // This will cancel sleep
+		}
+	});
+
+	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE_TIMER, [this]() {
+		time_t now = safeUTC.now();
+		// Take into account inaccuracies in sleep time with -2
+		if (_nextStatusUpdate >= now - 2) {
+			updateStatus();
+		};
+	});
 }
 
 void Model::reserveEvent(const ReserveParams& params) {
@@ -118,6 +133,8 @@ void Model::_onEndEvent(const Result<Event>& result) {
 
 void Model::updateStatus() {
 	log_i("Fetching calendar status.");
+	_nextStatusUpdate = safeUTC.now() + STATUS_UPDATE_INTERVAL_S;
+	sleepManager.nextWakeTime = _nextStatusUpdate;
 	_apiTask.fetchCalendarStatus();
 }
 

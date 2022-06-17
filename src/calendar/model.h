@@ -11,6 +11,8 @@ class GUITask;
 
 namespace cal {
 
+#define STATUS_UPDATE_INTERVAL_S 2 * SECS_PER_MIN
+
 class Model {
   public:
 	Model(APITask& apiTask);
@@ -46,6 +48,7 @@ class Model {
 
 	/**
 	 * Fetch the current status of the calendar.
+	 * Also updates sleep timings in sleep manager.
 	 */
 	void updateStatus();
 
@@ -63,6 +66,9 @@ class Model {
 	std::mutex _statusMutex;
 	// Remember to protect with mutex as multiple tasks call functions of Model.
 	std::shared_ptr<CalendarStatus> _status = std::make_shared<CalendarStatus>();
+
+	// Unix UTC seconds
+	time_t _nextStatusUpdate = 0;
 
 	APITask& _apiTask;
 	gui::GUITask* _guiTask = nullptr;

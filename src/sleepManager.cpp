@@ -1,5 +1,9 @@
 #include "sleepManager.h"
 
+#include "esp_wifi.h"
+#include "globals.h"
+#include "utils.h"
+
 ScopedTaskCounter::ScopedTaskCounter(SleepManager* manager) : _manager{manager} {
 	_manager->incrementTaskCounter();
 }
@@ -19,6 +23,10 @@ void task(void* arg) {
 		switch (action) {
 			case SM::Action::SLEEP: {
 				manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
+
+				// If any callback started a task, timers are active and we should postpone sleeping
+				if (manager->_anyTimerActive())
+					continue;
 
 				const SM::WakeReason wakeReason = manager->_sleep();
 
@@ -43,16 +51,8 @@ void task(void* arg) {
 void timerCallback(TimerHandle_t handle) {
 	SleepManager* manager = static_cast<SleepManager*>(pvTimerGetTimerID(handle));
 
-	bool taskActive = xTimerIsTimerActive(manager->_taskActivityTimer) == pdTRUE;
-	bool touchActive = xTimerIsTimerActive(manager->_touchActivityTimer) == pdTRUE;
-
-	log_i("A timer expired, Task timer active: %d, Touch timer active: %d", taskActive,
-	      touchActive);
-
-	// If a timer is till active we don't need to do anything
-	if (taskActive || touchActive) {
+	if (manager->_anyTimerActive())
 		return;
-	}
 
 	BaseType_t count = uxSemaphoreGetCount(manager->_activeTaskCounter);
 
@@ -63,6 +63,15 @@ void timerCallback(TimerHandle_t handle) {
 	if (count == 0) {
 		manager->_enqueue(SleepManager::Action::SLEEP);
 	}
+}
+
+bool SleepManager::_anyTimerActive() {
+	bool taskActive = xTimerIsTimerActive(_taskActivityTimer) == pdTRUE;
+	bool touchActive = xTimerIsTimerActive(_touchActivityTimer) == pdTRUE;
+
+	log_i("Task timer active: %d, Touch timer active: %d", taskActive, touchActive);
+
+	return taskActive || touchActive;
 }
 
 void SleepManager::_enqueue(Action action) { xQueueSend(_queueHandle, (void*)&action, 0); }
@@ -138,47 +147,32 @@ void SleepManager::_dispatchCallbacks(Callback type) {
 }
 
 SleepManager::WakeReason SleepManager::_sleep() {
-	log_i("Going to sleep... (NOT IMPLEMENTED YET)");
+	log_i("Going to sleep...");
 
-	// TODO: implement sleeping
+	// TODO: put wifi to sleep in a more robust way (and maybe inside BEFORE_SLEEP callback)
+	utils::sleepWiFi();
 
-	// // Calculate how long we need to sleep in order to achieve the desired update status
-	// interval. unsigned long curMillis = millis(); uint64_t sleepTime
-	//     = uint64_t(max(nextStatusUpdateMillis, curMillis + 1) - curMillis) * MICROS_PER_MILLI;
+	time_t now = safeUTC.now();
 
-	// Serial.print("Sleeping for ");
-	// Serial.print(sleepTime / MICROS_PER_SEC);
-	// Serial.println(" s or until touch.");
+	uint64_t sleepTime = max(nextWakeTime - now, (long)MIN_TIMED_SLEEP_S);
 
-	// Serial.flush();
+	log_i("Sleeping for %llu s or until touch.", sleepTime);
 
-	// utils::sleepWiFi();
+	Serial.flush();
 
-	// // Light sleep and wait for timer or touch interrupt
-	// esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
-	// esp_sleep_enable_timer_wakeup(sleepTime);
-	// esp_light_sleep_start();
+	// Light sleep and wait for timer or touch interrupt
+	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
+	esp_sleep_enable_timer_wakeup(sleepTime * 1000 * 1000);
+	esp_light_sleep_start();
 
-	// Serial.print("Wakeup cause: ");
-	// auto cause = esp_sleep_get_wakeup_cause();
-	// if (cause == ESP_SLEEP_WAKEUP_TIMER) {
-	// 	Serial.println("TIMER");
-	// 	Serial.println("Updating gui status and going back to sleep");
+	auto cause = esp_sleep_get_wakeup_cause();
+	if (cause == ESP_SLEEP_WAKEUP_TIMER) {
+		log_i("Wakeup cause: TIMER");
+		return WakeReason::TIMER;
+	} else if (cause == ESP_SLEEP_WAKEUP_EXT0) {
+		log_i("Wakeup cause: TOUCH");
+		return WakeReason::TOUCH;
+	}
 
-	// 	// When wakeup is caused by timer, a status update is due.
-	// 	// gui::updateGui(); deprecated
-
-	// 	// Calculate the next status update timestamp based on our interval.
-	// 	nextStatusUpdateMillis = millis() + UPDATE_STATUS_INTERVAL_MS;
-
-	// 	// Go instantly back to sleep
-	// 	wakeUntilMillis = 0;
-	// } else if (cause == ESP_SLEEP_WAKEUP_EXT0) {
-	// 	Serial.println("TOUCH");
-
-	// 	// Stay awake for a moment to process long touches
-	// 	wakeUntilMillis = millis() + WAKE_TIME_MS;
-	// }
-
-	return WakeReason::TIMER;
+	return WakeReason::UNKNOWN;
 }

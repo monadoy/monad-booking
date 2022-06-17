@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <ezTime.h>
 
+#include <atomic>
 #include <vector>
 
 #define SLEEP_MANAGER_MAX_TASK_COUNT 20
@@ -12,14 +13,15 @@
 #define SLEEP_MANAGER_TASK_QUEUE_SIZE 10
 
 // How long to keep awake after touch event
-#define TOUCH_WAKE_TIMEOUT_MS 15 * 1000
+#define TOUCH_WAKE_TIMEOUT_MS 10 * 1000
 
 // How long the keep awake after tasks are complete.
 // This works as a safety buffer when there is some processing time between
 // two sequential tasks that should keep us awake.
 #define TASK_WAKE_TIMEOUT_MS 200
 
-#define TIMER_CALLBACK_INTERVAL_S 2 * 60
+// Minimum time to put into timer when sleeping
+#define MIN_TIMED_SLEEP_S 3
 
 class SleepManager;
 
@@ -42,16 +44,7 @@ class SleepManager {
   public:
 	SleepManager();
 
-	enum class Action : size_t {
-		/*
-		 * Timer callback is executed every TIMER_CALLBACK_INTERVAL_S. Device will
-		 * wake up from sleep to ensure that the callback is executed in a timely manner. If already
-		 * woken, we will wait until just before sleeping.
-		 */
-		INTERVAL,
-		SLEEP,
-		SIZE
-	};
+	enum class Action : size_t { SLEEP, SIZE };
 
 	/**
 	 * Convenient RAII task count.
@@ -80,10 +73,15 @@ class SleepManager {
 		AFTER_WAKE_TOUCH,
 		AFTER_WAKE_TIMER,
 		BEFORE_SLEEP,
-		ON_INTERVAL,
 		SIZE
 	};
 
+	// Set this to control length of time to sleep, if it's less than current time, sleep will be
+	// default length. Uses unix utc seconds.
+	std::atomic<time_t> nextWakeTime{0};
+
+	// TODO: order of operations for callbacks could be made clearer.
+	// E.g. maybe we should supply the whole list at once instead of registering one by one.
 	/*
 	 * WARNING!
 	 * Register these before incrementing any task counters,
@@ -93,13 +91,14 @@ class SleepManager {
 	std::array<std::vector<std::function<void()>>, (size_t)Callback::SIZE> _callbacks{};
 	void _dispatchCallbacks(Callback type);
 
-	// TODO: callbacks for waking to touch and sleep
 	// TODO: shutdown for the night if needed
 
-	enum class WakeReason { TOUCH, TIMER };
+	enum class WakeReason { TOUCH, TIMER, UNKNOWN };
 	WakeReason _sleep();
 
 	void _enqueue(Action action);
+
+	bool _anyTimerActive();
 
 	SemaphoreHandle_t _activeTaskCounter;
 

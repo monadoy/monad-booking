@@ -28,8 +28,9 @@ void task(void* arg) {
 		}
 		while (!WiFi.isConnected()) {
 			delay(20);
-			Serial.println(WiFi.status());
+			Serial.print(WiFi.status());
 		}
+		Serial.println();
 
 		apiTask->_api->refreshAuth();
 
