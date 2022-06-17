@@ -69,7 +69,7 @@ void EPDGUI_Process(int16_t x, int16_t y);
 
 String getBatteryPercent();
 String getWifiStatus();
-void updateStatus(cal::CalendarStatus* status);
+void updateStatus(cal::CalendarStatus* statusCopy);
 void updateScreen(bool pushLeft, bool pushRight);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
@@ -119,10 +119,6 @@ void clearDebug();
 } // namespace
 
 namespace gui {
-void registerModel(cal::Model* model); 
-void initGui(Config::ConfigStore* configStore);
-void toSetupScreen();
-void showBootLog();
 
 class GUITask {
   public:
@@ -139,12 +135,13 @@ class GUITask {
 		RESERVE,
 		FREE,
 		MODEL,
+		UPDATE,
 		OTHER,
 		SIZE };
 	
 	/* std::array<String, (size_t)GuiRequest::SIZE> guiRequestStrings{"RESERVE", "FREE", "OTHER", "MODEL"}; */
 	
-	QueueHandle_t _queueHandle;
+	QueueHandle_t _guiQueueHandle;
 	struct GuiQueueElement {
 		GuiQueueElement(ActionType t, void* func) : type{t}, func{func} {}
 		ActionType type;
@@ -173,7 +170,7 @@ class GUITask {
 	 * 
 	 * @param status nullptr if nothing changed, otherwise changed event
 	 */
-	void stateChanged(cal::CalendarStatus* status);
+	void stateChanged(GuiRequest type, cal::CalendarStatus* status);
 
 	/**
 	 * @brief Touch down event
@@ -198,7 +195,12 @@ private:
 	TaskHandle_t _taskHandle;
 	void enqueue(ActionType at, void* func);
 };
-
+void initGui(Config::ConfigStore* configStore);
+void toSetupScreen();
+void showBootLog();
+void registerModel(cal::Model* model); 
+void task(void* arg);
+void updateGui(gui::GUITask::GuiRequest type, cal::CalendarStatus* status);
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error);
 String enumToString(gui::GUITask::GuiRequest type);
 

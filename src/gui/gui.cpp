@@ -95,29 +95,27 @@ String getBatteryPercent() {
 
 bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal::Event> event2) {
 	if (!!event1 != !!event2) {
-		Serial.println("1");
 		return false;
 	}
 	if (!event1 && !event2) {
-		Serial.println("2");
 		return true;
 	}
 	if (*event1 == *event2) {
-		Serial.println("3");
 		return true;
 	}
-	Serial.println("4");
 	return false;
 }
 
 void updateStatus(cal::CalendarStatus* statusCopy) {
+	log_i("updatestatus called....");
 	bool leftEventsEqual = false;
 	bool updateRight = false;
 	if (statusCopy) {
 		auto status = toSmartPtr<cal::CalendarStatus>(statusCopy);
+		log_i("Updating status currently...");
 		bool leftEventsEqual = checkEventEquality(currentEvent, status->currentEvent);
 		bool updateRight = checkEventEquality(nextEvent, status->nextEvent);
-
+		resourceName = status->name;
 		nextEvent = status->nextEvent;
 		currentEvent = status->currentEvent;
 	}
@@ -126,6 +124,7 @@ void updateStatus(cal::CalendarStatus* statusCopy) {
 	bool updateLeft = leftEventsEqual && buttonsEqual;
 	currentBtnIndex = newBtnIndex;
 	if (currentScreen == SCREEN_MAIN) {
+		log_i("Going to Main screen");
 		toMainScreen(!updateLeft, !updateRight);
 	}
 }
@@ -164,8 +163,7 @@ int configureMainButtonPos(bool isHide) {
 		btnIndex = 4;
 	} else {
 		int timeTillNext = int(difftime(nextEvent->unixStartTime, safeUTC.now()) / SECS_PER_MIN);
-		Serial.println("Time till next booking");
-		Serial.println(timeTillNext);
+		log_i("Time till next booking");
 		if (timeTillNext < 15) {
 			btnIndex = 0;
 		} else if (timeTillNext < 30) {
@@ -752,7 +750,7 @@ void initGui(Config::ConfigStore* configStore) {
 
 	M5.EPD.Active();
 	if (loadSetup) {
-		Serial.println("Going to setupscreen");
+		log_i("Going to setupscreen");
 		for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 		     p != epdgui_object_list.end(); p++) {
 			(*p)->SetHide(true);
@@ -761,13 +759,21 @@ void initGui(Config::ConfigStore* configStore) {
 		lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 		lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 		toSetupScreen();
-	}
+	} /* else { // TODO: remove this else entirely
+	    _model->updateStatus();
+	    toMainScreen(true, true);
+	} */
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	hideLoading(true);
-	debug("Code " + enumToString(type)+ " " + String(error.code) + "\n" + "- "
+	debug("Code " + enumToString(type) + " " + String(error.code) + "\n" + "- "
 	      + String(error.message));
+}
+void updateGui(gui::GUITask::GuiRequest type, cal::CalendarStatus* status) {
+	hideLoading(true);
+	updateStatus(status);
+	log_i("updateGui was called");
 }
 
 String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done with an array
@@ -780,6 +786,9 @@ String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done 
 			break;
 		case GUITask::GuiRequest::MODEL:
 			return "MODEL";
+			break;
+		case GUITask::GuiRequest::UPDATE:
+			return "UPDATE";
 			break;
 		default:
 			return "OTHER";
@@ -845,22 +854,22 @@ void showBootLog() {
 	updateScreen(true, true);
 }
 
-#define GUI_QUEUE_LENGTH 50
+#define GUI_QUEUE_LENGTH 2
 #define GUI_TASK_PRIORITY 5
-#define GUI_TASK_STACK_SIZE 8192 * 8
+#define GUI_TASK_STACK_SIZE 4096
 
 void task(void* arg) {
 	GUITask* guiTask = static_cast<GUITask*>(arg);
 
-	Serial.print("GUI Task created");
+	log_i("GUI Task created");
 
 	for (;;) {
 		void* reqTemp;
-		Serial.print("GUI Task: waiting for queue receive");
-		xQueueReceive(guiTask->_queueHandle, &reqTemp, portMAX_DELAY);
+		log_i("GUI Task: waiting for queue receive");
+		xQueueReceive(guiTask->_guiQueueHandle, &reqTemp, portMAX_DELAY);
 		auto counter = sleepManager.scopedTaskCount();
 		auto req = toSmartPtr<GUITask::GuiQueueElement>(reqTemp);
-		Serial.print("GUI Task: queue item received");
+		log_i("GUI Task: queue item received");
 
 		auto func = toSmartPtr<GUITask::QueueFunc>(req->func);
 		(*func)();
@@ -869,37 +878,22 @@ void task(void* arg) {
 	vTaskDelete(NULL);
 }
 
-GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
-	gui::registerModel(model);
-	xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
-	                        GUI_TASK_PRIORITY, &_taskHandle, 1);
-	_queueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
-
-	gui::initGui(configStore);
-}
-
 // TODO: use type -parameter
 void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
-	if (!status)
-		enqueue(ActionType::STATE_UPDATE, new QueueFunc([=]() { return updateStatus(nullptr); }));
-	else {
-		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
-		enqueue(ActionType::STATE_UPDATE,
-		        new QueueFunc([=]() { return updateStatus(statusCopy); }));
-	}
+	cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
+	enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, statusCopy); }));
 }
+
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
+	log_i("GUI ERROR");
 	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
 }
-void GUITask::stateChanged(cal::CalendarStatus* status) {
-	if (!status)
-		enqueue(ActionType::STATE_UPDATE, new QueueFunc([=]() { return updateStatus(nullptr); }));
-	else {
-		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
-		enqueue(ActionType::STATE_UPDATE,
-		        new QueueFunc([=]() { return updateStatus(statusCopy); }));
-	}
+
+void GUITask::stateChanged(GuiRequest type, cal::CalendarStatus* status) {
+	cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
+	enqueue(ActionType::STATE_UPDATE,
+	        new QueueFunc([=]() { return updateGui(GuiRequest::UPDATE, statusCopy); }));
 }
 void GUITask::touchDown(const tp_finger_t& tp) {
 	enqueue(ActionType::TOUCH_DOWN, new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));
@@ -909,6 +903,27 @@ void GUITask::touchUp() {
 }
 void GUITask::enqueue(ActionType at, void* func) {
 	GuiQueueElement* data = new GuiQueueElement{at, func};
-	xQueueSend(_queueHandle, (void*)&data, 0);
+	xQueueSend(_guiQueueHandle, (void*)&data, 0);
 };
+
+GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
+	BaseType_t xReturned;
+	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
+	xReturned = xTaskCreatePinnedToCore(task,
+										"GUI Task",
+										GUI_TASK_STACK_SIZE,
+										static_cast<void*>(this),
+	                              		GUI_TASK_PRIORITY,
+										&_taskHandle, 1);
+	Serial.print("xReturned value is ");
+	Serial.println(xReturned);
+	gui::registerModel(model);
+
+	gui::initGui(configStore);
+	if (_guiQueueHandle != NULL) {
+		log_i("GUI Task: queue created");
+	} else {
+		log_i("GUI Task: queue create failed");
+	}
+}
 }  // namespace gui
