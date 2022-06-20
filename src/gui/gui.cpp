@@ -87,8 +87,6 @@ void EPDGUI_Process(int16_t x, int16_t y) {
 			isGoingToSleep = true;
 		}
 	}
-	needToPutSleep = !isGoingToSleep;
-	tryToPutSleep();
 }
 
 String getBatteryPercent() {
@@ -385,8 +383,6 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 		reserveParamsPtr = res.ok();
 	}
 	timeToBeBooked = difftime(reserveParamsPtr->endTime, reserveParamsPtr->startTime);
-	Serial.print("Time to be booked is ");
-	Serial.println(timeToBeBooked);
 	currentScreen = SCREEN_BOOKING;
 	hideMainButtons(true);
 	hideMainLabels(true);
@@ -449,11 +445,9 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	} else {
 		loadNextBooking();
 	}
-	log_i("EPD now active");
 	M5.EPD.Active();
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
-	log_i("EPD Going to sleep...");
 	M5.EPD.Sleep();
 }
 
@@ -498,14 +492,16 @@ void tillNextButton(epdgui_args_vector_t& args) {
 
 void confirmBookingButton(epdgui_args_vector_t& args) {
 	makeBooking(*reserveParamsPtr);
-	toMainScreen(true, true);
+	hideLoading(false);
+	// toMainScreen(true, true); // TODO: add loading screen call here
 }
 
 void cancelButton(epdgui_args_vector_t& args) { toMainScreen(true, true); }
 
 void confirmFreeButton(epdgui_args_vector_t& args) {
 	deleteBooking();
-	toMainScreen(true, true);
+	hideLoading(false);
+	// toMainScreen(true, true); // TODO: add loading screen call here
 }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
@@ -515,20 +511,13 @@ void continueButton(epdgui_args_vector_t& args) {}
 void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
 void hideLoading(bool isHide) {
+	lbls[LABEL_LOADING]->SetHide(isHide);
 	if (isHide) {
-		if (currentEvent && currentScreen == SCREEN_MAIN) {
-			lbls[LABEL_LOADING]->setColors(15, 15);
-		} else {
-			lbls[LABEL_LOADING]->setColors(0, 0);
-		}
-		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
-		M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
-		lbls[LABEL_LOADING]->SetHide(isHide);
 	} else {
-		lbls[LABEL_LOADING]->SetHide(isHide);
-		lbls[LABEL_LOADING]->setColors(0, 15);
-		EPDGUI_Draw(lbls[LABEL_LOADING], UPDATE_MODE_NONE);
-		M5.EPD.UpdateArea(440, 240, 120, 40, UPDATE_MODE_DU4);
+		btns[BUTTON_CONFIRMBOOKING]->SetHide(true);
+		btns[BUTTON_CANCELBOOKING]->SetHide(true);
+		btns[BUTTON_CONFIRMFREE]->SetHide(true);
+		btns[BUTTON_CANCELFREE]->SetHide(true);
 	}
 }
 
@@ -675,9 +664,9 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
 	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
 
-	lbls[LABEL_LOADING] = new EPDGUI_Textbox(440, 240, 120, 40, 0, 15, FONT_SIZE_NORMAL, false);
+	lbls[LABEL_LOADING] = new EPDGUI_Textbox(521, 399, 375, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
-	lbls[LABEL_LOADING]->AddText("Loading...");
+	lbls[LABEL_LOADING]->AddText("Ladataan...");
 	lbls[LABEL_LOADING]->SetHide(true);
 
 	lbls[LABEL_ERROR] = new EPDGUI_Textbox(308, 0, 344, 120, 0, 15, FONT_SIZE_NORMAL, false);
@@ -883,12 +872,24 @@ void task(void* arg) {
 
 // TODO: use type -parameter
 void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
-	cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
-	enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, statusCopy); }));
+	if (lbls[LABEL_ERROR]->GetText() != "") {
+		clearDebug();
+	}
+	if (type != GuiRequest::UPDATE) {
+		toMainScreen(true, true);
+	}
+	log_i("Creating copy of the parameter pointer");
+	if(status) {
+		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
+		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, statusCopy); }));
+	} else {
+		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, nullptr); }));
+	}
 }
 
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
+	toMainScreen(true, true);
 	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
 }
 
@@ -910,12 +911,9 @@ GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
 	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
 	BaseType_t xReturned;
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
-	xReturned = xTaskCreatePinnedToCore(task,
-										"GUI Task",
-										GUI_TASK_STACK_SIZE,
-										static_cast<void*>(this),
-	                              		GUI_TASK_PRIORITY,
-										&_taskHandle, 1);
+	xReturned
+	    = xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
+	                              GUI_TASK_PRIORITY, &_taskHandle, 1);
 	Serial.print("xReturned value is ");
 	Serial.println(xReturned);
 	gui::registerModel(model);
