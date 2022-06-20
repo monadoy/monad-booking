@@ -10,12 +10,16 @@ const char* AP_PASS = "Monad-";
 const IPAddress WiFiManager::AP_IP(192, 168, 1, 1);
 
 // Make sure that we don't go to sleep while running an access point
-void onAPEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 	switch (event) {
 		case ARDUINO_EVENT_WIFI_AP_START:
 			sleepManager.incrementTaskCounter();
+			break;
 		case ARDUINO_EVENT_WIFI_AP_STOP:
 			sleepManager.decrementTaskCounter();
+			break;
+		case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+			log_i("WiFi connected in %d ms", millis() - wifiManager._connectTimer);
 			break;
 		default:
 			log_e("Unhandled event");
@@ -24,34 +28,64 @@ void onAPEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 }
 
 WiFiManager::WiFiManager() {
-	WiFi.onEvent(onAPEvent, ARDUINO_EVENT_WIFI_AP_START);
-	WiFi.onEvent(onAPEvent, ARDUINO_EVENT_WIFI_AP_STOP);
+	WiFi.onEvent(onEvent, ARDUINO_EVENT_WIFI_AP_START);
+	WiFi.onEvent(onEvent, ARDUINO_EVENT_WIFI_AP_STOP);
+	WiFi.onEvent(onEvent, ARDUINO_EVENT_WIFI_STA_CONNECTED);
 }
 
 bool WiFiManager::openStation(const String& ssid, const String& password) {
-	log_i("STA mode: connecting to AP...");
+	log_i("Opening WiFi station...");
 
 	WiFi.mode(WIFI_STA);
-	WiFi.setAutoReconnect(true);
+	WiFi.setAutoReconnect(false);
 	WiFi.begin(ssid.c_str(), password.c_str());
-
-	waitWiFi();
-
-	// TODO: handle failure case
-	return true;
+	_connecting = true;
+	_connectTimer = millis();
+	return waitWiFi();
 }
 
-void WiFiManager::waitWiFi() {
-	auto startTime = millis();
-	log_i("Waiting for WiFi...");
-	while (!WiFi.isConnected()) {
-		Serial.print(".");
-		delay(20);
+void WiFiManager::_connect() {
+	log_i("Connecting WiFi...");
+	WiFi.begin();
+	_connecting = true;
+	_connectTimer = millis();
+}
+
+bool WiFiManager::waitWiFi() {
+	// If multiple tasks want wifi, they need to wait for their turn
+	std::lock_guard<std::mutex> lock(_waitWiFiMutex);
+
+	if (WiFi.isConnected()) {
+		return true;
 	}
-	log_i("WiFi connected in %d ms.", millis() - startTime);
+
+	if (!_connecting) {
+		_connect();
+	}
+
+	while (_connecting) {
+		wl_status_t status = WiFi.status();
+
+		if (status == WL_CONNECT_FAILED) {
+			log_e("Connect failed, retrying");
+			_connect();
+		} else if (status == WL_NO_SSID_AVAIL) {
+			log_e("No SSID available");
+			_connecting = false;
+		} else if (status == WL_CONNECTED) {
+			log_e("Wifi wait done");
+			_connecting = false;
+		}
+	}
+
+	return WiFi.isConnected();
 }
 
-void WiFiManager::wakeWiFi() { esp_wifi_start(); }
+void WiFiManager::wakeWiFi() {
+	esp_wifi_start();
+	log_i("WiFi status before begin: %d", WiFi.status());
+	_connect();
+}
 
 void WiFiManager::sleepWiFi() { esp_wifi_stop(); }
 

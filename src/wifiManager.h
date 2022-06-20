@@ -3,6 +3,9 @@
 
 #include <WiFi.h>
 
+#include <atomic>
+#include <mutex>
+
 struct APInfo {
 	String ssid;
 	String password;
@@ -27,7 +30,7 @@ class WiFiManager {
 	 */
 	bool openStation(const String& ssid, const String& password);
 
-	void waitWiFi();
+	bool waitWiFi();
 
 	void wakeWiFi();
 
@@ -46,6 +49,14 @@ class WiFiManager {
 	STAInfo getStationInfo();
 
 	static const IPAddress AP_IP;
+
+	std::atomic<unsigned long> _connectTimer;
+
+  private:
+	void _connect();
+
+	std::mutex _waitWiFiMutex;
+	std::atomic<bool> _connecting{false};
 };
 
 #endif
