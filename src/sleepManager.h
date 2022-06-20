@@ -80,8 +80,6 @@ class SleepManager {
 	// default length. Uses unix utc seconds.
 	std::atomic<time_t> nextWakeTime{0};
 
-	// TODO: order of operations for callbacks could be made clearer.
-	// E.g. maybe we should supply the whole list at once instead of registering one by one.
 	/*
 	 * WARNING!
 	 * Register these before incrementing any task counters,
