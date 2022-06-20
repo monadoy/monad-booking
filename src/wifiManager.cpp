@@ -68,8 +68,7 @@ void WiFiManager::openAccessPoint() {
 	String ssid = String(AP_SSID) + randNumString(4);
 	String pass = String(AP_PASS) + randNumString(4);
 
-	log_i("ssid: %s", ssid.c_str());
-	log_i("pass: %s", pass.c_str());
+	log_i("Opening access point:\nssid: %s\npass: %s", ssid.c_str(), pass.c_str());
 
 	WiFi.mode(WIFI_MODE_AP);
 	WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
