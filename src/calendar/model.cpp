@@ -110,7 +110,7 @@ void Model::endCurrentEvent() {
 		return;
 	}
 
-	if (!_status->currentEvent->unixEndTime <= safeUTC.now()) {
+	if (_status->currentEvent->unixEndTime <= safeUTC.now()) {
 		log_e("Won't end current event as it already ended");
 		_guiTask->error(GuiReq::FREE, Error("Won't end current event as it already ended"));
 		return;
