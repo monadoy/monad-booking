@@ -221,14 +221,12 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 }
 
 Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
-	HTTPClient http;
-
 	// BUILD REQUEST
 	String url
 	    = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events?fields=id";
-	http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
-	http.addHeader("Content-Type", "application/json");
-	http.addHeader("Authorization", "Bearer " + _token.accessToken);
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
@@ -245,12 +243,12 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	Serial.println("Sending event insert payload:\n" + payload + "\n");
 
 	// SEND REQUEST
-	int httpCode = http.POST(payload);
+	int httpCode = _http.POST(payload);
 	payload.clear();
 
 	// PARSE RESPONSE AS JSON
-	String responseBody = http.getString();
-	http.end();
+	String responseBody = _http.getString();
+	_http.end();
 
 	Serial.println("Received event insert response:\n" + responseBody + "\n");
 	DynamicJsonDocument doc(1024);
