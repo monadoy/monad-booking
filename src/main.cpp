@@ -2,10 +2,6 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <M5EPD.h>
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <esp_wifi.h>
-#include <ezTime.h>
 
 #include <memory>
 
@@ -24,18 +20,6 @@
 
 #define USE_EXTERNAL_SERIAL true
 
-// Provide official timezone names
-// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-const char* IANA_TZ = "Europe/Helsinki";
-
-M5EPD_Canvas canvas(&M5.EPD);
-
-#define MICROS_PER_MILLI 1000
-#define MILLIS_PER_SEC 1000
-#define MICROS_PER_SEC 1000000
-const uint64_t UPDATE_STATUS_INTERVAL_MS = 120 * MILLIS_PER_SEC;
-const uint64_t WAKE_TIME_MS = 400;
-
 std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
 
 std::array<uint8_t, 2> onHours{7, 19};
@@ -44,8 +28,6 @@ std::unique_ptr<Config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
-
-bool restoreWifiConfig();
 
 void setupTime(const String& IANATimeZone) {
 	Serial.println("Setting up time");
@@ -176,55 +158,6 @@ void shutDown() {
 
 	M5.shutdown(RTC_Date(tmOn.Wday, tmOn.Month, tmOn.Day, tmOn.Year - 1900),
 	            RTC_Time(tmOn.Hour, tmOn.Minute, tmOn.Second));
-}
-
-// When to stop looping and go back to sleep
-unsigned long wakeUntilMillis = 0;
-
-// When to wake up in order to update status
-unsigned long nextStatusUpdateMillis = 0;
-
-void sleep() {
-	Serial.println("Going to sleep...");
-
-	// Calculate how long we need to sleep in order to achieve the desired update status interval.
-	unsigned long curMillis = millis();
-	uint64_t sleepTime
-	    = uint64_t(max(nextStatusUpdateMillis, curMillis + 1) - curMillis) * MICROS_PER_MILLI;
-
-	Serial.print("Sleeping for ");
-	Serial.print(sleepTime / MICROS_PER_SEC);
-	Serial.println(" s or until touch.");
-
-	Serial.flush();
-
-	wifiManager.sleepWiFi();
-
-	// Light sleep and wait for timer or touch interrupt
-	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
-	esp_sleep_enable_timer_wakeup(sleepTime);
-	esp_light_sleep_start();
-
-	Serial.print("Wakeup cause: ");
-	auto cause = esp_sleep_get_wakeup_cause();
-	if (cause == ESP_SLEEP_WAKEUP_TIMER) {
-		Serial.println("TIMER");
-		Serial.println("Updating gui status and going back to sleep");
-
-		// When wakeup is caused by timer, a status update is due.
-		// gui::updateGui(); deprecated
-
-		// Calculate the next status update timestamp based on our interval.
-		nextStatusUpdateMillis = millis() + UPDATE_STATUS_INTERVAL_MS;
-
-		// Go instantly back to sleep
-		wakeUntilMillis = 0;
-	} else if (cause == ESP_SLEEP_WAKEUP_EXT0) {
-		Serial.println("TOUCH");
-
-		// Stay awake for a moment to process long touches
-		wakeUntilMillis = millis() + WAKE_TIME_MS;
-	}
 }
 
 void loop() { vTaskDelete(NULL); }
