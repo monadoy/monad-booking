@@ -26,10 +26,20 @@ class WiFiManager {
 	WiFiManager();
 
 	/**
-	 * Use when connecting to an access point.
+	 * Opposite of 'openAccessPoint()'.
+	 * Starts wifi in STA mode.
+	 * Basically connects the device to wifi.
 	 * Returns true on successful connection, false on failure.
 	 */
 	bool openStation(const String& ssid, const String& password);
+
+	/**
+	 * Opposite of 'openStation()'.
+	 * Starts wifi in AP mode.
+	 * Opens an wifi access point that allows other devices to connect to it.
+	 * Uses a randomly generated password and ssid.
+	 */
+	void openAccessPoint();
 
 	/**
 	 * Non-busy wait for wifi connection.
@@ -38,20 +48,14 @@ class WiFiManager {
 	bool waitWiFi();
 
 	/**
-	 * Tell esp to start wifi and create a new connection.
+	 * Tells esp to start wifi and create a new connection.
 	 */
 	void wakeWiFi();
 
 	/**
-	 * Tell esp to stop wifi in order to keep wifi status in sync while sleeping.
+	 * Tells esp to stop wifi in order to keep wifi status in sync while sleeping.
 	 */
 	void sleepWiFi();
-
-	/**
-	 * Open an access point to allow other devices to connect to it.
-	 * Uses a randomly generated password and ssid.
-	 */
-	void openAccessPoint();
 
 	bool isAccessPoint();
 
