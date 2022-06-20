@@ -72,6 +72,8 @@ void EPDGUI_Process(void) {
 }
 
 void EPDGUI_Process(int16_t x, int16_t y) {
+	log_i("EPD now active");
+	M5.EPD.Active();
 	Serial.print("Touch at coordinates ");
 	Serial.print(x);
 	Serial.print(" - ");
@@ -447,10 +449,12 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	} else {
 		loadNextBooking();
 	}
-	//M5.EPD.Active();
+	log_i("EPD now active");
+	M5.EPD.Active();
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
-	//M5.EPD.Sleep();
+	log_i("EPD Going to sleep...");
+	M5.EPD.Sleep();
 }
 
 void toSettingsScreen() {
@@ -708,9 +712,10 @@ void createBoldLabels() {
 }
 
 void tryToPutSleep() {
-	/* if (needToPutSleep && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
+	if (needToPutSleep && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
+		log_i("EPD Going to sleep...");
 		M5.EPD.Sleep();
-	} */
+	}
 }
 void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
@@ -751,7 +756,7 @@ void initGui(Config::ConfigStore* configStore) {
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
 	createRegularLabels();
-
+	log_i("EPD now active");
 	M5.EPD.Active();
 	if (loadSetup) {
 		log_i("Going to setupscreen");
