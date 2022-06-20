@@ -127,7 +127,7 @@ void updateStatus(cal::CalendarStatus* statusCopy) {
 	bool buttonsEqual = currentBtnIndex == newBtnIndex;
 	bool updateLeft = leftEventsEqual && buttonsEqual;
 	currentBtnIndex = newBtnIndex;
-	if (currentScreen == SCREEN_MAIN) {
+	if(currentScreen == SCREEN_MAIN) {
 		toMainScreen(!updateLeft, !updateRight);
 	}
 }
@@ -766,6 +766,7 @@ void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	hideLoading(true);
 	debug("Code " + enumToString(type) + " " + String(error.code) + "\n" + "- "
 	      + String(error.message));
+	updateScreen(true, true);
 }
 void updateGui(gui::GUITask::GuiRequest type, cal::CalendarStatus* status) {
 	hideLoading(true);
@@ -871,15 +872,13 @@ void task(void* arg) {
 	vTaskDelete(NULL);
 }
 
-// TODO: use type -parameter
 void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
 	if (lbls[LABEL_ERROR]->GetText() != "") {
 		clearDebug();
 	}
-	if (type != GuiRequest::UPDATE) {
-		toMainScreen(true, true);
+	if(type == GuiRequest::RESERVE || type == GuiRequest::FREE) {
+		currentScreen = SCREEN_MAIN;
 	}
-	log_i("Creating copy of the parameter pointer");
 	if(status) {
 		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
 		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, statusCopy); }));
@@ -890,8 +889,8 @@ void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
 
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
-	toMainScreen(true, true);
 	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
+	toMainScreen(true, true);
 }
 
 void GUITask::touchDown(const tp_finger_t& tp) {
