@@ -22,15 +22,7 @@ void task(void* arg) {
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 		Serial.print("API Task: queue item received");
 
-		if (!WiFi.isConnected()) {
-			// TODO: Find a better way to ask for wifi
-			WiFi.reconnect();
-		}
-		while (!WiFi.isConnected()) {
-			delay(20);
-			Serial.print(WiFi.status());
-		}
-		Serial.println();
+		wifiManager.waitWiFi();
 
 		apiTask->_api->refreshAuth();
 

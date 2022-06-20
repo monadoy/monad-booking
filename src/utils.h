@@ -72,25 +72,7 @@ struct Result {
 	}
 };
 
-void connectWiFi(const String& ssid, const String& password);
-
-void ensureWiFi();
-
-void sleepWiFi();
-
 bool isCharging();
-
-bool isAP();
-
-String getApPassword();
-
-String getApSSID();
-
-bool isSetupMode();
-
-void setupMode();
-
-String genRandomAppendix(int length);
 
 std::vector<String> getBootLog();
 

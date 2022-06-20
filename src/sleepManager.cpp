@@ -149,9 +149,6 @@ void SleepManager::_dispatchCallbacks(Callback type) {
 SleepManager::WakeReason SleepManager::_sleep() {
 	log_i("Going to sleep...");
 
-	// TODO: put wifi to sleep in a more robust way (and maybe inside BEFORE_SLEEP callback)
-	utils::sleepWiFi();
-
 	time_t now = safeUTC.now();
 
 	uint64_t sleepTime = max(nextWakeTime - now, (long)MIN_TIMED_SLEEP_S);
@@ -160,10 +157,14 @@ SleepManager::WakeReason SleepManager::_sleep() {
 
 	Serial.flush();
 
+	wifiManager.sleepWiFi();
+
 	// Light sleep and wait for timer or touch interrupt
 	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
 	esp_sleep_enable_timer_wakeup(sleepTime * 1000 * 1000);
 	esp_light_sleep_start();
+
+	wifiManager.wakeWiFi();
 
 	auto cause = esp_sleep_get_wakeup_cause();
 	if (cause == ESP_SLEEP_WAKEUP_TIMER) {

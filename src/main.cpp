@@ -75,8 +75,6 @@ void setup() {
 		return;
 	}
 
-	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
-
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
 	M5.EPD.Clear(true);
@@ -84,10 +82,10 @@ void setup() {
 	Serial.println("Setting up RTC...");
 	M5.RTC.begin();
 
+	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
-	esp_wifi_start();
-	utils::connectWiFi(config["wifi"]["ssid"], config["wifi"]["password"]);
+	wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"]);
 	setupTime(config["timezone"]);
 
 	auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
@@ -200,7 +198,7 @@ void sleep() {
 
 	Serial.flush();
 
-	utils::sleepWiFi();
+	// utils::sleepWiFi();
 
 	// Light sleep and wait for timer or touch interrupt
 	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
