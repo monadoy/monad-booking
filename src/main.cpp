@@ -85,7 +85,6 @@ void setup() {
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
-	wifiManager.wakeWiFi();
 	wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"]);
 	setupTime(config["timezone"]);
 

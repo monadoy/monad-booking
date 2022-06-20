@@ -518,6 +518,7 @@ void hideLoading(bool isHide) {
 		btns[BUTTON_CANCELBOOKING]->SetHide(true);
 		btns[BUTTON_CONFIRMFREE]->SetHide(true);
 		btns[BUTTON_CANCELFREE]->SetHide(true);
+		updateScreen(true, true);
 	}
 }
 
