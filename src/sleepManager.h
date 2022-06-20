@@ -98,7 +98,7 @@ class SleepManager {
 
 	void _enqueue(Action action);
 
-	bool _anyTimerActive();
+	bool _anyActivity();
 
 	SemaphoreHandle_t _activeTaskCounter;
 

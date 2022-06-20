@@ -24,8 +24,8 @@ void task(void* arg) {
 			case SM::Action::SLEEP: {
 				manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
 
-				// If any callback started a task, timers are active and we should postpone sleeping
-				if (manager->_anyTimerActive())
+				// If any callback started a task, we should postpone sleeping
+				if (manager->_anyActivity())
 					continue;
 
 				const SM::WakeReason wakeReason = manager->_sleep();
@@ -51,27 +51,18 @@ void task(void* arg) {
 void timerCallback(TimerHandle_t handle) {
 	SleepManager* manager = static_cast<SleepManager*>(pvTimerGetTimerID(handle));
 
-	if (manager->_anyTimerActive())
+	if (manager->_anyActivity())
 		return;
 
-	BaseType_t count = uxSemaphoreGetCount(manager->_activeTaskCounter);
+	log_i("All timers and tasks expired");
 
-	log_i("All timers expired, count: %d", count);
-
-	// If active task counter is still zero after timer has expired,
-	// go to sleep.
-	if (count == 0) {
-		manager->_enqueue(SleepManager::Action::SLEEP);
-	}
+	manager->_enqueue(SleepManager::Action::SLEEP);
 }
 
-bool SleepManager::_anyTimerActive() {
-	bool taskActive = xTimerIsTimerActive(_taskActivityTimer) == pdTRUE;
-	bool touchActive = xTimerIsTimerActive(_touchActivityTimer) == pdTRUE;
-
-	log_i("Task timer active: %d, Touch timer active: %d", taskActive, touchActive);
-
-	return taskActive || touchActive;
+bool SleepManager::_anyActivity() {
+	return xTimerIsTimerActive(_taskActivityTimer) == pdTRUE
+	       || xTimerIsTimerActive(_touchActivityTimer) == pdTRUE
+	       || uxSemaphoreGetCount(_activeTaskCounter) > 0;
 }
 
 void SleepManager::_enqueue(Action action) { xQueueSend(_queueHandle, (void*)&action, 0); }
@@ -135,7 +126,7 @@ void SleepManager::refreshTouchWake() {
 		log_e("Touch activity timer reset failed");
 	}
 
-	log_i("Touch wake refreshed");
+	// log_i("Touch wake refreshed");
 }
 
 void SleepManager::registerCallback(Callback type, const std::function<void()>& cb) {
