@@ -58,6 +58,7 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) { object->Draw(mode); }
 
 void EPDGUI_Process(void) {
+	Serial.println("Finger lifted");
 	bool isGoingToSleep = false;
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
@@ -71,6 +72,10 @@ void EPDGUI_Process(void) {
 }
 
 void EPDGUI_Process(int16_t x, int16_t y) {
+	Serial.print("Touch at coordinates ");
+	Serial.print(x);
+	Serial.print(" - ");
+	Serial.println(y);
 	sleepManager.refreshTouchWake();
 	bool isGoingToSleep = false;
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
@@ -442,10 +447,10 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	} else {
 		loadNextBooking();
 	}
-	M5.EPD.Active();
+	//M5.EPD.Active();
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
-	M5.EPD.Sleep();
+	//M5.EPD.Sleep();
 }
 
 void toSettingsScreen() {
@@ -703,9 +708,9 @@ void createBoldLabels() {
 }
 
 void tryToPutSleep() {
-	if (needToPutSleep && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
+	/* if (needToPutSleep && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
 		M5.EPD.Sleep();
-	}
+	} */
 }
 void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
@@ -861,12 +866,9 @@ void task(void* arg) {
 
 	for (;;) {
 		void* reqTemp;
-		log_i("GUI Task: waiting for queue receive");
 		xQueueReceive(guiTask->_guiQueueHandle, &reqTemp, portMAX_DELAY);
 		auto counter = sleepManager.scopedTaskCount();
 		auto req = toSmartPtr<GUITask::GuiQueueElement>(reqTemp);
-		log_i("GUI Task: queue item received");
-
 		auto func = toSmartPtr<GUITask::QueueFunc>(req->func);
 		(*func)();
 	}
@@ -900,9 +902,7 @@ void GUITask::enqueue(ActionType at, void* func) {
 
 GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
 	using namespace std::placeholders;
-	this->callbackTouchDown = std::bind(&GUITask::touchDown, this, _1);
-	this->callbackTouchUp = std::bind(&GUITask::touchUp, this);
-	M5.TP.onTouch(GUITask::callbackTouchDown, GUITask::callbackTouchUp);
+	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
 	BaseType_t xReturned;
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
 	xReturned = xTaskCreatePinnedToCore(task,
