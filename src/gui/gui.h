@@ -69,7 +69,7 @@ void EPDGUI_Process(int16_t x, int16_t y);
 
 String getBatteryPercent();
 String getWifiStatus();
-void updateStatus(cal::CalendarStatus* statusCopy);
+void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy);
 void updateScreen(bool pushLeft, bool pushRight);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
@@ -194,7 +194,7 @@ void toSetupScreen();
 void showBootLog();
 void registerModel(cal::Model* model); 
 void task(void* arg);
-void updateGui(gui::GUITask::GuiRequest type, cal::CalendarStatus* status);
+void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatus> status);
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error);
 String enumToString(gui::GUITask::GuiRequest type);
 

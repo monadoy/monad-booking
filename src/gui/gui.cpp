@@ -111,17 +111,16 @@ bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal:
 	return false;
 }
 
-void updateStatus(cal::CalendarStatus* statusCopy) {
+void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
 	log_i("updatestatus called....");
 	bool leftEventsEqual = false;
 	bool updateRight = false;
 	if (statusCopy) {
-		auto status = toSmartPtr<cal::CalendarStatus>(statusCopy);
-		bool leftEventsEqual = checkEventEquality(currentEvent, status->currentEvent);
-		bool updateRight = checkEventEquality(nextEvent, status->nextEvent);
-		resourceName = status->name;
-		nextEvent = status->nextEvent;
-		currentEvent = status->currentEvent;
+		bool leftEventsEqual = checkEventEquality(currentEvent, statusCopy->currentEvent);
+		bool updateRight = checkEventEquality(nextEvent, statusCopy->nextEvent);
+		resourceName = statusCopy->name;
+		nextEvent = statusCopy->nextEvent;
+		currentEvent = statusCopy->currentEvent;
 	}
 	int newBtnIndex = configureMainButtonPos(false);
 	bool buttonsEqual = currentBtnIndex == newBtnIndex;
@@ -381,8 +380,8 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 	                      : _model->calculateReserveParams(time * SECS_PER_MIN);
 	if (res.isOk()) {
 		reserveParamsPtr = res.ok();
+		timeToBeBooked = difftime(reserveParamsPtr->endTime, reserveParamsPtr->startTime);
 	}
-	timeToBeBooked = difftime(reserveParamsPtr->endTime, reserveParamsPtr->startTime);
 	currentScreen = SCREEN_BOOKING;
 	hideMainButtons(true);
 	hideMainLabels(true);
@@ -518,7 +517,7 @@ void hideLoading(bool isHide) {
 		btns[BUTTON_CANCELBOOKING]->SetHide(true);
 		btns[BUTTON_CONFIRMFREE]->SetHide(true);
 		btns[BUTTON_CANCELFREE]->SetHide(true);
-		updateScreen(true, true);
+		M5.EPD.UpdateArea(521, 399, 375, 77, UPDATE_MODE_GC16);
 	}
 }
 
@@ -767,8 +766,16 @@ void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	debug("Code " + enumToString(type) + " " + String(error.code) + "\n" + "- "
 	      + String(error.message));
 	updateScreen(true, true);
+	toMainScreen(true, true);
 }
-void updateGui(gui::GUITask::GuiRequest type, cal::CalendarStatus* status) {
+void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatus> status) {
+	if (lbls[LABEL_ERROR]->GetText() != "") {
+		clearDebug();
+	}
+	if(type == gui::GUITask::GuiRequest::RESERVE || type == gui::GUITask::GuiRequest::FREE) {
+		currentScreen = SCREEN_MAIN;
+	}
+
 	hideLoading(true);
 	updateStatus(status);
 	log_i("updateGui was called");
@@ -873,14 +880,8 @@ void task(void* arg) {
 }
 
 void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
-	if (lbls[LABEL_ERROR]->GetText() != "") {
-		clearDebug();
-	}
-	if(type == GuiRequest::RESERVE || type == GuiRequest::FREE) {
-		currentScreen = SCREEN_MAIN;
-	}
 	if(status) {
-		cal::CalendarStatus* statusCopy = new cal::CalendarStatus(*status);
+		std::shared_ptr<cal::CalendarStatus> statusCopy = std::shared_ptr<cal::CalendarStatus>(status);
 		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, statusCopy); }));
 	} else {
 		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, nullptr); }));
@@ -890,7 +891,6 @@ void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
 // TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
 	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
-	toMainScreen(true, true);
 }
 
 void GUITask::touchDown(const tp_finger_t& tp) {
