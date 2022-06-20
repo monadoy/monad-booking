@@ -98,7 +98,7 @@ void Model::_onInsertEvent(const Result<Event>& result) {
 
 	_status->currentEvent = result.ok();
 
-	_guiTask->success(GuiReq::RESERVE, _status.get());
+	_guiTask->success(GuiReq::RESERVE, _status);
 }
 
 void Model::endCurrentEvent() {
@@ -128,7 +128,7 @@ void Model::_onEndEvent(const Result<Event>& result) {
 
 	_status->currentEvent = nullptr;
 
-	_guiTask->success(GuiReq::FREE, _status.get());
+	_guiTask->success(GuiReq::FREE, _status);
 }
 
 void Model::updateStatus() {
@@ -159,7 +159,7 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 
 	_status = newStatus;
 
-	_guiTask->success(GuiReq::UPDATE, _status.get());
+	_guiTask->success(GuiReq::UPDATE, _status);
 }
 
 bool Model::_areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const {

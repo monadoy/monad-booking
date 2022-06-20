@@ -879,10 +879,9 @@ void task(void* arg) {
 	vTaskDelete(NULL);
 }
 
-void GUITask::success(GuiRequest type, cal::CalendarStatus* status) {
-	if(status) {
-		std::shared_ptr<cal::CalendarStatus> statusCopy = std::shared_ptr<cal::CalendarStatus>(status);
-		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, statusCopy); }));
+void GUITask::success(GuiRequest type, std::shared_ptr<cal::CalendarStatus> status) {
+	if (status) {
+		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, status); }));
 	} else {
 		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, nullptr); }));
 	}

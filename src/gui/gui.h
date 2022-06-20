@@ -154,7 +154,7 @@ class GUITask {
 	 * @param type What kind of operation was executed
 	 * @param status Current calendar status
 	 */
-	void success(GuiRequest type, cal::CalendarStatus* status);
+	void success(GuiRequest type, std::shared_ptr<cal::CalendarStatus> status);
 
 	/**
 	 * @brief Called when operation caused error
