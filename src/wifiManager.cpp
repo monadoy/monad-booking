@@ -74,10 +74,6 @@ void WiFiManager::openAccessPoint() {
 	WiFi.mode(WIFI_MODE_AP);
 	WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
 	WiFi.softAP(ssid.c_str(), pass.c_str());
-
-	while (true) {
-		log_i("%d", WiFi.status());
-	}
 }
 
 bool WiFiManager::isAccessPoint() {
