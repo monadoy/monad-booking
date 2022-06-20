@@ -710,6 +710,7 @@ void tryToPutSleep() {
 void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
 	lbls[LABEL_ERROR]->SetText(err);
+	EPDGUI_Draw(lbls[LABEL_ERROR], UPDATE_MODE_NONE);
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
 
