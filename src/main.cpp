@@ -85,6 +85,7 @@ void setup() {
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
+	wifiManager.wakeWiFi();
 	wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"]);
 	setupTime(config["timezone"]);
 
@@ -198,7 +199,7 @@ void sleep() {
 
 	Serial.flush();
 
-	// utils::sleepWiFi();
+	wifiManager.sleepWiFi();
 
 	// Light sleep and wait for timer or touch interrupt
 	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
