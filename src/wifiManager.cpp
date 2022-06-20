@@ -9,8 +9,8 @@ const char* AP_PASS = "Monad-";
 
 const IPAddress WiFiManager::AP_IP(192, 168, 1, 1);
 
-// Make sure that we don't go to sleep while running an access point
-void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+// Just make sure that we don't go to sleep while being an access point.
+void onAPEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 	switch (event) {
 		case ARDUINO_EVENT_WIFI_AP_START:
 			sleepManager.incrementTaskCounter();
@@ -18,19 +18,57 @@ void onEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 		case ARDUINO_EVENT_WIFI_AP_STOP:
 			sleepManager.decrementTaskCounter();
 			break;
-		case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-			log_i("WiFi connected in %d ms", millis() - wifiManager._connectTimer);
-			break;
 		default:
 			log_e("Unhandled event");
 			break;
 	}
 }
 
+/**
+ * Give connection semaphores back when a connection attempt is completed.
+ * Also dispatch error events when errors happen.
+ */
+void onSTAEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+	switch (event) {
+		case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+			log_i("WiFi connected in %d ms", millis() - wifiManager._connectTimer);
+			xSemaphoreGive(wifiManager._connectSemaphore);
+			break;
+		case ARDUINO_EVENT_WIFI_STA_DISCONNECTED: {
+			wifiManager._disconnectReason = (wifi_err_reason_t)info.wifi_sta_disconnected.reason;
+			wifiManager._disconnectReasonStr = wifiErrorToString(wifiManager._disconnectReason);
+
+			// ASSOC_LEAVE seems to be one of the only non-error disconnect reasons.
+			// All other reasons should be passed into error callbacks.
+			if (wifiManager._disconnectReason != WIFI_REASON_ASSOC_LEAVE) {
+				for (size_t i = 0; i < wifiManager._errorCallbacks.size(); i++)
+					wifiManager._errorCallbacks[i](wifiManager._disconnectReasonStr);
+			}
+
+			xSemaphoreGive(wifiManager._connectSemaphore);
+			break;
+		}
+		default:
+			log_e("Unhandled event");
+			break;
+	}
+}
+
+String WiFiManager::getDisconnectReason() {
+	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
+	String reason = wifiManager._disconnectReasonStr;
+	xSemaphoreGive(_connectSemaphore);
+	return reason;
+}
+
 WiFiManager::WiFiManager() {
-	WiFi.onEvent(onEvent, ARDUINO_EVENT_WIFI_AP_START);
-	WiFi.onEvent(onEvent, ARDUINO_EVENT_WIFI_AP_STOP);
-	WiFi.onEvent(onEvent, ARDUINO_EVENT_WIFI_STA_CONNECTED);
+	// Binary semaphore requires initialization
+	xSemaphoreGive(_connectSemaphore);
+
+	WiFi.onEvent(onAPEvent, ARDUINO_EVENT_WIFI_AP_START);
+	WiFi.onEvent(onAPEvent, ARDUINO_EVENT_WIFI_AP_STOP);
+	WiFi.onEvent(onSTAEvent, ARDUINO_EVENT_WIFI_STA_GOT_IP);
+	WiFi.onEvent(onSTAEvent, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 }
 
 bool WiFiManager::openStation(const String& ssid, const String& password) {
@@ -39,44 +77,31 @@ bool WiFiManager::openStation(const String& ssid, const String& password) {
 	WiFi.mode(WIFI_STA);
 	WiFi.setAutoReconnect(false);
 	WiFi.begin(ssid.c_str(), password.c_str());
-	_connecting = true;
+	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
 	_connectTimer = millis();
 	return waitWiFi();
 }
 
 void WiFiManager::_connect() {
+	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
 	log_i("Connecting WiFi...");
 	WiFi.begin();
-	_connecting = true;
 	_connectTimer = millis();
 }
 
 bool WiFiManager::waitWiFi() {
-	// If multiple tasks want wifi, they need to wait for their turn
-	std::lock_guard<std::mutex> lock(_waitWiFiMutex);
-
 	if (WiFi.isConnected()) {
 		return true;
 	}
 
-	if (!_connecting) {
+	// If no connection is in progress, initiate connection
+	if (uxSemaphoreGetCount(_connectSemaphore) == 1) {
 		_connect();
 	}
 
-	while (_connecting) {
-		wl_status_t status = WiFi.status();
-
-		if (status == WL_CONNECT_FAILED) {
-			log_e("Connect failed, retrying");
-			_connect();
-		} else if (status == WL_NO_SSID_AVAIL) {
-			log_e("No SSID available");
-			_connecting = false;
-		} else if (status == WL_CONNECTED) {
-			log_e("Wifi wait done");
-			_connecting = false;
-		}
-	}
+	// Wait for connection attempt to complete
+	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
+	xSemaphoreGive(_connectSemaphore);
 
 	return WiFi.isConnected();
 }
@@ -129,3 +154,70 @@ STAInfo WiFiManager::getStationInfo() {
 	const char* password = reinterpret_cast<const char*>(conf.sta.password);
 	return STAInfo{.ssid = String{ssid}, .password = String{password}, .ip = WiFi.localIP()};
 }
+
+namespace {
+const char* wifiErrorToString(wifi_err_reason_t errCode) {
+	switch ((wifi_err_reason_t)errCode) {
+#if CORE_DEBUG_LEVEL > 3
+		case WIFI_REASON_UNSPECIFIED:
+			return "UNSPECIFIED";
+		case WIFI_REASON_AUTH_EXPIRE:
+			return "AUTH_EXPIRE";
+		case WIFI_REASON_AUTH_LEAVE:
+			return "AUTH_LEAVE";
+		case WIFI_REASON_ASSOC_EXPIRE:
+			return "ASSOC_EXPIRE";
+		case WIFI_REASON_ASSOC_TOOMANY:
+			return "ASSOC_TOOMANY";
+		case WIFI_REASON_NOT_AUTHED:
+			return "NOT_AUTHED";
+		case WIFI_REASON_NOT_ASSOCED:
+			return "NOT_ASSOCED";
+		case WIFI_REASON_ASSOC_LEAVE:
+			return "ASSOC_LEAVE";
+		case WIFI_REASON_ASSOC_NOT_AUTHED:
+			return "ASSOC_NOT_AUTHED";
+		case WIFI_REASON_DISASSOC_PWRCAP_BAD:
+			return "DISASSOC_PWRCAP_BAD";
+		case WIFI_REASON_DISASSOC_SUPCHAN_BAD:
+			return "DISASSOC_SUPCHAN_BAD";
+		case WIFI_REASON_IE_INVALID:
+			return "IE_INVALID";
+		case WIFI_REASON_MIC_FAILURE:
+			return "MIC_FAILURE";
+		case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+			return "4WAY_HANDSHAKE_TIMEOUT";
+		case WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT:
+			return "GROUP_KEY_UPDATE_TIMEOUT";
+		case WIFI_REASON_IE_IN_4WAY_DIFFERS:
+			return "IE_IN_4WAY_DIFFERS";
+		case WIFI_REASON_GROUP_CIPHER_INVALID:
+			return "GROUP_CIPHER_INVALID";
+		case WIFI_REASON_PAIRWISE_CIPHER_INVALID:
+			return "PAIRWISE_CIPHER_INVALID";
+		case WIFI_REASON_AKMP_INVALID:
+			return "AKMP_INVALID";
+		case WIFI_REASON_UNSUPP_RSN_IE_VERSION:
+			return "UNSUPP_RSN_IE_VERSION";
+		case WIFI_REASON_INVALID_RSN_IE_CAP:
+			return "INVALID_RSN_IE_CAP";
+		case WIFI_REASON_802_1X_AUTH_FAILED:
+			return "802_1X_AUTH_FAILED";
+		case WIFI_REASON_CIPHER_SUITE_REJECTED:
+			return "CIPHER_SUITE_REJECTED";
+		case WIFI_REASON_BEACON_TIMEOUT:
+			return "BEACON_TIMEOUT";
+		case WIFI_REASON_NO_AP_FOUND:
+			return "NO_AP_FOUND";
+		case WIFI_REASON_AUTH_FAIL:
+			return "AUTH_FAIL";
+		case WIFI_REASON_ASSOC_FAIL:
+			return "ASSOC_FAIL";
+		case WIFI_REASON_HANDSHAKE_TIMEOUT:
+			return "HANDSHAKE_TIMEOUT";
+#endif
+		default:
+			return "Unknown WiFi error";
+	}
+}
+}  // namespace

@@ -67,7 +67,10 @@ void setup() {
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
-	wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"]);
+	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"])) {
+		// TODO: show error on screen
+		return;
+	}
 	setupTime(config["timezone"]);
 
 	auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
