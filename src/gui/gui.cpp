@@ -72,7 +72,6 @@ void EPDGUI_Process(void) {
 }
 
 void EPDGUI_Process(int16_t x, int16_t y) {
-	log_i("EPD now active");
 	M5.EPD.Active();
 	Serial.print("Touch at coordinates ");
 	Serial.print(x);
@@ -491,7 +490,6 @@ void tillNextButton(epdgui_args_vector_t& args) {
 
 void confirmBookingButton(epdgui_args_vector_t& args) {
 	makeBooking(*reserveParamsPtr);
-	hideLoading(false);
 	// toMainScreen(true, true); // TODO: add loading screen call here
 }
 
@@ -499,7 +497,6 @@ void cancelButton(epdgui_args_vector_t& args) { toMainScreen(true, true); }
 
 void confirmFreeButton(epdgui_args_vector_t& args) {
 	deleteBooking();
-	hideLoading(false);
 	// toMainScreen(true, true); // TODO: add loading screen call here
 }
 
@@ -512,12 +509,16 @@ void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	if (isHide) {
+		log_i("Hiding loadingscreen...");
 	} else {
-		btns[BUTTON_CONFIRMBOOKING]->SetHide(true);
-		btns[BUTTON_CANCELBOOKING]->SetHide(true);
-		btns[BUTTON_CONFIRMFREE]->SetHide(true);
-		btns[BUTTON_CANCELFREE]->SetHide(true);
-		M5.EPD.UpdateArea(521, 399, 375, 77, UPDATE_MODE_GC16);
+		log_i("Showing loadingscreen...");
+		if(currentScreen==SCREEN_BOOKING) {
+			hideBookingConfirmationButtons(true);
+		} else {
+			hideFreeConfirmationButtons(true);
+		}
+		/* M5.EPD.UpdateArea(521, 399, 375, 77, UPDATE_MODE_GC16); */
+		updateScreen(true, true);
 	}
 }
 
