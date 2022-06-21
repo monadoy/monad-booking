@@ -20,55 +20,45 @@ struct Error {
  * Then you can get a shared_ptr to the value with functions ok() or err().
  */
 template <typename T, typename E = Error>
-struct Result {
+class Result {
   private:
-	Result(std::shared_ptr<T> _ok, std::shared_ptr<E> _err) : ok_{_ok}, err_{_err} {}
+	Result(std::shared_ptr<T> ok, std::shared_ptr<E> err) : _ok{ok}, _err{err} {}
 
-	const std::shared_ptr<T> ok_ = nullptr;
-	const std::shared_ptr<E> err_ = nullptr;
+	std::shared_ptr<T> _ok;
+	std::shared_ptr<E> _err;
 
   public:
-	Result(const Result& other) = default;
-	Result(Result&& other) = default;
-	Result& operator=(const Result& other) = default;
-	Result& operator=(Result&& other) = default;
-	virtual ~Result() = default;
-
 	static Result makeOk(T* value) {
-		if (!value)
-			throw std::runtime_error("Tried to make an ok result with a null pointer");
+		assert(!!value);
 		return Result(std::shared_ptr<T>(value), nullptr);
 	}
 
 	static Result makeOk(std::shared_ptr<T> value) {
-		if (!value)
-			throw std::runtime_error("Tried to make an ok result with a null pointer");
+		assert(!!value);
 		return Result(value, nullptr);
 	}
 
 	static Result makeErr(E* error) {
-		if (!error)
-			throw std::runtime_error("Tried to make an error result with a null pointer");
+		assert(!!error);
 		return Result(nullptr, std::shared_ptr<E>(error));
 	}
 
 	static Result makeErr(std::shared_ptr<E> error) {
-		if (!error)
-			throw std::runtime_error("Tried to make an error result with a null pointer");
+		assert(!!error);
 		return Result(nullptr, error);
 	}
 
-	bool isOk() const { return ok_ != nullptr; }
-	bool isErr() const { return err_ != nullptr; }
+	bool isOk() const { return _ok != nullptr; }
+	bool isErr() const { return _err != nullptr; }
 
 	std::shared_ptr<T> ok() const {
 		assert(isOk());
-		return ok_;
+		return _ok;
 	}
 
 	std::shared_ptr<E> err() const {
 		assert(isErr());
-		return err_;
+		return _err;
 	}
 };
 
