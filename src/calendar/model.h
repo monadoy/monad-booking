@@ -59,8 +59,23 @@ class Model {
 
 	bool _areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const;
 
+	/**
+	 * Does required operations for model errors.
+	 * Does:
+	 * - logging
+	 * - asynchronously notify GUI about an error
+	 * - update state because the error was probably caused by out of date information
+	 */
+	void _handleError(size_t reqType, std::shared_ptr<Error> error);
+
+	/**
+	 * Creates a result based on supplied error and does required operations.
+	 * We do:
+	 * - logging
+	 * - update state because the error was probably caused by out of date information
+	 */
 	template <typename T>
-	bool _handleError(size_t reqType, const Result<T>& result);
+	utils::Result<T> _handleErrorSync(utils::Error* error);
 
 	// Protects _status;
 	std::mutex _statusMutex;

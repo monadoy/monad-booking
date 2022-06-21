@@ -9,14 +9,15 @@ namespace cal {
 
 typedef gui::GUITask::GuiRequest GuiReq;
 
+void Model::_handleError(size_t reqType, std::shared_ptr<Error> error) {
+	log_e("%s", error->message.c_str());
+	_guiTask->error((GuiReq)reqType, *error);
+}
+
 template <typename T>
-bool Model::_handleError(size_t reqType, const Result<T>& result) {
-	if (result.isErr()) {
-		log_e("%s", result.err()->message.c_str());
-		_guiTask->error((GuiReq)reqType, *result.err());
-		return true;
-	}
-	return false;
+utils::Result<T> Model::_handleErrorSync(utils::Error* error) {
+	log_e("%s", error->message.c_str());
+	return utils::Result<T>::makeErr(error);
 }
 
 Model::Model(APITask& apiTask) : _apiTask{apiTask} {
@@ -53,8 +54,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 	const time_t now = safeUTC.now();
 
 	if (_status->currentEvent) {
-		log_e("Current event already exists, can't insert another one.");
-		return utils::Result<ReserveParams>::makeErr(
+		return _handleErrorSync<Model::ReserveParams>(
 		    new utils::Error("Current event already exists, can't insert another one."));
 	}
 
@@ -70,9 +70,8 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 		endTime = min(endTime, _status->nextEvent->unixStartTime);
 
 	if (endTime < now + 30) {
-		log_e("Won't insert such a short event (%d seconds).", endTime - now);
-		return utils::Result<ReserveParams>::makeErr(new utils::Error{
-		    "Won't insert such a short event (" + String(endTime - now) + " seconds)."});
+		return _handleErrorSync<Model::ReserveParams>(new utils::Error(
+		    "Won't insert such a short event (" + String(endTime - now) + " seconds)."));
 	}
 
 	return utils::Result<ReserveParams>::makeOk(
@@ -83,8 +82,8 @@ utils::Result<Model::ReserveParams> Model::calculateReserveUntilNextParams() {
 	{
 		std::lock_guard<std::mutex> lock(_statusMutex);
 		if (!_status->nextEvent) {
-			log_e("No next event exists.");
-			return utils::Result<ReserveParams>::makeErr(new utils::Error{"No next event exists."});
+			return _handleErrorSync<Model::ReserveParams>(
+			    new utils::Error("No next event exists."));
 		}
 	}
 	return calculateReserveParams(_status->nextEvent->unixStartTime - safeUTC.now());
@@ -94,8 +93,9 @@ void Model::_onInsertEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Got event insert response.");
 
-	if (_handleError((size_t)GuiReq::RESERVE, result))
-		return;
+	if (result.isErr()) {
+		return _handleError((size_t)GuiReq::RESERVE, result.err());
+	}
 
 	_status->currentEvent = result.ok();
 
@@ -106,15 +106,13 @@ void Model::endCurrentEvent() {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Ending current event.");
 	if (!_status->currentEvent) {
-		log_e("No current event exists to end");
-		_guiTask->error(GuiReq::FREE, Error("No current event exists to end"));
-		return;
+		return _handleError((size_t)GuiReq::FREE,
+		                    std::make_shared<Error>("No current event exists to end"));
 	}
 
 	if (_status->currentEvent->unixEndTime <= safeUTC.now()) {
-		log_e("Won't end current event as it already ended");
-		_guiTask->error(GuiReq::FREE, Error("Won't end current event as it already ended"));
-		return;
+		return _handleError((size_t)GuiReq::FREE,
+		                    std::make_shared<Error>("Won't end current event as it already ended"));
 	}
 
 	_apiTask.endEvent(_status->currentEvent->id);
@@ -124,8 +122,9 @@ void Model::_onEndEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Got end event response.");
 
-	if (_handleError((size_t)GuiReq::FREE, result))
-		return;
+	if (result.isErr()) {
+		return _handleError((size_t)GuiReq::FREE, result.err());
+	}
 
 	_status->currentEvent = nullptr;
 
@@ -143,8 +142,9 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Received calendar status.");
 
-	if (_handleError((size_t)GuiReq::UPDATE, result))
-		return;
+	if (result.isErr()) {
+		return _handleError((size_t)GuiReq::UPDATE, result.err());
+	}
 
 	auto newStatus = result.ok();
 
