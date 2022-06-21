@@ -11,7 +11,7 @@ typedef gui::GUITask::GuiRequest GuiReq;
 
 void Model::_handleError(size_t reqType, std::shared_ptr<Error> error) {
 	// Logical errors are most likely caused by out of date information, so we need to update it
-	if (error->type == Error::Type::LOGICAL)
+	if (reqType != (size_t)GuiReq::UPDATE && error->type == Error::Type::LOGICAL)
 		updateStatus();
 	log_e("%s", error->message.c_str());
 	_guiTask->error((GuiReq)reqType, *error);

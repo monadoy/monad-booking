@@ -77,10 +77,6 @@ class API {
 	virtual bool refreshAuth() = 0;
 
 	/**
-	 * NOTE:
-	 * Don't return LOGICAL typed errors from this function, it will result in infinite
-	 * request loops.
-	 *
 	 * Fetch the current and next events from calendar today. Also contains the name
 	 * of the room. Returns the calendar status on success and error on failure.
 	 */
