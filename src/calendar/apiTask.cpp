@@ -31,6 +31,8 @@ void task(void* arg) {
 
 		apiTask->_api->refreshAuth();
 
+		auto startTime = millis();
+
 		switch (req->type) {
 			case APITask::RequestType::CALENDAR_STATUS: {
 				auto func = toSmartPtr<APITask::QueueFuncCalendarStatus>(req->func);
@@ -51,6 +53,8 @@ void task(void* arg) {
 				Serial.println("APITask: Unhandled request type " + String((uint8_t)req->type));
 				break;
 		}
+
+		log_i("Request completed in %u ms.", millis() - startTime);
 	}
 
 	vTaskDelete(NULL);
