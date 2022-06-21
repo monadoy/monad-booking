@@ -41,6 +41,8 @@ std::shared_ptr<cal::Event> extractEvent(const JsonObject& object) {
 
 namespace cal {
 
+const int INSERT_EVENT_VERIFY_MAX_RETRIES = 4;
+
 const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(resource,responseStatus)";
 const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 
@@ -282,7 +284,7 @@ Result<Event> GoogleAPI::getEvent(const String& eventId) {
 	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>());
 	if (!event) {
 		return Result<Event>::makeErr(
-		    new Error{Error::Type::LOGICAL, "GET didn't return a valid accepted event"});
+		    new Error{Error::Type::LOGICAL, "Event overlaps with another event"});
 	}
 
 	return Result<Event>::makeOk(event);
@@ -329,10 +331,10 @@ std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc, in
 	}
 
 	if (httpCode < 200 || httpCode >= 300) {
-		log_w("HTTP response: %d, %s", httpCode, doc["error"]["message"].as<char*>());
-		return std::make_shared<cal::Error>(
-		    cal::Error::Type::HTTP,
-		    "HTTP response: " + String(httpCode) + ", " + doc["error"]["message"].as<String>());
+		String msg = doc["error"]["message"].as<String>();
+		log_w("HTTP response: %d, %s", httpCode, msg.c_str());
+		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
+		                                    "HTTP response: " + String(httpCode) + ", " + msg);
 	}
 
 	return nullptr;
