@@ -30,6 +30,7 @@ void task(void* arg) {
 				if (!beforeSleepDispatched) {
 					manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
 					beforeSleepDispatched = true;
+					delay(10);
 				}
 
 				// If any callback started a task, we should postpone sleeping
@@ -141,6 +142,7 @@ void SleepManager::registerCallback(Callback type, const std::function<void()>& 
 }
 
 void SleepManager::_dispatchCallbacks(Callback type) {
+	log_i("Dispatching callback %d.", (int)type);
 	for (const auto& cb : _callbacks[(size_t)type]) cb();
 }
 

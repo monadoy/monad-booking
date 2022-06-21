@@ -934,5 +934,7 @@ GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
 	} else {
 		log_i("GUI Task: queue create failed");
 	}
+
+	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() { sleep(); });
 }
 }  // namespace gui
