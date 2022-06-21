@@ -22,12 +22,7 @@ void task(void* arg) {
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 		Serial.print("API Task: queue item received");
 
-		if (!wifiManager.waitWiFi()) {
-			log_e("WiFi errored, could not complete API request");
-			// TODO: show error in UI
-			delay(100);
-			continue;
-		}
+		wifiManager.waitWiFi();
 
 		apiTask->_api->refreshAuth();
 
