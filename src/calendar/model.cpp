@@ -62,7 +62,8 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 
 	// Round up to five minute
 	const time_t remainder = endTime % (5 * SECS_PER_MIN);
-	endTime = endTime - remainder + 5 * SECS_PER_MIN;
+	if (remainder != 0)
+		endTime = endTime - remainder + 5 * SECS_PER_MIN;
 
 	// Make fit before next event if needed
 	if (_status->nextEvent)
