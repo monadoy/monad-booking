@@ -5,25 +5,6 @@
 #include "timeUtils.h"
 
 namespace {
-std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
-                                                const String& responseBody) {
-	DeserializationError err = deserializeJson(doc, responseBody);
-	if (err) {
-		Serial.print(F("deserializeJson() failed with code "));
-		Serial.println(err.f_str());
-		return std::make_shared<cal::Error>(
-		    cal::Error::Type::PARSE, "deserializeJson() failed with code " + String(err.f_str()));
-	}
-
-	if (httpCode != 200) {
-		Serial.println("Error in HTTP request: " + httpCode);
-		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
-		                                    "Error in HTTP request: " + String(httpCode) + ", "
-		                                        + doc["error"]["message"].as<String>());
-	}
-
-	return nullptr;
-}
 
 std::shared_ptr<cal::Event> extractEvent(const JsonObject& object) {
 	// Whole day events contain "date" key, ignore these for now
@@ -316,6 +297,34 @@ utils::Result<Token, utils::Error> GoogleAPI::parseToken(const JsonObjectConst& 
 	              .clientSecret = obj["client_secret"],
 	              .scope = obj["scopes"][0],
 	              .unixExpiry = 0});
+}
+
+std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc, int httpCode,
+                                                           const String& responseBody) {
+	// Negative codes are errors special to HTTPClient
+	if (httpCode < 0) {
+		String errStr = _http.errorToString(httpCode);
+		log_w("HTTP: %d, %s", httpCode, errStr.c_str());
+		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
+		                                    "HTTP: " + String(httpCode) + ", " + errStr.c_str());
+	}
+
+	DeserializationError err = deserializeJson(doc, responseBody);
+	if (err) {
+		String errStr = err.f_str();
+		log_w("deserializeJson() failed with code %s", errStr.c_str());
+		return std::make_shared<cal::Error>(cal::Error::Type::PARSE,
+		                                    "deserializeJson() failed with code " + errStr);
+	}
+
+	if (httpCode < 200 || httpCode >= 300) {
+		log_w("HTTP response: %d, %s", httpCode, doc["error"]["message"].as<char*>());
+		return std::make_shared<cal::Error>(
+		    cal::Error::Type::HTTP,
+		    "HTTP response: " + String(httpCode) + ", " + doc["error"]["message"].as<String>());
+	}
+
+	return nullptr;
 }
 
 }  // namespace cal

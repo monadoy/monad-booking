@@ -32,6 +32,9 @@ class GoogleAPI : public API {
   private:
 	Result<Event> getEvent(const String& eventId);
 
+	std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
+	                                                const String& responseBody);
+
 	Token _token;
 	String _calendarId;
 
