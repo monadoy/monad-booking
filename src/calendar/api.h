@@ -33,7 +33,19 @@ struct Event {
 };
 
 struct Error {
-	Error(const String& message) : message{message} {}
+	enum class Type {
+		// In HTTP errors the web requests have returned a non-ok status code.
+		// E.g. internal server errors, invalid requests, forbidden requests.
+		HTTP,
+		// Parse errors are e.g. mangled json objects, empty responses,
+		// or non existing json keys.
+		PARSE,
+		// In logical errors we have otherwise valid web responses, but some invariants are broken.
+		// E.g. inserting overlapping events, or removing non-existing events.
+		LOGICAL
+	};
+	Error(Type type, const String& message) : type{type}, message{message} {}
+	Type type;
 	String message;
 };
 
@@ -65,9 +77,12 @@ class API {
 	virtual bool refreshAuth() = 0;
 
 	/**
-	 * Fetch the current and next events from calendar today.
-	 * Also contains the name of the room.
-	 * Returns the calendar status on success and error on failure.
+	 * NOTE:
+	 * Don't return LOGICAL typed errors from this function, it will result in infinite
+	 * request loops.
+	 *
+	 * Fetch the current and next events from calendar today. Also contains the name
+	 * of the room. Returns the calendar status on success and error on failure.
 	 */
 	virtual Result<CalendarStatus> fetchCalendarStatus() = 0;
 

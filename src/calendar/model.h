@@ -64,7 +64,8 @@ class Model {
 	 * Does:
 	 * - logging
 	 * - asynchronously notify GUI about an error
-	 * - update state because the error was probably caused by out of date information
+	 * - update state if its type is LOGICAL,
+	 *   because the error was probably caused by out of date information
 	 */
 	void _handleError(size_t reqType, std::shared_ptr<Error> error);
 
@@ -72,10 +73,10 @@ class Model {
 	 * Creates a result based on supplied error and does required operations.
 	 * We do:
 	 * - logging
-	 * - update state because the error was probably caused by out of date information
+	 * - update state because it was probably out of date
 	 */
 	template <typename T>
-	utils::Result<T> _handleErrorSync(utils::Error* error);
+	utils::Result<T> _handleStateErrorSync(utils::Error* error);
 
 	// Protects _status;
 	std::mutex _statusMutex;

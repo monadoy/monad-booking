@@ -10,12 +10,16 @@ namespace cal {
 typedef gui::GUITask::GuiRequest GuiReq;
 
 void Model::_handleError(size_t reqType, std::shared_ptr<Error> error) {
+	// Logical errors are most likely caused by out of date information, so we need to update it
+	if (error->type == Error::Type::LOGICAL)
+		updateStatus();
 	log_e("%s", error->message.c_str());
 	_guiTask->error((GuiReq)reqType, *error);
 }
 
 template <typename T>
-utils::Result<T> Model::_handleErrorSync(utils::Error* error) {
+utils::Result<T> Model::_handleStateErrorSync(utils::Error* error) {
+	updateStatus();
 	log_e("%s", error->message.c_str());
 	return utils::Result<T>::makeErr(error);
 }
@@ -54,7 +58,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 	const time_t now = safeUTC.now();
 
 	if (_status->currentEvent) {
-		return _handleErrorSync<Model::ReserveParams>(
+		return _handleStateErrorSync<Model::ReserveParams>(
 		    new utils::Error("Current event already exists, can't insert another one."));
 	}
 
@@ -70,7 +74,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveParams(int reserveSec
 		endTime = min(endTime, _status->nextEvent->unixStartTime);
 
 	if (endTime < now + 30) {
-		return _handleErrorSync<Model::ReserveParams>(new utils::Error(
+		return _handleStateErrorSync<Model::ReserveParams>(new utils::Error(
 		    "Won't insert such a short event (" + String(endTime - now) + " seconds)."));
 	}
 
@@ -82,7 +86,7 @@ utils::Result<Model::ReserveParams> Model::calculateReserveUntilNextParams() {
 	{
 		std::lock_guard<std::mutex> lock(_statusMutex);
 		if (!_status->nextEvent) {
-			return _handleErrorSync<Model::ReserveParams>(
+			return _handleStateErrorSync<Model::ReserveParams>(
 			    new utils::Error("No next event exists."));
 		}
 	}
@@ -106,13 +110,15 @@ void Model::endCurrentEvent() {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Ending current event.");
 	if (!_status->currentEvent) {
-		return _handleError((size_t)GuiReq::FREE,
-		                    std::make_shared<Error>("No current event exists to end"));
+		return _handleError(
+		    (size_t)GuiReq::FREE,
+		    std::make_shared<Error>(Error::Type::LOGICAL, "No current event exists to end"));
 	}
 
 	if (_status->currentEvent->unixEndTime <= safeUTC.now()) {
 		return _handleError((size_t)GuiReq::FREE,
-		                    std::make_shared<Error>("Won't end current event as it already ended"));
+		                    std::make_shared<Error>(Error::Type::LOGICAL,
+		                                            "Won't end current event as it already ended"));
 	}
 
 	_apiTask.endEvent(_status->currentEvent->id);
