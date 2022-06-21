@@ -719,6 +719,12 @@ void clearDebug() {
 	lbls[LABEL_ERROR]->SetHide(true);
 	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
 }
+
+void toSleep() {
+	if (currentScreen == SCREEN_BOOKING || currentScreen == SCREEN_FREEING) {
+		toMainScreen(true, true);
+	}
+}
 }  // namespace
 
 namespace gui {
@@ -899,6 +905,10 @@ void GUITask::touchDown(const tp_finger_t& tp) {
 
 void GUITask::touchUp() {
 	enqueue(ActionType::TOUCH_UP, new QueueFunc([=]() { return EPDGUI_Process(); }));
+}
+
+void GUITask::sleep() {
+	enqueue(ActionType::SLEEP, new QueueFunc([=]() { return toSleep(); }));
 }
 
 void GUITask::enqueue(ActionType at, void* func) {

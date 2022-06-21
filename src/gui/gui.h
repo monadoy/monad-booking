@@ -116,6 +116,7 @@ void createBoldLabels();
 void tryToPutSleep();
 void debug(String err);
 void clearDebug();
+void toSleep();
 } // namespace
 
 namespace gui {
@@ -127,7 +128,8 @@ class GUITask {
 		SUCCESS,
 		ERROR,
 		TOUCH_DOWN,
-		TOUCH_UP
+		TOUCH_UP,
+		SLEEP
 	};
 
 	enum class GuiRequest {
@@ -178,6 +180,12 @@ class GUITask {
 	 */
 	void touchUp();
 	std::function<void()> callbackTouchUp;
+
+	/**
+	 * @brief Function to call before gui goes to sleep
+	 * 
+	 */
+	void sleep();
 
 	/**
 	 * @brief event to load setup
