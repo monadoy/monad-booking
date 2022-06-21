@@ -11,15 +11,14 @@ std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
 	if (err) {
 		Serial.print(F("deserializeJson() failed with code "));
 		Serial.println(err.f_str());
-		return std::shared_ptr<cal::Error>(
-		    new cal::Error{"deserializeJson() failed with code " + String(err.f_str())});
+		return std::make_shared<cal::Error>("deserializeJson() failed with code "
+		                                    + String(err.f_str()));
 	}
 
 	if (httpCode != 200) {
 		Serial.println("Error in HTTP request: " + httpCode);
-		return std::shared_ptr<cal::Error>(
-		    new cal::Error{httpCode, "Error in HTTP request: " + String(httpCode) + ", "
-		                                 + doc["error"]["message"].as<String>()});
+		return std::make_shared<cal::Error>("Error in HTTP request: " + String(httpCode) + ", "
+		                                    + doc["error"]["message"].as<String>());
 	}
 
 	return nullptr;

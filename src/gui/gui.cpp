@@ -770,8 +770,7 @@ void initGui(Config::ConfigStore* configStore) {
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	hideLoading(true);
-	debug("Code " + enumToString(type) + " " + String(error.code) + "\n" + "- "
-	      + String(error.message));
+	debug("Error: " + enumToString(type) + "\n- " + error.message);
 	updateScreen(true, true);
 	toMainScreen(true, true);
 }
