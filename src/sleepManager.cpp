@@ -14,6 +14,8 @@ typedef SleepManager SM;
 void task(void* arg) {
 	SM* manager = static_cast<SM*>(arg);
 
+	bool beforeSleepDispatched = false;
+
 	log_i("Task created");
 
 	for (;;) {
@@ -22,7 +24,13 @@ void task(void* arg) {
 
 		switch (action) {
 			case SM::Action::SLEEP: {
-				manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
+				// BEFORE_SLEEP callbacks may spin up tasks that keep us awake.
+				// After they complete and enqueue a sleep action again,
+				// we should not dispatch them again to avoid infinite wake ups.
+				if (!beforeSleepDispatched) {
+					manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
+					beforeSleepDispatched = true;
+				}
 
 				// If any callback started a task, we should postpone sleeping
 				if (manager->_anyActivity())
@@ -35,6 +43,8 @@ void task(void* arg) {
 					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TIMER);
 				else if (wakeReason == SM::WakeReason::TOUCH)
 					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TOUCH);
+
+				beforeSleepDispatched = false;
 
 				break;
 			}
