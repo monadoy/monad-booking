@@ -31,11 +31,11 @@ void task(void* arg) {
 					manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
 					beforeSleepDispatched = true;
 					delay(10);
-				}
 
-				// If any callback started a task, we should postpone sleeping
-				if (manager->_anyActivity())
-					continue;
+					// If any callback started a task, we should postpone sleeping
+					if (manager->_anyActivity())
+						continue;
+				}
 
 				const SM::WakeReason wakeReason = manager->_sleep();
 
