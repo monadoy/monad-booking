@@ -243,7 +243,18 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 
 	// We need to fetch the room to check if the room has accepted it.
 	// It will be declined if it overlaps with an existing events.
-	return getEvent(eventId);
+
+	// Google may not instantly update if room accepts or not, so try a few times.
+	int i = 0;
+	auto res = getEvent(eventId);
+
+	while (i < INSERT_EVENT_VERIFY_MAX_RETRIES && res.isErr()
+	       && res.err()->type == Error::Type::LOGICAL) {
+		res = getEvent(eventId);
+		i++;
+	}
+
+	return res;
 }
 
 Result<Event> GoogleAPI::getEvent(const String& eventId) {
