@@ -81,18 +81,11 @@ bool GoogleAPI::refreshAuth() {
 	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
-	Serial.println("Received token response:\n" + responseBody + "\n");
-	if (httpCode != 200) {
-		Serial.println("Error on HTTP request: " + httpCode);
+	Serial.println("Received refresh auth response:\n" + responseBody + "\n");
+	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
 		return false;
-	}
-	StaticJsonDocument<1024> doc;
-	DeserializationError err = deserializeJson(doc, responseBody);
-	if (err) {
-		Serial.print(F("deserializeJson() failed with code "));
-		Serial.println(err.f_str());
-		return false;
-	}
 
 	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
