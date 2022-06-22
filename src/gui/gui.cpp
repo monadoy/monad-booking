@@ -125,7 +125,7 @@ void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
 	bool buttonsEqual = currentBtnIndex == newBtnIndex;
 	bool updateLeft = leftEventsEqual && buttonsEqual;
 	currentBtnIndex = newBtnIndex;
-	if(currentScreen == SCREEN_MAIN) {
+	if (currentScreen == SCREEN_MAIN) {
 		toMainScreen(!updateLeft, !updateRight);
 	}
 }
@@ -404,11 +404,13 @@ void toFreeBooking() {
 }
 
 void makeBooking(const cal::Model::ReserveParams& params) {
+	log_i("Calling model to make booking...");
 	hideLoading(false);
 	_model->reserveEvent(params);
 }
 
 void deleteBooking() {
+	log_i("Calling model to end current booking");
 	hideLoading(false);
 	_model->endCurrentEvent();
 }
@@ -446,6 +448,7 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	M5.EPD.Active();
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
+	log_i("EPD Going to sleep...");
 	M5.EPD.Sleep();
 }
 
@@ -512,7 +515,7 @@ void hideLoading(bool isHide) {
 		log_i("Hiding loadingscreen...");
 	} else {
 		log_i("Showing loadingscreen...");
-		if(currentScreen==SCREEN_BOOKING) {
+		if (currentScreen == SCREEN_BOOKING) {
 			hideBookingConfirmationButtons(true);
 		} else {
 			hideFreeConfirmationButtons(true);
@@ -774,11 +777,12 @@ void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	updateScreen(true, true);
 	toMainScreen(true, true);
 }
+
 void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatus> status) {
 	if (lbls[LABEL_ERROR]->GetText() != "") {
 		clearDebug();
 	}
-	if(type == gui::GUITask::GuiRequest::RESERVE || type == gui::GUITask::GuiRequest::FREE) {
+	if (type == gui::GUITask::GuiRequest::RESERVE || type == gui::GUITask::GuiRequest::FREE) {
 		currentScreen = SCREEN_MAIN;
 	}
 
@@ -823,8 +827,8 @@ void toSetupScreen() {
 		configData += "Salasana: ";
 		configData += wifiManager.getAccessPointInfo().password + "\n";
 		configData += "Navigoi osoitteeseen: " + wifiManager.AP_IP;
-		const String qrString
-		    = "WIFI:S:" + wifiManager.getAccessPointInfo().ssid + ";T:WPA;P:" + wifiManager.getAccessPointInfo().password + ";;";
+		const String qrString = "WIFI:S:" + wifiManager.getAccessPointInfo().ssid
+		                        + ";T:WPA;P:" + wifiManager.getAccessPointInfo().password + ";;";
 		canvasNextEvent.qrcode(qrString, 0, 120, 300, 7);
 	} else {
 		String wifiSSID = wifiManager.getStationInfo().ssid;
@@ -864,7 +868,7 @@ void showBootLog() {
 	updateScreen(true, true);
 }
 
-#define GUI_QUEUE_LENGTH 15
+#define GUI_QUEUE_LENGTH 20
 #define GUI_TASK_PRIORITY 5
 #define GUI_TASK_STACK_SIZE 4096
 
