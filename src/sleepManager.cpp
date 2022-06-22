@@ -12,6 +12,43 @@ ScopedTaskCounter::~ScopedTaskCounter() { _manager->decrementTaskCounter(); }
 
 typedef SleepManager SM;
 
+const std::array<const char*, (size_t)SM::Callback::SIZE> SM::callbackNames{
+    "AFTER_WAKE", "AFTER_WAKE_TOUCH", "AFTER_WAKE_TIMER", "BEFORE_SLEEP", "BEFORE_SHUTDOWN",
+};
+
+void handleBeforeAction(SM* manager, SM::Action action) {
+	switch (action) {
+		case SM::Action::SLEEP:
+			manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
+			break;
+		case SM::Action::SHUTDOWN:
+			manager->_dispatchCallbacks(SM::Callback::BEFORE_SHUTDOWN);
+			break;
+		default:
+			log_e("unhandled action %d", SM::callbackNames[(size_t)action]);
+	}
+}
+
+void handleAction(SM* manager, SM::Action action) {
+	switch (action) {
+		case SM::Action::SLEEP: {
+			const SM::WakeReason wakeReason = manager->_sleep();
+
+			manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE);
+			if (wakeReason == SM::WakeReason::TIMER)
+				manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TIMER);
+			else if (wakeReason == SM::WakeReason::TOUCH)
+				manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TOUCH);
+			break;
+		}
+		case SM::Action::SHUTDOWN:
+			manager->_shutdown();
+			break;
+		default:
+			log_e("unhandled action %d", SM::callbackNames[(size_t)action]);
+	}
+}
+
 void task(void* arg) {
 	SM* manager = static_cast<SM*>(arg);
 
@@ -21,45 +58,22 @@ void task(void* arg) {
 		SM::Action action;
 		xQueueReceive(manager->_queueHandle, &action, portMAX_DELAY);
 
-		switch (action) {
-			case SM::Action::SLEEP: {
-				manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
+		handleBeforeAction(manager, action);
 
-				// BEFORE_SLEEP callbacks may spin up tasks that keep us awake.
-				// Wait until they are done.
-				// TODO: could use semaphores instead of polling
-				delay(10);
-				while (manager->_anyActivity()) {
-					delay(10);
-				}
-
-				const SM::WakeReason wakeReason = manager->_sleep();
-
-				manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE);
-				if (wakeReason == SM::WakeReason::TIMER)
-					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TIMER);
-				else if (wakeReason == SM::WakeReason::TOUCH)
-					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TOUCH);
-
-				break;
-			}
-			case SM::Action::SHUTDOWN: {
-				manager->_dispatchCallbacks(SM::Callback::BEFORE_SHUTDOWN);
-
-				// BEFORE_SHUTDOWN callbacks may spin up tasks that keep us awake.
-				// Wait until they are done.
-				delay(10);
-				while (manager->_anyActivity()) {
-					delay(10);
-				}
-
-				manager->_shutdown();
-				break;
-			}
-			default:
-				log_e("unhandled action %d", (size_t)action);
-				break;
+		// BEFORE_* callbacks may spin up tasks that keep us awake.
+		// Wait until they are done.
+		// TODO: could use semaphores instead of polling
+		delay(10);
+		log_i("Waiting for BEFORE_* tasks to complete");
+		while (manager->_anyActivity()) {
+			delay(10);
 		}
+		log_i("Waiting done!");
+
+		// Remove all new queue actions added by callback tasks
+		xQueueReset(manager->_queueHandle);
+
+		handleAction(manager, action);
 	}
 
 	vTaskDelete(NULL);
@@ -153,7 +167,7 @@ void SleepManager::registerCallback(Callback type, const std::function<void()>& 
 }
 
 void SleepManager::_dispatchCallbacks(Callback type) {
-	log_i("Dispatching callback %d.", (int)type);
+	log_i("Dispatching callback %s.", SM::callbackNames[(size_t)type]);
 	for (const auto& cb : _callbacks[(size_t)type]) cb();
 }
 

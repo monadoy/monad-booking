@@ -77,6 +77,8 @@ class SleepManager {
 		SIZE
 	};
 
+	static const std::array<const char*, (size_t)Callback::SIZE> callbackNames;
+
 	// Set this to control length of time to sleep, if it's less than current time, sleep will be
 	// default length. Uses unix utc seconds.
 	std::atomic<time_t> nextWakeTime{0};
