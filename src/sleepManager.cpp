@@ -236,6 +236,8 @@ void SleepManager::_shutdown() {
 	log_i("%s", log.c_str());
 	utils::addBootLogEntry(log);
 
+	Serial.flush();
+
 	// TODO: show shutdown screen in GUI, maybe with BEFORE_SHUTDOWN event
 
 	M5.shutdown(turnOnTimeRTC.date, turnOnTimeRTC.time);

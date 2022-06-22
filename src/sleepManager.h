@@ -100,8 +100,6 @@ class SleepManager {
 	bool _shouldShutdown();
 	void _shutdown();
 
-	// TODO: shutdown for the night if needed
-
 	enum class WakeReason { TOUCH, TIMER, UNKNOWN };
 	WakeReason _sleep();
 
