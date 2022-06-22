@@ -22,8 +22,10 @@ RTCDateTime toRTCTime(time_t unixTime) {
 	// Second:
 	// - ezTime: 0 to 59, rtc: same
 
-	RTC_Date date{(int8_t)tm.Wday - 1, (int8_t)tm.Month, (int8_t)tm.Day, (int16_t)tm.Year + 1970};
-	RTC_Time time{(int8_t)tm.Hour, (int8_t)tm.Minute, (int8_t)tm.Second};
+	RTC_Date date{static_cast<int8_t>(tm.Wday - 1), static_cast<int8_t>(tm.Month),
+	              static_cast<int8_t>(tm.Day), static_cast<int16_t>(tm.Year + 1970)};
+	RTC_Time time{static_cast<int8_t>(tm.Hour), static_cast<int8_t>(tm.Minute),
+	              static_cast<int8_t>(tm.Second)};
 
 	return RTCDateTime{.date = std::move(date), .time = std::move(time)};
 }
