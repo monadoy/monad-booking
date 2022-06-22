@@ -2,6 +2,7 @@
 
 #include "esp_wifi.h"
 #include "globals.h"
+#include "timeUtils.h"
 #include "utils.h"
 
 ScopedTaskCounter::ScopedTaskCounter(SleepManager* manager) : _manager{manager} {
@@ -14,8 +15,6 @@ typedef SleepManager SM;
 void task(void* arg) {
 	SM* manager = static_cast<SM*>(arg);
 
-	bool beforeSleepDispatched = false;
-
 	log_i("Task created");
 
 	for (;;) {
@@ -24,17 +23,14 @@ void task(void* arg) {
 
 		switch (action) {
 			case SM::Action::SLEEP: {
-				// BEFORE_SLEEP callbacks may spin up tasks that keep us awake.
-				// After they complete and enqueue a sleep action again,
-				// we should not dispatch them again to avoid infinite wake ups.
-				if (!beforeSleepDispatched) {
-					manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
-					beforeSleepDispatched = true;
-					delay(10);
+				manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
 
-					// If any callback started a task, we should postpone sleeping
-					if (manager->_anyActivity())
-						continue;
+				// BEFORE_SLEEP callbacks may spin up tasks that keep us awake.
+				// Wait until they are done.
+				// TODO: could use semaphores instead of polling
+				delay(10);
+				while (manager->_anyActivity()) {
+					delay(10);
 				}
 
 				const SM::WakeReason wakeReason = manager->_sleep();
@@ -45,8 +41,19 @@ void task(void* arg) {
 				else if (wakeReason == SM::WakeReason::TOUCH)
 					manager->_dispatchCallbacks(SM::Callback::AFTER_WAKE_TOUCH);
 
-				beforeSleepDispatched = false;
+				break;
+			}
+			case SM::Action::SHUTDOWN: {
+				manager->_dispatchCallbacks(SM::Callback::BEFORE_SHUTDOWN);
 
+				// BEFORE_SHUTDOWN callbacks may spin up tasks that keep us awake.
+				// Wait until they are done.
+				delay(10);
+				while (manager->_anyActivity()) {
+					delay(10);
+				}
+
+				manager->_shutdown();
 				break;
 			}
 			default:
@@ -67,7 +74,11 @@ void timerCallback(TimerHandle_t handle) {
 
 	log_i("All timers and tasks expired");
 
-	manager->_enqueue(SleepManager::Action::SLEEP);
+	if (manager->_shouldShutdown()) {
+		manager->_enqueue(SleepManager::Action::SHUTDOWN);
+	} else {
+		manager->_enqueue(SleepManager::Action::SLEEP);
+	}
 }
 
 bool SleepManager::_anyActivity() {
@@ -149,9 +160,7 @@ void SleepManager::_dispatchCallbacks(Callback type) {
 SleepManager::WakeReason SleepManager::_sleep() {
 	log_i("Going to sleep...");
 
-	time_t now = safeUTC.now();
-
-	uint64_t sleepTime = max(nextWakeTime - now, (long)MIN_TIMED_SLEEP_S);
+	uint64_t sleepTime = max(nextWakeTime - safeUTC.now(), (long)MIN_TIMED_SLEEP_S);
 
 	log_i("Sleeping for %llu s or until touch.", sleepTime);
 
@@ -176,4 +185,44 @@ SleepManager::WakeReason SleepManager::_sleep() {
 	}
 
 	return WakeReason::UNKNOWN;
+}
+
+time_t SleepManager::_calculateTurnOnTime() {
+	time_t now = safeMyTZ.now();
+
+	tmElements_t tm;
+	ezt::breakTime(now, tm);
+	if (tm.Hour > onHours[0]) {
+		tm.Day += 1;
+	}
+	tm.Hour = onHours[0];
+	tm.Minute = 0;
+	tm.Second = 0;
+
+	return safeMyTZ.tzTime(ezt::makeTime(tm));
+}
+
+bool SleepManager::_shouldShutdown() {
+	time_t t = safeMyTZ.now();
+	tmElements_t tm;
+	ezt::breakTime(t, tm);
+
+	return (!onDays[tm.Wday - 1] || tm.Hour < onHours[0] || tm.Hour >= onHours[1])
+	       && !utils::isCharging();
+}
+
+void SleepManager::_shutdown() {
+	time_t turnOnTime = _calculateTurnOnTime();
+
+	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTime);
+
+	String turnOnTimeStr = safeMyTZ.dateTime(turnOnTime, UTC_TIME, RFC3339);
+
+	const String log = "[" + safeMyTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
+	log_i("%s", log.c_str());
+	utils::addBootLogEntry(log);
+
+	// TODO: show shutdown screen in GUI, maybe with BEFORE_SHUTDOWN event
+
+	M5.shutdown(turnOnTimeRTC.date, turnOnTimeRTC.time);
 }

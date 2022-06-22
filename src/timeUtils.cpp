@@ -1,6 +1,50 @@
 #include "timeUtils.h"
 
 namespace timeutils {
+
+RTCDateTime toRTCTime(time_t unixTime) {
+	tmElements_t tm;
+	ezt::breakTime(unixTime, tm);
+
+	// Conversions:
+	// Year:
+	// - ezTime: offset since 1970, rtc: year numbers normally
+	// Month:
+	// - ezTime: 1 to 12, rtc: same
+	// Day:
+	// - ezTime: 1 to 31, rtc: same
+	// Weekday:
+	// - ezTime: 1 to 7 starting Sunday, rtc: 0 to 6 starting Sunday
+	// Hour:
+	// - ezTime: 0 to 23, rtc: same
+	// Minute:
+	// - ezTime: 0 to 59, rtc: same
+	// Second:
+	// - ezTime: 0 to 59, rtc: same
+
+	RTC_Date date{(int8_t)tm.Wday - 1, (int8_t)tm.Month, (int8_t)tm.Day, (int16_t)tm.Year + 1970};
+	RTC_Time time{(int8_t)tm.Hour, (int8_t)tm.Minute, (int8_t)tm.Second};
+
+	return RTCDateTime{.date = std::move(date), .time = std::move(time)};
+}
+
+time_t toUnixTime(RTCDateTime rtcDateTime) {
+	const RTC_Date& date = rtcDateTime.date;
+	const RTC_Time& time = rtcDateTime.time;
+
+	tmElements_t tm{
+	    .Second = static_cast<uint8_t>(time.sec),
+	    .Minute = static_cast<uint8_t>(time.min),
+	    .Hour = static_cast<uint8_t>(time.hour),
+	    .Wday = static_cast<uint8_t>(date.week + 1),
+	    .Day = static_cast<uint8_t>(date.day),
+	    .Month = static_cast<uint8_t>(date.mon),
+	    .Year = static_cast<uint8_t>(date.year - 1970),
+	};
+
+	return ezt::makeTime(tm);
+}
+
 time_t getNextMidnight(time_t now) {
 	tmElements_t tm;
 	ezt::breakTime(now, tm);
@@ -50,4 +94,4 @@ time_t parseRfcTimestamp(const String& input) {
 
 	return t;
 }
-}
+}  // namespace timeutils

@@ -44,7 +44,7 @@ class SleepManager {
   public:
 	SleepManager();
 
-	enum class Action : size_t { SLEEP, SIZE };
+	enum class Action : size_t { SLEEP, SHUTDOWN, SIZE };
 
 	/**
 	 * Convenient RAII task count.
@@ -73,6 +73,7 @@ class SleepManager {
 		AFTER_WAKE_TOUCH,
 		AFTER_WAKE_TIMER,
 		BEFORE_SLEEP,
+		BEFORE_SHUTDOWN,
 		SIZE
 	};
 
@@ -88,6 +89,14 @@ class SleepManager {
 	void registerCallback(Callback type, const std::function<void()>& cb);
 	std::array<std::vector<std::function<void()>>, (size_t)Callback::SIZE> _callbacks{};
 	void _dispatchCallbacks(Callback type);
+
+	// starts on sunday
+	const std::array<bool, 7> onDays{0, 1, 1, 1, 1, 1, 0};
+	const std::array<uint8_t, 2> onHours{7, 19};
+
+	time_t _calculateTurnOnTime();
+	bool _shouldShutdown();
+	void _shutdown();
 
 	// TODO: shutdown for the night if needed
 

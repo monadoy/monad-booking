@@ -13,16 +13,13 @@
 #include "gui/gui.h"
 #include "safeTimezone.h"
 #include "sleepManager.h"
+#include "timeUtils.h"
 #include "utils.h"
 
 // Format the filesystem automatically if not formatted already
 #define FORMAT_LITTLEFS_IF_FAILED true
 
 #define USE_EXTERNAL_SERIAL true
-
-std::array<uint8_t, 2> offDays{SATURDAY, SUNDAY};
-
-std::array<uint8_t, 2> onHours{7, 19};
 
 std::unique_ptr<Config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
@@ -37,6 +34,20 @@ void setupTime(const String& IANATimeZone) {
 
 	if (!safeMyTZ.setCache(String("timezones"), IANATimeZone))
 		safeMyTZ.setLocation(IANATimeZone);
+}
+
+void syncEzTimeFromRTC() {
+	timeutils::RTCDateTime rtcTime;
+	M5.RTC.getDate(&rtcTime.date);
+	M5.RTC.getTime(&rtcTime.time);
+	safeUTC.setTime(timeutils::toUnixTime(rtcTime));
+	log_i("ezTime synced from rtc: %s", safeMyTZ.dateTime(RFC3339).c_str());
+}
+
+void syncRTCFromEzTime() {
+	timeutils::RTCDateTime dateTime = timeutils::toRTCTime(safeUTC.now());
+	M5.RTC.setDate(&dateTime.date);
+	M5.RTC.setTime(&dateTime.time);
 }
 
 void setup() {
@@ -72,6 +83,10 @@ void setup() {
 		return;
 	}
 	setupTime(config["timezone"]);
+	syncRTCFromEzTime();
+	// ezTime uses millis() and drifts over time, sync it from rtc after every wake from sleep
+	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
+	                              []() { syncEzTimeFromRTC(); });
 
 	auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
 
@@ -81,10 +96,10 @@ void setup() {
 	}
 
 	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), config["gcalsettings"]["calendarid"]};
-
 	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
 
 	calendarModel = utils::make_unique<cal::Model>(*apiTask);
+
 	guiTask = utils::make_unique<gui::GUITask>(configStore.get(), calendarModel.get());
 	calendarModel->registerGUITask(guiTask.get());
 
@@ -109,58 +124,6 @@ void setup() {
 	for (int i = entries.size() - 1; i >= 0; --i) {
 		Serial.println(entries[i]);
 	}
-}
-
-bool shouldShutDown() {
-	time_t t = safeMyTZ.now();
-	tmElements_t tm;
-	ezt::breakTime(t, tm);
-
-	return std::any_of(offDays.begin(), offDays.end(), [&](uint8_t d) { return d == tm.Wday; })
-	       || tm.Hour < onHours[0] || tm.Hour >= onHours[1];
-}
-
-time_t calculateTurnOnTimeUTC() {
-	time_t now = safeMyTZ.now();
-
-	tmElements_t tm;
-	ezt::breakTime(now, tm);
-	if (tm.Hour > onHours[0]) {
-		tm.Day += 1;
-	}
-	tm.Hour = onHours[0];
-	tm.Minute = 5;
-	tm.Second = 0;
-
-	return safeMyTZ.tzTime(ezt::makeTime(tm));
-}
-
-void shutDown() {
-	time_t nowUTC = UTC.now();
-
-	tmElements_t tm;
-	ezt::breakTime(nowUTC, tm);
-
-	RTC_Date date(tm.Wday, tm.Month, tm.Day, tm.Year - 1900);
-	RTC_Time time(tm.Hour, tm.Minute, tm.Second);
-	M5.RTC.setDate(&date);
-	M5.RTC.setTime(&time);
-
-	time_t turnOnTimeUTC = calculateTurnOnTimeUTC();
-
-	String turnOnTimeStr = safeMyTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
-
-	const String log = "[" + safeMyTZ.dateTime(RFC3339) + "] Shut, try wake at " + turnOnTimeStr;
-	Serial.println(log);
-	utils::addBootLogEntry(log);
-
-	gui::showBootLog();
-
-	tmElements_t tmOn;
-	ezt::breakTime(turnOnTimeUTC, tmOn);
-
-	M5.shutdown(RTC_Date(tmOn.Wday, tmOn.Month, tmOn.Day, tmOn.Year - 1900),
-	            RTC_Time(tmOn.Hour, tmOn.Minute, tmOn.Second));
 }
 
 void loop() { vTaskDelete(NULL); }

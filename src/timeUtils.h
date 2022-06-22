@@ -1,9 +1,18 @@
 #ifndef TIMEUTILS_H
 #define TIMEUTILS_H
 
+#include <M5EPD.h>
 #include <ezTime.h>
 
 namespace timeutils {
+
+struct RTCDateTime {
+	RTC_Date date;
+	RTC_Time time;
+};
+
+RTCDateTime toRTCTime(time_t unixTime);
+time_t toUnixTime(RTCDateTime rtcDateTime);
 
 time_t getNextMidnight(time_t now);
 

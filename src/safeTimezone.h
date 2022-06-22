@@ -51,6 +51,12 @@ class SafeTimezone {
 		return res;
 	}
 
+	void setTime(const time_t t, const uint16_t ms = 0) {
+		xSemaphoreTake(handle_, portMAX_DELAY);
+		tz_.setTime(t, ms);
+		xSemaphoreGive(handle_);
+	}
+
   private:
 	SemaphoreHandle_t handle_ = xSemaphoreCreateMutex();
 	Timezone& tz_;
