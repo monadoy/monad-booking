@@ -76,16 +76,13 @@ void APITask::enqueue(RequestType rt, void* func) {
 };
 
 APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
-	xTaskCreatePinnedToCore(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this),
-	                        API_TASK_PRIORITY, &_taskHandle, 0);
-
 	_queueHandle = xQueueCreate(API_QUEUE_LENGTH, sizeof(APITask::QueueElement*));
+	assert(_queueHandle != NULL);
 
-	if (_queueHandle != NULL) {
-		Serial.println("API Task: queue created");
-	} else {
-		Serial.println("API Task: queue create failed");
-	}
+	BaseType_t taskCreateRes
+	    = xTaskCreatePinnedToCore(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this),
+	                              API_TASK_PRIORITY, &_taskHandle, 0);
+	assert(taskCreateRes == pdPASS);
 }
 
 }  // namespace cal
