@@ -10,7 +10,7 @@ void ConfigStore::loadConfig() {
 	Serial.println("Trying to load config from flash...");
 
 	// Release old memory if it exists
-	config_.clear();
+	config_ = StaticJsonDocument<2048>();
 
 	configFileHandle = fs_.open(configFileName_ + ".msgpack", FILE_READ);
 	if (configFileHandle) {

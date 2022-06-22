@@ -137,6 +137,8 @@ void SleepManager::incrementTaskCounter() {
 		log_e("Task counter increment failed");
 		return;
 	}
+
+	// log_i("Task counter incremented: count %d", uxSemaphoreGetCount(_activeTaskCounter));
 }
 
 void SleepManager::decrementTaskCounter() {
@@ -146,6 +148,7 @@ void SleepManager::decrementTaskCounter() {
 	}
 
 	BaseType_t count = uxSemaphoreGetCount(_activeTaskCounter);
+	// log_i("Task counter decremented: count %d", count);
 
 	if (count == 0) {
 		if (xTimerReset(_taskActivityTimer, 10) != pdPASS) {

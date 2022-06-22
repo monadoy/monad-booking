@@ -13,9 +13,11 @@ const IPAddress WiFiManager::AP_IP(192, 168, 1, 1);
 void onAPEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 	switch (event) {
 		case ARDUINO_EVENT_WIFI_AP_START:
+			log_i("AP_START");
 			sleepManager.incrementTaskCounter();
 			break;
 		case ARDUINO_EVENT_WIFI_AP_STOP:
+			log_i("AP_STOP");
 			sleepManager.decrementTaskCounter();
 			break;
 		default:
@@ -74,7 +76,6 @@ WiFiManager::WiFiManager() {
 bool WiFiManager::openStation(const String& ssid, const String& password) {
 	log_i("Opening WiFi station...");
 
-	WiFi.mode(WIFI_STA);
 	WiFi.setAutoReconnect(false);
 	WiFi.begin(ssid.c_str(), password.c_str());
 	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
@@ -127,10 +128,8 @@ void WiFiManager::openAccessPoint() {
 	String ssid = String(AP_SSID) + randNumString(4);
 	String pass = String(AP_PASS) + randNumString(4);
 
-	log_i("Opening access point:\nssid: %s\npass: %s", ssid.c_str(), pass.c_str());
+	log_i("Opening access point");
 
-	WiFi.mode(WIFI_MODE_AP);
-	WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
 	WiFi.softAP(ssid.c_str(), pass.c_str());
 }
 
@@ -139,26 +138,26 @@ bool WiFiManager::isAccessPoint() {
 	return mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA;
 }
 
-APInfo WiFiManager::getAccessPointInfo() {
+WiFiInfo WiFiManager::getAccessPointInfo() {
 	wifi_config_t conf;
 	esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
 	const char* ssid = reinterpret_cast<const char*>(conf.ap.ssid);
 	const char* password = reinterpret_cast<const char*>(conf.ap.password);
-	return APInfo{.ssid = String{ssid}, .password = String{password}};
+	return WiFiInfo{.ssid = String{ssid}, .password = String{password}, .ip = WiFi.softAPIP()};
 }
 
-STAInfo WiFiManager::getStationInfo() {
+WiFiInfo WiFiManager::getStationInfo() {
 	wifi_config_t conf;
 	esp_wifi_get_config((wifi_interface_t)WIFI_IF_STA, &conf);
 	const char* ssid = reinterpret_cast<const char*>(conf.sta.ssid);
 	const char* password = reinterpret_cast<const char*>(conf.sta.password);
-	return STAInfo{.ssid = String{ssid}, .password = String{password}, .ip = WiFi.localIP()};
+	return WiFiInfo{.ssid = String{ssid}, .password = String{password}, .ip = WiFi.localIP()};
 }
 
 namespace {
 const char* wifiErrorToString(wifi_err_reason_t errCode) {
 	switch ((wifi_err_reason_t)errCode) {
-#if CORE_DEBUG_LEVEL > 3
+#if CORE_DEBUG_LEVEL > 2
 		case WIFI_REASON_UNSPECIFIED:
 			return "UNSPECIFIED";
 		case WIFI_REASON_AUTH_EXPIRE:

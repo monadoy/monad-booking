@@ -7,12 +7,7 @@
 #include <mutex>
 #include <vector>
 
-struct APInfo {
-	String ssid;
-	String password;
-};
-
-struct STAInfo {
+struct WiFiInfo {
 	String ssid;
 	String password;
 	IPAddress ip;
@@ -59,9 +54,9 @@ class WiFiManager {
 
 	bool isAccessPoint();
 
-	APInfo getAccessPointInfo();
+	WiFiInfo getAccessPointInfo();
 
-	STAInfo getStationInfo();
+	WiFiInfo getStationInfo();
 
 	static const IPAddress AP_IP;
 
