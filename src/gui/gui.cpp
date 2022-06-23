@@ -520,7 +520,7 @@ void hideLoading(bool isHide) {
 		} else {
 			hideFreeConfirmationButtons(true);
 		}
-		//showLoadingAnimation();
+		showLoadingAnimation();
 		/* M5.EPD.UpdateArea(521, 399, 375, 77, UPDATE_MODE_GC16); */
 		updateScreen(true, true);
 	}
@@ -736,41 +736,19 @@ namespace gui {
 
 void registerModel(cal::Model* model) { _model = model; }
 
-void initGui(Config::ConfigStore* configStore) {
-	JsonObjectConst config = configStore->getConfigJson();
-	bool loadSetup = config.begin() == config.end();
-	canvasCurrentEvent.createCanvas(652, 540);
-	canvasNextEvent.createCanvas(308, 540);
-
-	M5EPD_Canvas boldfont(&M5.EPD);
-	boldfont.setTextFont(1);
-	boldfont.loadFont(interBold, LittleFS);
-	boldfont.createRender(FONT_SIZE_BUTTON, 64);
-	boldfont.createRender(FONT_SIZE_TITLE, 128);
-	boldfont.createRender(FONT_SIZE_HEADER, 64);
-	createBoldLabels();
-	createButtons();
-
+void initGui() {
 	M5EPD_Canvas font(&M5.EPD);
+	font.setTextFont(1);
+	font.loadFont(interBold, LittleFS);
+	font.createRender(FONT_SIZE_BUTTON, 64);
+	font.createRender(FONT_SIZE_TITLE, 128);
+	font.createRender(FONT_SIZE_HEADER, 64);
+
 	font.setTextFont(2);
 	font.loadFont(interRegular, LittleFS);
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
-	createRegularLabels();
-	log_i("EPD now active");
-	M5.EPD.Active();
-	if (loadSetup) {
-		log_i("Going to setupscreen");
-		for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
-		     p != epdgui_object_list.end(); p++) {
-			(*p)->SetHide(true);
-		}
-		hideSettings(false);
-		lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
-		lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
-		toSetupScreen();
-	}
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
@@ -791,6 +769,18 @@ void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatu
 	hideLoading(true);
 	updateStatus(status);
 	log_i("updateGui was called");
+}
+
+void loadSetup() {
+	log_i("Going to setupscreen");
+	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+		     p != epdgui_object_list.end(); p++) {
+			(*p)->SetHide(true);
+		}
+	hideSettings(false);
+	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
+	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
+	toSetupScreen();
 }
 
 String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done with an array
@@ -870,6 +860,18 @@ void showBootLog() {
 	updateScreen(true, true);
 }
 
+void initMainScreen(cal::Model* model) {
+	canvasCurrentEvent.createCanvas(652, 540);
+	canvasNextEvent.createCanvas(308, 540);
+
+	canvasCurrentEvent.setTextFont(1);
+	createBoldLabels();
+	createButtons();
+	canvasCurrentEvent.setTextFont(2);
+	createRegularLabels();
+	registerModel(model);
+}
+
 #define GUI_QUEUE_LENGTH 20
 #define GUI_TASK_PRIORITY 5
 #define GUI_TASK_STACK_SIZE 4096
@@ -919,21 +921,22 @@ void GUITask::sleep() {
 void GUITask::enqueue(ActionType at, void* func) {
 	GuiQueueElement* data = new GuiQueueElement{at, func};
 	xQueueSend(_guiQueueHandle, (void*)&data, 0);
-};
+}
 
-GUITask::GUITask(Config::ConfigStore* configStore, cal::Model* model) {
+void GUITask::initMain(cal::Model* model) {
+	enqueue(ActionType::INIT, new QueueFunc([=]() {return initMainScreen(model);} ));
+}
+
+GUITask::GUITask() {
+
+
 	using namespace std::placeholders;
 	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
-	BaseType_t xReturned;
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
-	xReturned
-	    = xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
+	xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
 	                              GUI_TASK_PRIORITY, &_taskHandle, 1);
-	Serial.print("xReturned value is ");
-	Serial.println(xReturned);
-	gui::registerModel(model);
 
-	gui::initGui(configStore);
+	gui::initGui();
 	if (_guiQueueHandle != NULL) {
 		log_i("GUI Task: queue created");
 	} else {

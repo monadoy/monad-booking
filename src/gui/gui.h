@@ -67,6 +67,9 @@ enum {
 	SCREEN_SETTINGS,
 	SCREEN_SETUP,
 	SCREEN_BOOTLOG,
+	SCREEN_SHUTDOWN,
+	SCREEN_STARTUP,
+	SCREEN_STARTUP_ERROR,
 	SCREEN_SIZE
 };
 
@@ -132,8 +135,8 @@ namespace gui {
 
 class GUITask {
   public:
-	GUITask(Config::ConfigStore* configStore, cal::Model* model);
-	enum class ActionType { SUCCESS, ERROR, TOUCH_DOWN, TOUCH_UP, SLEEP };
+	GUITask();
+	enum class ActionType { SUCCESS, ERROR, TOUCH_DOWN, TOUCH_UP, SLEEP, INIT };
 
 	enum class GuiRequest { RESERVE, FREE, MODEL, UPDATE, OTHER, SIZE };
 
@@ -186,16 +189,18 @@ class GUITask {
 	void sleep();
 
 	/**
-	 * @brief event to load setup
-	 *
+	 * @brief  Initializes the main screen with model pointer
+	 * 
+	 * @param model 
 	 */
-	void loadSetup();
+	void initMain(cal::Model* model);
 
   private:
 	TaskHandle_t _taskHandle;
 	void enqueue(ActionType at, void* func);
 };
-void initGui(Config::ConfigStore* configStore);
+void initGui();
+void initMainScreen(cal::Model* model);
 void toSetupScreen();
 void showBootLog();
 void registerModel(cal::Model* model);
