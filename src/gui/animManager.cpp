@@ -40,9 +40,17 @@ void PNGDraw(PNGDRAW *pDraw)
 void showLoadingAnimation() {
     int rc;
 	for (int i = 1; i <= NUM_OF_FRAMES; i++) {
-        Serial.println("Draw frame");
 		String pngName = "/images/frame" + String(16 - i) + ".png";
         rc = png.open(pngName.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDraw);
-        M5.EPD.UpdateArea(521, 350, 375, 248, UPDATE_MODE_DU4);
+        if(rc==PNG_SUCCESS) {
+            png.decode(NULL, 0);
+            int beginTime = millis();
+            M5.EPD.UpdateArea(521, 350, 375, 248, UPDATE_MODE_DU4);
+            Serial.print("Frame drawing took ");
+            Serial.print(beginTime-millis());
+            Serial.println(" milliseconds.");
+
+            png.close();
+        }
 	}
 }

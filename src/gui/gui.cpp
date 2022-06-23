@@ -136,7 +136,7 @@ void updateScreen(bool pushLeft, bool pushRight) {
 		canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 	}
 	if (pushRight) {
-		canvasNextEvent.pushCfanvas(652, 0, UPDATE_MODE_NONE);
+		canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
 	}
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
