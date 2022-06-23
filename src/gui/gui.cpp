@@ -7,6 +7,7 @@
 #include "configServer.h"
 #include "globals.h"
 #include "safeTimezone.h"
+#include "animManager.h"
 
 namespace {
 
@@ -135,7 +136,7 @@ void updateScreen(bool pushLeft, bool pushRight) {
 		canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 	}
 	if (pushRight) {
-		canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
+		canvasNextEvent.pushCfanvas(652, 0, UPDATE_MODE_NONE);
 	}
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
@@ -510,7 +511,6 @@ void continueButton(epdgui_args_vector_t& args) {}
 void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
 void hideLoading(bool isHide) {
-	lbls[LABEL_LOADING]->SetHide(isHide);
 	if (isHide) {
 		log_i("Hiding loadingscreen...");
 	} else {
@@ -520,6 +520,7 @@ void hideLoading(bool isHide) {
 		} else {
 			hideFreeConfirmationButtons(true);
 		}
+		//showLoadingAnimation();
 		/* M5.EPD.UpdateArea(521, 399, 375, 77, UPDATE_MODE_GC16); */
 		updateScreen(true, true);
 	}
@@ -728,6 +729,7 @@ void toSleep() {
 		toMainScreen(true, true);
 	}
 }
+
 }  // namespace
 
 namespace gui {
