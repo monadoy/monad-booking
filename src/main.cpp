@@ -73,10 +73,11 @@ void setup() {
 
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
-	M5.EPD.Clear(true);
+	M5.EPD.Clear(true); // TODO: move debug texts to startup text
 
 	Serial.println("Setting up RTC...");
 	M5.RTC.begin();
+	guiTask = utils::make_unique<gui::GUITask>();
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
@@ -106,7 +107,8 @@ void setup() {
 
 		calendarModel = utils::make_unique<cal::Model>(*apiTask);
 
-		guiTask = utils::make_unique<gui::GUITask>();
+		guiTask->initMain(calendarModel.get());
+
 		calendarModel->registerGUITask(guiTask.get());
 
 		calendarModel->updateStatus();
