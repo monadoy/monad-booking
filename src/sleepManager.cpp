@@ -166,11 +166,13 @@ void SleepManager::refreshTouchWake() {
 }
 
 void SleepManager::registerCallback(Callback type, const std::function<void()>& cb) {
+	std::lock_guard<std::mutex> lock(_callbacksMutex);
 	_callbacks[(size_t)type].push_back(cb);
 }
 
 void SleepManager::_dispatchCallbacks(Callback type) {
 	log_i("Dispatching callback %s.", SM::callbackNames[(size_t)type]);
+	std::lock_guard<std::mutex> lock(_callbacksMutex);
 	for (const auto& cb : _callbacks[(size_t)type]) cb();
 }
 
@@ -204,28 +206,46 @@ SleepManager::WakeReason SleepManager::_sleep() {
 	return WakeReason::UNKNOWN;
 }
 
+void SleepManager::setOnTimes(const std::array<bool, 7>& days, const std::array<uint8_t, 2>& hours,
+                              const std::array<uint8_t, 2>& minutes) {
+	std::lock_guard<std::mutex> lock(_onTimesMutex);
+	_onDays = days;
+	_onHours = hours;
+	_onMinutes = minutes;
+	log_i("Awake days: %d %d %d %d %d %d %d.", _onDays[0], _onDays[1], _onDays[2], _onDays[3],
+	      _onDays[4], _onDays[5], _onDays[6]);
+	log_i("Awake times: from: %02d:%02d, to: %02d:%02d.", _onHours[0], _onMinutes[0], _onHours[1],
+	      _onMinutes[1]);
+}
+
 time_t SleepManager::_calculateTurnOnTime() {
+	std::lock_guard<std::mutex> lock(_onTimesMutex);
+
 	time_t now = safeMyTZ.now();
 
 	tmElements_t tm;
 	ezt::breakTime(now, tm);
-	if (tm.Hour > onHours[0]) {
+	if (tm.Hour > _onHours[0]) {
 		tm.Day += 1;
 	}
-	tm.Hour = onHours[0];
-	tm.Minute = 0;
+	tm.Hour = _onHours[0];
+	tm.Minute = _onMinutes[0] + 1;  // Add one minute buffer in case timer drifts
 	tm.Second = 0;
 
 	return safeMyTZ.tzTime(ezt::makeTime(tm));
 }
 
 bool SleepManager::_shouldShutdown() {
+	std::lock_guard<std::mutex> lock(_onTimesMutex);
+
 	time_t t = safeMyTZ.now();
 	tmElements_t tm;
 	ezt::breakTime(t, tm);
 
-	return (!onDays[tm.Wday - 1] || tm.Hour < onHours[0] || tm.Hour >= onHours[1])
-	       && !utils::isCharging();
+	return (!_onDays[tm.Wday - 1]
+	        || (tm.Hour < _onHours[0] || (tm.Hour == _onHours[0] && tm.Minute < _onMinutes[0]))
+	        || (tm.Hour > _onHours[1] || (tm.Hour == _onHours[1] && tm.Minute > _onMinutes[1]))
+	               && !utils::isCharging());
 }
 
 void SleepManager::_shutdown() {

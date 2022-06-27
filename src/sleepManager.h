@@ -4,6 +4,7 @@
 #include <ezTime.h>
 
 #include <atomic>
+#include <mutex>
 #include <vector>
 
 #define SLEEP_MANAGER_MAX_TASK_COUNT 20
@@ -83,18 +84,17 @@ class SleepManager {
 	// default length. Uses unix utc seconds.
 	std::atomic<time_t> nextWakeTime{0};
 
-	/*
-	 * WARNING!
-	 * Register these before incrementing any task counters,
-	 * otherwise there will be race conditions!!
-	 */
 	void registerCallback(Callback type, const std::function<void()>& cb);
+	std::mutex _callbacksMutex;  // Protects _callbacks
 	std::array<std::vector<std::function<void()>>, (size_t)Callback::SIZE> _callbacks{};
 	void _dispatchCallbacks(Callback type);
 
-	// starts on sunday
-	const std::array<bool, 7> onDays{0, 1, 1, 1, 1, 1, 0};
-	const std::array<uint8_t, 2> onHours{7, 19};
+	void setOnTimes(const std::array<bool, 7>& days, const std::array<uint8_t, 2>& hours,
+	                const std::array<uint8_t, 2>& minutes);
+	std::mutex _onTimesMutex;  // Protects onDays, onHours and onMinutes
+	std::array<bool, 7> _onDays{1, 1, 1, 1, 1, 1, 1};
+	std::array<uint8_t, 2> _onHours{0, 0};
+	std::array<uint8_t, 2> _onMinutes{0, 0};
 
 	time_t _calculateTurnOnTime();
 	bool _shouldShutdown();
