@@ -7,16 +7,17 @@ from PIL import Image
 
 @click.command()
 @click.argument("image_path_or_folder")
-def main(image_path_or_folder):
+@click.option('--four_colours', is_flag=True)
+def main(image_path_or_folder, four_colours):
     if os.path.isdir(image_path_or_folder):
         for file in os.listdir(image_path_or_folder):
             if file.endswith(".png") and not file.endswith("_4bpp.png"):
-                convert(file)
+                convert(file, four_colours)
     else:
-        convert(image_path_or_folder)
+        convert(image_path_or_folder, four_colours)
 
 
-def convert(image_path):
+def convert(image_path, four_colours):
     click.echo("Converting image: " + image_path)
     # Convert to grayscale with transparency
     orig = Image.open(image_path).convert("LA")
@@ -30,7 +31,12 @@ def convert(image_path):
 
     # Quantize
     im = np.array(image, dtype=np.float64)
-    im /= 17
+    if four_colours:
+        im /= 81
+        im = np.floor(im)
+        im *= 5
+    else:
+        im /=17
     im = np.rint(im).astype(np.uint8)
 
     # Save as 4 bit grayscale non-transparent png
