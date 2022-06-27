@@ -15,7 +15,7 @@ def quantize(im, levels):
 
 @click.command()
 @click.argument("image_path_or_folder")
-@click.option("--four_colours", is_flag=True)
+@click.option("--four-colours", is_flag=True)
 @click.option("--uniform/--no-uniform", default=True)
 def main(image_path_or_folder, four_colours, uniform):
     if os.path.isdir(image_path_or_folder):
