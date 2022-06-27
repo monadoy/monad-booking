@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte"
 	import { timeZonesNames } from "@vvo/tzdb"
+	import { Config, defaultConfig } from "./configTypes"
 
 	const validateEmail = email => {
 		return String(email)
@@ -10,30 +11,23 @@
 			)
 	}
 
-	let defaultConfig: Config = {
-		name: "",
-		timezone: "Europe/Helsinki",
-		gcalsettings: {
-			calendarid: "",
-			token: null,
-		},
-		wifi: {
-			ssid: "",
-			password: "",
-		},
+	const safeParseInt = (input: string) => {
+		const parsed = parseInt(input, 10)
+		if (isNaN(parsed)) {
+			return 0
+		}
+		return parsed
 	}
 
-	interface Config {
-		name?: string
-		timezone?: string
-		gcalsettings: {
-			calendarid?: string
-			token: any
-		}
-		wifi?: {
-			ssid?: string
-			password?: string
-		}
+	const parseTimeInput = (input: string) => {
+		let [hInput, minInput] = input.split(":")
+		hInput ??= ""
+		minInput ??= ""
+
+		const h = Math.min(Math.max(safeParseInt(hInput), 0), 23)
+		const min = Math.min(Math.max(safeParseInt(minInput), 0), 59)
+		const str = h.toString().padStart(2, "0") + ":" + min.toString().padStart(2, "0")
+		return str
 	}
 
 	let message = { isError: false, content: "" }
@@ -80,7 +74,7 @@
 			})
 	}
 
-	let config: Config | null = defaultConfig
+	let config: Config = defaultConfig
 
 	const updateToken = (s: string) => {
 		if (!s) return
@@ -141,8 +135,45 @@
 					</option>
 				{/each}
 			</select>
+			<h4>Awake Times</h4>
+			<div class="multi-input">
+				<label for="awaketimefrom">from</label>
+				<input
+					class="time"
+					id="awaketimefrom"
+					type="text"
+					on:blur={e => {
+						config.awake.time.from = parseTimeInput(e.currentTarget.value)
+					}}
+					bind:value={config.awake.time.from}
+				/>
+				<label for="awaketimeto">to</label>
+				<input
+					class="time"
+					id="awaketimeto"
+					type="text"
+					on:blur={e => {
+						config.awake.time.to = parseTimeInput(e.currentTarget.value)
+					}}
+					bind:value={config.awake.time.to}
+				/>
+			</div>
+			<h4>Awake Days</h4>
+			<div class="multi-input">
+				{#each ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as day}
+					<label for={`awakeday${day}`}
+						>{day}
+						<input
+							type="checkbox"
+							id={`awakeday${day}`}
+							bind:checked={config.awake.weekdays[day]}
+						/></label
+					>
+				{/each}
+			</div>
+
 			<label for="calendarid">Calendar ID</label>
-			<input id="calendarid" type="text" bind:value={config.gcalsettings.calendarid} />
+			<input id="calendarid" type="email" bind:value={config.gcalsettings.calendarid} />
 			<label for="tokenjson">Token.json</label>
 			<input id="tokenjsonfile" type="file" bind:files />
 			<div />
@@ -173,9 +204,12 @@
 		margin: 0 auto;
 	}
 
-	label {
+	label,
+	h4 {
 		display: inline-block;
 		margin: 0.4rem 0 0.2rem 0;
+		font-weight: normal;
+		font-size: 1rem;
 	}
 
 	textarea {
@@ -190,6 +224,7 @@
 	form {
 		display: grid;
 		grid-template-rows: repeat(8, minmax(1.8rem, auto));
+		grid-template-columns: minmax(0, auto);
 	}
 
 	form > #submit {
@@ -208,7 +243,32 @@
 	}
 
 	input[type="file"] {
-		margin: auto 0;
+		margin: 0 0 0.4rem 0;
+	}
+
+	input.time {
+		width: 50px;
+		text-align: center;
+	}
+
+	.multi-input {
+		display: flex;
+		align-items: stretch;
+		flex-flow: row wrap;
+		gap: 8px;
+	}
+
+	.multi-input > input {
+		display: flex;
+
+		margin-right: 8px;
+	}
+
+	input[type="checkbox"] {
+		width: 1.2rem;
+		height: 1.2rem;
+		margin: 0 8px 0 0;
+		transform: translatey(+4px);
 	}
 
 	@media only screen and (min-width: 768px) {
@@ -218,7 +278,7 @@
 
 		form {
 			grid-template-columns: auto 1fr;
-			grid-gap: 0.5rem;
+			grid-gap: 0.8rem;
 		}
 
 		form > #submit {
@@ -226,6 +286,10 @@
 		}
 
 		label {
+			margin: auto 0;
+		}
+
+		input[type="file"] {
 			margin: auto 0;
 		}
 	}
