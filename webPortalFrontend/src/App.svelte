@@ -162,7 +162,7 @@
 			<div class="multi-input">
 				{#each ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as day}
 					<label for={`awakeday${day}`}
-						>{day}
+						>{day.charAt(0).toUpperCase() + day.slice(1)}
 						<input
 							type="checkbox"
 							id={`awakeday${day}`}
