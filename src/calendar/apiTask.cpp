@@ -81,7 +81,7 @@ APITask::APITask(std::unique_ptr<API>&& api) : _api{std::move(api)} {
 
 	BaseType_t taskCreateRes
 	    = xTaskCreatePinnedToCore(task, "API Task", API_TASK_STACK_SIZE, static_cast<void*>(this),
-	                              API_TASK_PRIORITY, &_taskHandle, 0);
+	                              API_TASK_PRIORITY, &_taskHandle, 1);
 	assert(taskCreateRes == pdPASS);
 }
 

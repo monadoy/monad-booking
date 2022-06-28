@@ -964,7 +964,7 @@ GUITask::GUITask() {
 	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
 	xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
-	                              GUI_TASK_PRIORITY, &_taskHandle, 1);
+	                              GUI_TASK_PRIORITY, &_taskHandle, 0);
 
 	gui::initGui();
 

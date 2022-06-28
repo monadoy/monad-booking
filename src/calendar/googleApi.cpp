@@ -65,6 +65,7 @@ GoogleAPI::GoogleAPI(const Token& token, const String& calendarId)
 };
 
 bool GoogleAPI::refreshAuth() {
+	int beginTime=millis();
 	Serial.println("Refreshing token...");
 	if (_token.unixExpiry + 60 > safeUTC.now()) {
 		Serial.println("Token doesn't need refreshing");
@@ -92,7 +93,9 @@ bool GoogleAPI::refreshAuth() {
 	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
 	_token.unixExpiry = safeUTC.now() + doc["expires_in"].as<long>();
-
+	Serial.print("The animation froze for ");
+	Serial.print(millis()-beginTime);
+	Serial.println(" milliseconds");
 	return true;
 };
 

@@ -81,6 +81,7 @@ void setup() {
 #endif
 
 	M5.begin(true, false, !USE_EXTERNAL_SERIAL, true, true);
+	vTaskPrioritySet(NULL, 5);
 
 	Serial.println("========== Monad Booking ==========");
 	Serial.println("Booting up...");
@@ -100,6 +101,7 @@ void setup() {
 	M5.RTC.begin();
 	guiTask = utils::make_unique<gui::GUITask>();
 	gui::registerAnimation(animation.get());
+	guiTask->startLoading();
 	log_i("Starting loading");
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
@@ -138,10 +140,6 @@ void setup() {
 		guiTask->initMain(calendarModel.get());
 
 		calendarModel->registerGUITask(guiTask.get());
-
-		calendarModel->updateStatus();
-		// guiTask->stopLoading();
-
 		utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 	} else {
 		Serial.println("Starting in setup mode.");
@@ -176,6 +174,7 @@ void setup() {
 	for (int i = entries.size() - 1; i >= 0; --i) {
 		Serial.println(entries[i]);
 	}
+	calendarModel->updateStatus();
 }
 
 void loop() { vTaskDelete(NULL); }
