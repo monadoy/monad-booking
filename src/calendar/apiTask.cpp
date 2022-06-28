@@ -6,9 +6,9 @@
 #define API_QUEUE_LENGTH 10
 #define API_TASK_PRIORITY 5
 #define API_TASK_STACK_SIZE 8192
+#define API_TASK_WIFI_CONNECT_MAX_RETRIES 1
 
 namespace cal {
-
 void task(void* arg) {
 	APITask* apiTask = static_cast<APITask*>(arg);
 
@@ -22,7 +22,7 @@ void task(void* arg) {
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 		Serial.print("API Task: queue item received");
 
-		wifiManager.waitWiFi();
+		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
 
 		apiTask->_api->refreshAuth();
 

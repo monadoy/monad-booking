@@ -10,17 +10,19 @@
 #include "calendar/model.h"
 #include "configServer.h"
 #include "globals.h"
+#include "gui/animManager.h"
 #include "gui/gui.h"
 #include "safeTimezone.h"
 #include "sleepManager.h"
 #include "timeUtils.h"
 #include "utils.h"
-#include "gui/animManager.h"
 
 // Format the filesystem automatically if not formatted already
 #define FORMAT_LITTLEFS_IF_FAILED true
 
 #define USE_EXTERNAL_SERIAL true
+
+#define BOOT_WIFI_CONNECT_MAX_RETRIES 5
 
 // Only used in setup mode
 std::unique_ptr<Config::ConfigServer> configServer = nullptr;
@@ -109,8 +111,9 @@ void setup() {
 
 		initAwakeTimes(config);
 
-		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"])) {
-			log_i("Error whilst opening wifi");
+		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
+		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
+			log_i("Didn't get internet access during boot up sequence, shutting down...");
 			// TODO: show error on screen
 			return;
 		}
@@ -137,7 +140,7 @@ void setup() {
 		calendarModel->registerGUITask(guiTask.get());
 
 		calendarModel->updateStatus();
-		//guiTask->stopLoading();
+		// guiTask->stopLoading();
 
 		utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 	} else {

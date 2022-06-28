@@ -43,6 +43,8 @@ void onSTAEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 			// ASSOC_LEAVE seems to be one of the only non-error disconnect reasons.
 			// All other reasons should be passed into error callbacks.
 			if (wifiManager._disconnectReason != WIFI_REASON_ASSOC_LEAVE) {
+				log_i("Wifi disconnect: %s", wifiManager._disconnectReasonStr.c_str());
+
 				for (size_t i = 0; i < wifiManager._errorCallbacks.size(); i++)
 					wifiManager._errorCallbacks[i](wifiManager._disconnectReasonStr);
 			}
@@ -73,14 +75,14 @@ WiFiManager::WiFiManager() {
 	WiFi.onEvent(onSTAEvent, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 }
 
-bool WiFiManager::openStation(const String& ssid, const String& password) {
+bool WiFiManager::openStation(const String& ssid, const String& password, int maxRetries) {
 	log_i("Opening WiFi station...");
 
 	WiFi.setAutoReconnect(false);
 	WiFi.begin(ssid.c_str(), password.c_str());
 	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
 	_connectTimer = millis();
-	return waitWiFi();
+	return waitWiFi(maxRetries);
 }
 
 void WiFiManager::_connect() {
@@ -90,21 +92,27 @@ void WiFiManager::_connect() {
 	_connectTimer = millis();
 }
 
-bool WiFiManager::waitWiFi() {
+bool WiFiManager::waitWiFi(int maxRetries) {
 	if (WiFi.isConnected()) {
 		return true;
 	}
 
-	// If no connection is in progress, initiate connection
-	if (uxSemaphoreGetCount(_connectSemaphore) == 1) {
-		_connect();
+	for (int tries = 0; tries <= maxRetries; tries++) {
+		log_w("Waiting for connection, try #%d", tries + 1);
+		// If no connection is in progress, initiate connection
+		if (uxSemaphoreGetCount(_connectSemaphore) == 1) {
+			_connect();
+		}
+
+		// Wait for connection attempt to complete
+		xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
+		xSemaphoreGive(_connectSemaphore);
+
+		if (WiFi.isConnected())
+			return true;
 	}
-
-	// Wait for connection attempt to complete
-	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
-	xSemaphoreGive(_connectSemaphore);
-
-	return WiFi.isConnected();
+	log_w("Couldn't connect to WiFi even after %d tries.", maxRetries + 1);
+	return false;
 }
 
 void WiFiManager::wakeWiFi() {

@@ -26,7 +26,7 @@ class WiFiManager {
 	 * Basically connects the device to wifi.
 	 * Returns true on successful connection, false on failure.
 	 */
-	bool openStation(const String& ssid, const String& password);
+	bool openStation(const String& ssid, const String& password, int maxRetries = 0);
 
 	/**
 	 * Opposite of 'openStation()'.
@@ -40,7 +40,7 @@ class WiFiManager {
 	 * Non-busy wait for wifi connection.
 	 * Creates a new connection or waits for an existing one to complete.
 	 */
-	bool waitWiFi();
+	bool waitWiFi(int maxRetries = 0);
 
 	/**
 	 * Tells esp to start wifi and create a new connection.
