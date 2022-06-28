@@ -51,8 +51,9 @@ def littlefs():
 
 @cli.command()
 def frontend():
-    os.chdir(
-        os.path.dirname(os.path.realpath(__file__)) + "/webPortalFrontend")
+    click.echo("Building frontend...")
+
+    os.chdir("./webPortalFrontend")
 
     os.system("npm install")
     os.system("npm run build")
@@ -67,4 +68,5 @@ def frontend():
 
 
 if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.realpath(__file__)) + "/..")
     cli()

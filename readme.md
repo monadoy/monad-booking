@@ -11,10 +11,10 @@ Requirements:
 Run commands below to set up the project
 ```sh
 # Install python requirements
-pip install -r requirements.txt
+pip install -r ./scripts/requirements.txt
 
 # Setup littlefs and build frontend
-python setup.py littlefs frontend
+python ./scripts/setup.py littlefs frontend
 ```
 
 ### Other
@@ -34,13 +34,13 @@ python setup.py littlefs frontend
 ### Generate token
 Authorize the program by logging in with the user (the following command pops up a web page where you can log in):
 ```sh
-python scripts/oauth2flow.py
+python ./scripts/oauth2flow.py
 ```
 This generates a token.json that is used by the program to access and edit the calendars. Put it into a safe place because the same token should be used for all devices. Specifically, 25 is the maximum number of simultaneously working tokens, so generating more carelessly will create problems.
 
 ### Build and upload
 Navigate to the VSCode PlatformIO extension tab and click the buttons below.
-![PlatformIO Build](platformioBuild.png)
+![PlatformIO Build](./misc/platformioBuild.png)
 
 These commands build and upload the program and the filesystem.
 
