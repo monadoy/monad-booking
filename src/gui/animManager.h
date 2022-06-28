@@ -3,8 +3,21 @@
 
 #include <PNGdec.h>
 
-const uint16_t NUM_OF_FRAMES = 15;
+namespace anim {
+    
+    const uint16_t NUM_OF_FRAMES = 14;
 
-void showLoadingAnimation();
+    class Animation {
+        public:
+            Animation();
+            void showNextFrame();
+            void resetAnimation();
+        private:
+            void _drawFrame();
+            void _reverseDirection();
+            int _currentFrame;
+            int _direction;
+    };
+}
 
 #endif

@@ -22,6 +22,8 @@ M5EPD_Canvas canvasNextEvent(&M5.EPD);
 std::shared_ptr<cal::Event> currentEvent = nullptr;
 std::shared_ptr<cal::Event> nextEvent = nullptr;
 cal::Model* _model = nullptr;
+gui::GUITask* _guiTask = nullptr;
+anim::Animation* _animation = nullptr;
 
 cal::Token token;
 String calendarId = "";
@@ -40,6 +42,7 @@ uint32_t obj_id = 1;
 bool needToPutSleep = true;
 bool tillNext = false;
 std::shared_ptr<cal::Model::ReserveParams> reserveParamsPtr = nullptr;
+std::atomic_bool gotResponse = ATOMIC_VAR_INIT(false);
 
 std::vector<std::pair<int, int>> button_positions
     = {{80, 306}, {223, 306}, {371, 306}, {80, 399}, {223, 399}};
@@ -511,18 +514,14 @@ void continueButton(epdgui_args_vector_t& args) {}
 void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
 void hideLoading(bool isHide) {
-	if (isHide) {
-		log_i("Hiding loadingscreen...");
-	} else {
-		log_i("Showing loadingscreen...");
+	lbls[LABEL_LOADING]->SetHide(isHide);
+	if(!isHide) {
 		if (currentScreen == SCREEN_BOOKING) {
 			hideBookingConfirmationButtons(true);
 		} else {
 			hideFreeConfirmationButtons(true);
 		}
-		showLoadingAnimation();
-		/* M5.EPD.UpdateArea(521, 399, 375, 77, UPDATE_MODE_GC16); */
-		updateScreen(true, true);
+		_guiTask->startLoading();
 	}
 }
 
@@ -669,11 +668,6 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
 	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
 
-	lbls[LABEL_LOADING] = new EPDGUI_Textbox(521, 399, 375, 77, 0, 15, FONT_SIZE_HEADER, false);
-	EPDGUI_AddObject(lbls[LABEL_LOADING]);
-	lbls[LABEL_LOADING]->AddText("Ladataan...");
-	lbls[LABEL_LOADING]->SetHide(true);
-
 	lbls[LABEL_ERROR] = new EPDGUI_Textbox(308, 0, 344, 120, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_ERROR]);
 	lbls[LABEL_ERROR]->SetHide(true);
@@ -730,11 +724,35 @@ void toSleep() {
 	}
 }
 
+void setLoadingText(String text) {
+	lbls[LABEL_LOADING]->SetText(text);
+}
+
+void initLoading() {
+	log_i("Loading initialized...");
+	gotResponse = false;
+	_guiTask->loadNextFrame();
+}
+
+void checkLoadNextFrame() {
+	if(!gotResponse){
+		_animation->showNextFrame();
+		_guiTask->loadNextFrame();
+	}
+}
+
+void endLoading() {
+	gotResponse = true;
+	_animation->resetAnimation();
+	log_i("Stopping animation");
+}
 }  // namespace
 
 namespace gui {
 
 void registerModel(cal::Model* model) { _model = model; }
+
+void registerAnimation(anim::Animation* loadingAnimation) { _animation = loadingAnimation; }
 
 void initGui() {
 	M5EPD_Canvas font(&M5.EPD);
@@ -749,9 +767,13 @@ void initGui() {
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
+
+	lbls[LABEL_LOADING] = new EPDGUI_Textbox(292, 394, 376, 77, 0, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_LOADING]);
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
+	_guiTask->stopLoading();
 	hideLoading(true);
 	debug("Error: " + enumToString(type) + "\n- " + error.message);
 	updateScreen(true, true);
@@ -765,14 +787,12 @@ void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatu
 	if (type == gui::GUITask::GuiRequest::RESERVE || type == gui::GUITask::GuiRequest::FREE) {
 		currentScreen = SCREEN_MAIN;
 	}
-
+	_guiTask->stopLoading();
 	hideLoading(true);
 	updateStatus(status);
-	log_i("updateGui was called");
 }
 
 void loadSetup() {
-	log_i("Going to setupscreen");
 	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 		     p != epdgui_object_list.end(); p++) {
 			(*p)->SetHide(true);
@@ -787,19 +807,14 @@ String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done 
 	switch (type) {
 		case GUITask::GuiRequest::RESERVE:
 			return "RESERVE";
-			break;
 		case GUITask::GuiRequest::FREE:
 			return "FREEING";
-			break;
 		case GUITask::GuiRequest::MODEL:
 			return "MODEL";
-			break;
 		case GUITask::GuiRequest::UPDATE:
 			return "UPDATE";
-			break;
 		default:
 			return "OTHER";
-			break;
 	}
 }
 
@@ -872,7 +887,7 @@ void initMainScreen(cal::Model* model) {
 	registerModel(model);
 }
 
-#define GUI_QUEUE_LENGTH 20
+#define GUI_QUEUE_LENGTH 10
 #define GUI_TASK_PRIORITY 5
 #define GUI_TASK_STACK_SIZE 4096
 
@@ -927,9 +942,24 @@ void GUITask::initMain(cal::Model* model) {
 	enqueue(ActionType::INIT, new QueueFunc([=]() {return initMainScreen(model);} ));
 }
 
+void GUITask::startLoading() {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() {return initLoading();} ));
+}
+
+void GUITask::loadNextFrame() {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() {return checkLoadNextFrame();} ));
+}
+
+void GUITask::showLoadingText(String data) {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() {return setLoadingText(data);} ));
+}
+
+void GUITask::stopLoading() {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() {return endLoading();} ));
+}
+
 GUITask::GUITask() {
-
-
+	_guiTask = this;
 	using namespace std::placeholders;
 	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
@@ -937,11 +967,6 @@ GUITask::GUITask() {
 	                              GUI_TASK_PRIORITY, &_taskHandle, 1);
 
 	gui::initGui();
-	if (_guiQueueHandle != NULL) {
-		log_i("GUI Task: queue created");
-	} else {
-		log_i("GUI Task: queue create failed");
-	}
 
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() { sleep(); });
 }

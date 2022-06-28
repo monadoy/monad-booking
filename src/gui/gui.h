@@ -11,6 +11,7 @@
 #include "calendar/model.h"
 #include "configServer.h"
 #include "safeTimezone.h"
+#include "gui/animManager.h"
 
 namespace {
 
@@ -129,6 +130,8 @@ void tryToPutSleep();
 void debug(String err);
 void clearDebug();
 void toSleep();
+void setLoadingText(String text);
+
 }  // namespace
 
 namespace gui {
@@ -136,7 +139,7 @@ namespace gui {
 class GUITask {
   public:
 	GUITask();
-	enum class ActionType { SUCCESS, ERROR, TOUCH_DOWN, TOUCH_UP, SLEEP, INIT };
+	enum class ActionType { SUCCESS, ERROR, TOUCH_DOWN, TOUCH_UP, SLEEP, INIT, LOADING };
 
 	enum class GuiRequest { RESERVE, FREE, MODEL, UPDATE, OTHER, SIZE };
 
@@ -190,11 +193,36 @@ class GUITask {
 
 	/**
 	 * @brief  Initializes the main screen with model pointer
-	 * 
-	 * @param model 
+	 *
+	 * @param model
 	 */
 	void initMain(cal::Model* model);
 
+	/**
+	 * @brief Starts loading
+	 *
+	 */
+	void startLoading();
+
+	/**
+	 * @brief Calls next animation frame to be loaded, recursively calls itself until success or
+	 * error appears.
+	 *
+	 */
+	void loadNextFrame();
+
+	/**
+	 * @brief Shows text during loading
+	 * 
+	 * @param data text to be shown 
+	 */
+	void showLoadingText(String data);
+
+	/**
+	 * @brief Stops loading animation
+	 * 
+	 */
+	void stopLoading();
   private:
 	TaskHandle_t _taskHandle;
 	void enqueue(ActionType at, void* func);
@@ -204,6 +232,7 @@ void initMainScreen(cal::Model* model);
 void toSetupScreen();
 void showBootLog();
 void registerModel(cal::Model* model);
+void registerAnimation(anim::Animation* loadingAnimation);
 void task(void* arg);
 void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatus> status);
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error);

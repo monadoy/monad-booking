@@ -2,11 +2,12 @@
 #include <M5EPD.h>
 #include <LittleFS.h>
 
-File myFile;
-PNG png;
+namespace anim {
+    File myFile;
+    PNG png;
 
 void* openFunc(const char *filename, int32_t *size) {
-    Serial.printf("Attempting to open %s\n", filename);
+    //Serial.printf("Attempting to open %s\n", filename);
     myFile = LittleFS.open(filename);
     *size = myFile.size();
     return &myFile;
@@ -32,25 +33,45 @@ int32_t seekFunc(PNGFILE *handle, int32_t pos) {
 void PNGDraw(PNGDRAW *pDraw)
 {
     // the coordinates are hard coded now
-    uint8_t usPixels[375];
-    static const uint8_t *pixels = usPixels;
-    M5.EPD.WritePartGram4bpp(521, 350+pDraw->y, pDraw->iWidth, 1, pixels);
+	M5.EPD.WritePartGram4bpp(292, 146+pDraw->y, pDraw->iWidth, 1, pDraw->pPixels);
 }
 
-void showLoadingAnimation() {
-    int rc;
-	for (int i = 1; i <= NUM_OF_FRAMES; i++) {
-		String pngName = "/images/frame" + String(16 - i) + ".png";
-        rc = png.open(pngName.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDraw);
-        if(rc==PNG_SUCCESS) {
-            png.decode(NULL, 0);
-            int beginTime = millis();
-            M5.EPD.UpdateArea(521, 350, 375, 248, UPDATE_MODE_DU4);
-            Serial.print("Frame drawing took ");
-            Serial.print(beginTime-millis());
-            Serial.println(" milliseconds.");
-
-            png.close();
-        }
-	}
+Animation::Animation(){
+    resetAnimation();
 }
+
+void Animation::showNextFrame() {
+    _currentFrame += _direction;
+    if(_currentFrame==NUM_OF_FRAMES || _currentFrame==1)
+        _reverseDirection();
+    _drawFrame();
+}
+
+void Animation::resetAnimation() {
+    _currentFrame = 1;
+    _direction = 1;
+}
+
+void Animation::_drawFrame() {
+    
+    int beginTime = millis();
+    M5.EPD.SetColorReverse(true);
+	String pngName = "/images/frame" + String(15 - _currentFrame) + ".png";
+    int rc = png.open(pngName.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDraw);
+    if(rc==PNG_SUCCESS) {
+        png.decode(NULL, 0);
+        M5.EPD.UpdateArea(292, 146, 376, 248, UPDATE_MODE_DU4);
+    }
+    M5.EPD.SetColorReverse(false);
+    Serial.print("Frame drawing took ");
+    Serial.print(millis()-beginTime);
+    Serial.println(" milliseconds.");
+    png.close();
+    
+}
+
+void Animation::_reverseDirection(){
+    _direction = (-1)*_direction;
+}
+
+} // namespace

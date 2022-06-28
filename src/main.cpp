@@ -15,6 +15,7 @@
 #include "sleepManager.h"
 #include "timeUtils.h"
 #include "utils.h"
+#include "gui/animManager.h"
 
 // Format the filesystem automatically if not formatted already
 #define FORMAT_LITTLEFS_IF_FAILED true
@@ -27,6 +28,7 @@ std::unique_ptr<Config::ConfigServer> configServer = nullptr;
 std::unique_ptr<Config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
+std::unique_ptr<anim::Animation> animation = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
 
 void initAwakeTimes(JsonObjectConst config) {
@@ -87,7 +89,7 @@ void setup() {
 		Serial.println("Please ensure your partition layout has spiffs partition defined");
 		return;
 	}
-
+	animation = utils::make_unique<anim::Animation>();
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
 	M5.EPD.Clear(true);  // TODO: move debug texts to startup text
@@ -95,9 +97,12 @@ void setup() {
 	Serial.println("Setting up RTC...");
 	M5.RTC.begin();
 	guiTask = utils::make_unique<gui::GUITask>();
+	gui::registerAnimation(animation.get());
+	log_i("Starting loading");
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
+	log_i("Past config loading now");
 
 	if (config.begin() != config.end()) {
 		Serial.println("Starting in normal mode.");
@@ -105,6 +110,7 @@ void setup() {
 		initAwakeTimes(config);
 
 		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"])) {
+			log_i("Error whilst opening wifi");
 			// TODO: show error on screen
 			return;
 		}
@@ -131,6 +137,7 @@ void setup() {
 		calendarModel->registerGUITask(guiTask.get());
 
 		calendarModel->updateStatus();
+		//guiTask->stopLoading();
 
 		utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 	} else {

@@ -3,9 +3,9 @@
 #include "WiFi.h"
 #include "globals.h"
 
-#define API_QUEUE_LENGTH 10
+#define API_QUEUE_LENGTH 3
 #define API_TASK_PRIORITY 5
-#define API_TASK_STACK_SIZE 8192 * 8
+#define API_TASK_STACK_SIZE 8192*3
 
 namespace cal {
 
