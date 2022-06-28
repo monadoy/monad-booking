@@ -60,7 +60,9 @@ const int EVENT_MAX_SIZE = 1024;
 const int EVENT_LIST_MAX_SIZE = LIST_MAX_EVENTS * EVENT_MAX_SIZE;
 
 GoogleAPI::GoogleAPI(const Token& token, const String& calendarId)
-    : _token{token}, _calendarId{calendarId} {};
+    : _token{token}, _calendarId{calendarId} {
+	_http.setReuse(true);
+};
 
 bool GoogleAPI::refreshAuth() {
 	Serial.println("Refreshing token...");
