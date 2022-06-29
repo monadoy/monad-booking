@@ -26,6 +26,7 @@ public:
     void SetTextMargin(int16_t left, int16_t top, int16_t right, int16_t bottom);
     void useBold(bool usebold);
     void setColors(int16_t color, int16_t txt_color);
+    void centerText();
 
 private:
     M5EPD_Canvas *_canvas = NULL;

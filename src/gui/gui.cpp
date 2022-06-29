@@ -2,12 +2,10 @@
 
 #include <WiFi.h>
 
-#include <list>
-
+#include "animManager.h"
 #include "configServer.h"
 #include "globals.h"
 #include "safeTimezone.h"
-#include "animManager.h"
 
 namespace {
 
@@ -36,7 +34,7 @@ const uint32_t BAT_HIGH = 4200;
 uint16_t currentScreen = SCREEN_MAIN;
 uint16_t currentBtnIndex = 4;
 
-std::list<EPDGUI_Base*> epdgui_object_list;
+std::vector<EPDGUI_Base*> epdgui_object_list;
 uint32_t obj_id = 1;
 
 bool needToPutSleep = true;
@@ -53,7 +51,7 @@ void EPDGUI_AddObject(EPDGUI_Base* object) {
 }
 
 void EPDGUI_Draw(m5epd_update_mode_t mode) {
-	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		(*p)->Draw(mode);
 	}
@@ -64,7 +62,7 @@ void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) { object->Draw(m
 void EPDGUI_Process(void) {
 	Serial.println("Finger lifted");
 	bool isGoingToSleep = false;
-	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		bool screenGoingToUpdate = (*p)->UpdateState(-1, -1);
 		if (screenGoingToUpdate) {
@@ -83,7 +81,7 @@ void EPDGUI_Process(int16_t x, int16_t y) {
 	Serial.println(y);
 	sleepManager.refreshTouchWake();
 	bool isGoingToSleep = false;
-	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		bool screenGoingToUpdate = (*p)->UpdateState(x, y);
 		if (screenGoingToUpdate) {
@@ -515,7 +513,7 @@ void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
-	if(!isHide) {
+	if (!isHide) {
 		if (currentScreen == SCREEN_BOOKING) {
 			hideBookingConfirmationButtons(true);
 		} else {
@@ -626,11 +624,13 @@ void createRegularLabels() {
 	lbls[LABEL_RESOURCE] = new EPDGUI_Textbox(80, 125, 418, 40, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
 	lbls[LABEL_RESOURCE]->AddText(resourceName);
+	lbls[LABEL_RESOURCE]->SetHide(true);
 
 	// book event label
 	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
 	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
+	lbls[LABEL_BOOK_EVENT]->SetHide(true);
 
 	// next event label
 	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, false);
@@ -656,18 +656,6 @@ void createRegularLabels() {
 	    = new EPDGUI_Textbox(80, 297, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
 
-	// current event creator label
-	lbls[LABEL_CONFIRM_BOOKING]
-	    = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
-	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
-	lbls[LABEL_CONFIRM_BOOKING]->AddText("Varataanko huone");
-
-	// current event desc label
-	lbls[LABEL_CONFIRM_FREE]
-	    = new EPDGUI_Textbox(144, 164, 450, 77, 0, 15, FONT_SIZE_HEADER, false);
-	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
-	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
-
 	lbls[LABEL_ERROR] = new EPDGUI_Textbox(308, 0, 344, 120, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_ERROR]);
 	lbls[LABEL_ERROR]->SetHide(true);
@@ -690,6 +678,20 @@ void createRegularLabels() {
 	lbls[LABEL_CURRENT_EVENT_TIME]
 	    = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
+
+	// current event creator label
+	lbls[LABEL_CONFIRM_BOOKING]
+	    = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
+	lbls[LABEL_CONFIRM_BOOKING]->AddText("Varataanko huone");
+	lbls[LABEL_CONFIRM_BOOKING]->SetHide(true);
+
+	// current event desc label
+	lbls[LABEL_CONFIRM_FREE]
+	    = new EPDGUI_Textbox(144, 164, 450, 77, 0, 15, FONT_SIZE_HEADER, false);
+	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
+	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
+	lbls[LABEL_CONFIRM_FREE]->SetHide(true);
 }
 
 void createBoldLabels() {
@@ -697,6 +699,7 @@ void createBoldLabels() {
 	lbls[LABEL_CURRENT_BOOKING]
 	    = new EPDGUI_Textbox(80, 160, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
+	lbls[LABEL_CURRENT_BOOKING]->SetHide(true);
 }
 
 void tryToPutSleep() {
@@ -726,6 +729,7 @@ void toSleep() {
 
 void setLoadingText(String text) {
 	lbls[LABEL_LOADING]->SetText(text);
+	M5.EPD.UpdateArea(292, 355, 376, 78, UPDATE_MODE_A2);
 }
 
 void initLoading() {
@@ -735,8 +739,9 @@ void initLoading() {
 }
 
 void checkLoadNextFrame() {
-	if(!gotResponse){
+	if (!gotResponse) {
 		_animation->showNextFrame();
+		delay(10);
 		_guiTask->loadNextFrame();
 	}
 }
@@ -767,9 +772,11 @@ void initGui() {
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
+	epdgui_object_list.reserve(40);
 
-	lbls[LABEL_LOADING] = new EPDGUI_Textbox(292, 394, 376, 77, 0, 15, FONT_SIZE_HEADER, false);
+	lbls[LABEL_LOADING] = new EPDGUI_Textbox(292, 394, 376, 78, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
+	lbls[LABEL_LOADING]->centerText();
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
@@ -793,10 +800,10 @@ void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatu
 }
 
 void loadSetup() {
-	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
-		     p != epdgui_object_list.end(); p++) {
-			(*p)->SetHide(true);
-		}
+	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	     p != epdgui_object_list.end(); p++) {
+		(*p)->SetHide(true);
+	}
 	hideSettings(false);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
@@ -853,7 +860,7 @@ void toSetupScreen() {
 
 void showBootLog() {
 	currentScreen = SCREEN_BOOTLOG;
-	for (std::list<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		(*p)->SetHide(true);
 	}
@@ -876,6 +883,7 @@ void showBootLog() {
 }
 
 void initMainScreen(cal::Model* model) {
+	int beginTime = millis();
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasNextEvent.createCanvas(308, 540);
 
@@ -885,9 +893,12 @@ void initMainScreen(cal::Model* model) {
 	canvasCurrentEvent.setTextFont(2);
 	createRegularLabels();
 	registerModel(model);
+	Serial.print("Screen froze for ");
+	Serial.print(millis() - beginTime);
+	Serial.println(" milliseconds.");
 }
 
-#define GUI_QUEUE_LENGTH 10
+#define GUI_QUEUE_LENGTH 20
 #define GUI_TASK_PRIORITY 5
 #define GUI_TASK_STACK_SIZE 4096
 
@@ -938,24 +949,22 @@ void GUITask::enqueue(ActionType at, void* func) {
 	xQueueSend(_guiQueueHandle, (void*)&data, 0);
 }
 
-void GUITask::initMain(cal::Model* model) {
-	enqueue(ActionType::INIT, new QueueFunc([=]() {return initMainScreen(model);} ));
-}
+void GUITask::initMain(cal::Model* model) { initMainScreen(model); }
 
 void GUITask::startLoading() {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() {return initLoading();} ));
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return initLoading(); }));
 }
 
 void GUITask::loadNextFrame() {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() {return checkLoadNextFrame();} ));
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return checkLoadNextFrame(); }));
 }
 
 void GUITask::showLoadingText(String data) {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() {return setLoadingText(data);} ));
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return setLoadingText(data); }));
 }
 
 void GUITask::stopLoading() {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() {return endLoading();} ));
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return endLoading(); }));
 }
 
 GUITask::GUITask() {
@@ -964,7 +973,7 @@ GUITask::GUITask() {
 	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
 	_guiQueueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::GuiQueueElement*));
 	xTaskCreatePinnedToCore(task, "GUI Task", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
-	                              GUI_TASK_PRIORITY, &_taskHandle, 0);
+	                        GUI_TASK_PRIORITY, &_taskHandle, 0);
 
 	gui::initGui();
 

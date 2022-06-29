@@ -102,20 +102,19 @@ void setup() {
 	guiTask = utils::make_unique<gui::GUITask>();
 	gui::registerAnimation(animation.get());
 	guiTask->startLoading();
-	log_i("Starting loading");
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
-	log_i("Past config loading now");
 
 	if (config.begin() != config.end()) {
-		Serial.println("Starting in normal mode.");
 
 		initAwakeTimes(config);
 
 		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
 			log_i("Didn't get internet access during boot up sequence, shutting down...");
+			guiTask->showLoadingText("Couldn't connect WIFI: " + wifiManager.getDisconnectReason() );
+			guiTask->stopLoading();
 			// TODO: show error on screen
 			return;
 		}
@@ -128,7 +127,8 @@ void setup() {
 		auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
 
 		if (tokenRes.isErr()) {
-			Serial.println(tokenRes.err()->message);
+			guiTask->stopLoading();
+			guiTask->showLoadingText(tokenRes.err()->message);
 			return;
 		}
 

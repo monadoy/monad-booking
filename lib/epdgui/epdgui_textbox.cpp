@@ -210,3 +210,7 @@ void EPDGUI_Textbox::setColors(int16_t color, int16_t txt_color) {
 	_txt_color = txt_color;
 	_canvas->setTextColor(_txt_color);
 }
+
+void EPDGUI_Textbox::centerText() {
+	_canvas->setTextDatum(5);
+}
