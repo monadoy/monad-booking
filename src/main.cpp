@@ -50,14 +50,18 @@ void initAwakeTimes(JsonObjectConst config) {
 	sleepManager.setOnTimes(onDays, onHours, onMinutes);
 }
 
-void setupTime(const String& IANATimeZone) {
+bool setupTime(const String& IANATimeZone) {
 	Serial.println("Setting up time");
 
 	ezt::setDebug(INFO);
-	ezt::waitForSync();
+	if (!ezt::waitForSync(10)) {
+		return false;
+	}
 
 	if (!safeMyTZ.setCache(String("timezones"), IANATimeZone))
 		safeMyTZ.setLocation(IANATimeZone);
+
+	return true;
 }
 
 void syncEzTimeFromRTC() {
@@ -118,7 +122,11 @@ void setup() {
 			// TODO: show error on screen
 			return;
 		}
-		setupTime(config["timezone"]);
+		if (!setupTime(config["timezone"])) {
+			log_i("Couldn't sync with NTP server, shutting down...");
+			// TODO: show error on screen
+			return;
+		}
 		syncRTCFromEzTime();
 		// ezTime uses millis() and drifts over time, sync it from rtc after every wake from sleep
 		sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
