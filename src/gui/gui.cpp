@@ -624,13 +624,11 @@ void createRegularLabels() {
 	lbls[LABEL_RESOURCE] = new EPDGUI_Textbox(80, 125, 418, 40, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
 	lbls[LABEL_RESOURCE]->AddText(resourceName);
-	lbls[LABEL_RESOURCE]->SetHide(true);
 
 	// book event label
 	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
 	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
-	lbls[LABEL_BOOK_EVENT]->SetHide(true);
 
 	// next event label
 	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, false);
@@ -684,14 +682,13 @@ void createRegularLabels() {
 	    = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
 	lbls[LABEL_CONFIRM_BOOKING]->AddText("Varataanko huone");
-	lbls[LABEL_CONFIRM_BOOKING]->SetHide(true);
 
 	// current event desc label
 	lbls[LABEL_CONFIRM_FREE]
 	    = new EPDGUI_Textbox(144, 164, 450, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
 	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
-	lbls[LABEL_CONFIRM_FREE]->SetHide(true);
+
 }
 
 void createBoldLabels() {
@@ -898,7 +895,7 @@ void initMainScreen(cal::Model* model) {
 	Serial.println(" milliseconds.");
 }
 
-#define GUI_QUEUE_LENGTH 20
+#define GUI_QUEUE_LENGTH 40
 #define GUI_TASK_PRIORITY 5
 #define GUI_TASK_STACK_SIZE 4096
 

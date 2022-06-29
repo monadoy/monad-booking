@@ -7,7 +7,7 @@ EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16
     : EPDGUI_Base(x, y, w, h) {
 	_canvas = new M5EPD_Canvas(&M5.EPD);
 	_use_bold = use_bold;
-
+	_ishide = true;
 	_size = txt_size;
 	_color = color;
 	_txt_color = txt_color;
