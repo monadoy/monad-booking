@@ -96,7 +96,7 @@ class SleepManager {
 	std::array<uint8_t, 2> _onHours{0, 0};
 	std::array<uint8_t, 2> _onMinutes{0, 0};
 
-	time_t _calculateTurnOnTime();
+	time_t calculateTurnOnTime(time_t now);
 	bool _shouldShutdown();
 	void _shutdown();
 
