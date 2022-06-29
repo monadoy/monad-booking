@@ -57,7 +57,6 @@ void Animation::resetAnimation() {
 }
 
 void Animation::_drawFrame() {
-	log_i("%u, %u", ESP.getFreeHeap(), ESP.getFreePsram());
 	int beginTime = millis();
 	M5.EPD.SetColorReverse(true);
 	String pngName = "/images/frame" + String(15 - _currentFrame) + ".png";
@@ -70,9 +69,7 @@ void Animation::_drawFrame() {
 	Serial.print("Frame drawing took ");
 	Serial.print(millis() - beginTime);
 	Serial.println(" milliseconds.");
-	log_i("%u, %u", ESP.getFreeHeap(), ESP.getFreePsram());
 	png.close();
-	log_i("%u, %u", ESP.getFreeHeap(), ESP.getFreePsram());
 }
 
 void Animation::_reverseDirection() { _direction = (-1) * _direction; }
