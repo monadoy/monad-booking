@@ -7,7 +7,7 @@ namespace Config {
 void ConfigStore::loadConfig() {
 	File configFileHandle;
 
-	Serial.println("Trying to load config from flash...");
+	log_i("Trying to load %s.msgpack from flash...", configFileName_.c_str());
 
 	// Release old memory if it exists
 	config_ = StaticJsonDocument<2048>();
@@ -16,28 +16,25 @@ void ConfigStore::loadConfig() {
 	if (configFileHandle) {
 		auto err = deserializeMsgPack(config_, configFileHandle);
 		if (err) {
-			Serial.print("Cannot deserialize ");
-			Serial.println(configFileName_ + ".msgpack");
+			log_e("Error deserializing %s.msgpack: %s", configFileName_.c_str(), err.c_str());
 		}
-		Serial.print(configFileName_ + ".msgpack");
-		Serial.println(" loaded from flash");
+		log_i("%s.msgpack loaded from flash", configFileName_.c_str());
 		return;
 	}
 
-	Serial.println("FALLBACK: Trying to load config.json from flash...");
+	log_i("FALLBACK: Trying to load %s.json from flash...", configFileName_.c_str());
 
 	configFileHandle = fs_.open(configFileName_ + ".json", FILE_READ);
 	if (configFileHandle) {
 		auto err = deserializeJson(config_, configFileHandle);
 		if (err) {
-			Serial.println("Cannot deserialize " + configFileName_ + ".json");
+			log_e("Error deserializing %s.json: %s", configFileName_.c_str(), err.c_str());
 		}
-		Serial.println(configFileName_ + ".json loaded from flash");
+		log_i("%s.json loaded from flash", configFileName_.c_str());
 		return;
 	}
 
-	// Cannot read any configfile
-	Serial.println("No existing config file found on flash");
+	log_i("No existing config file found on flash");
 };
 
 Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
@@ -47,7 +44,7 @@ Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
 
 	if (!configFileHandle) {
 		String errMsg = "Cannot open configfile for writing";
-		Serial.println(errMsg);
+		log_e("%s", errMsg.c_str());
 		return Result<bool>::makeErr(
 		    std::make_shared<ConfigError_t>(ConfigError_t{.errorMessage = errMsg}));
 	}
@@ -95,7 +92,7 @@ void ConfigServer::start() {
 	AsyncCallbackJsonWebHandler* configHandler = new AsyncCallbackJsonWebHandler(
 	    "/config", [&](AsyncWebServerRequest* request, JsonVariant& configJson) {
 		    // TODO: Probably good idea to validate the config before writing, somehow
-		    Serial.println("Writing new config to filesystem...");
+		    log_i("Writing new config to filesystem...");
 
 		    auto result = configStore_->saveConfig(configJson);
 

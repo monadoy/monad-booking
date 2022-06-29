@@ -108,26 +108,18 @@ SleepManager::SleepManager() {
 	            SLEEP_MANAGER_TASK_PRIORITY, &_taskHandle);
 
 	_queueHandle = xQueueCreate(SLEEP_MANAGER_TASK_QUEUE_SIZE, sizeof(Action));
-	if (_queueHandle == NULL) {
-		Serial.println("SleepManager Task: queue create failed");
-	}
+	assert(_queueHandle != NULL);
 
 	_activeTaskCounter = xSemaphoreCreateCounting(SLEEP_MANAGER_MAX_TASK_COUNT, 0);
-	if (_activeTaskCounter == NULL) {
-		log_e("Active task counter semaphore creation failed");
-	}
+	assert(_activeTaskCounter != NULL);
 
 	_touchActivityTimer = xTimerCreate("TOUCH_ACTIVITY", pdMS_TO_TICKS(TOUCH_WAKE_TIMEOUT_MS),
 	                                   pdFALSE, (void*)this, timerCallback);
-	if (_touchActivityTimer == NULL) {
-		log_e("Touch activity timer creation failed");
-	}
+	assert(_touchActivityTimer != NULL);
 
 	_taskActivityTimer = xTimerCreate("TASK_ACTIVITY", pdMS_TO_TICKS(TASK_WAKE_TIMEOUT_MS), pdFALSE,
 	                                  (void*)this, timerCallback);
-	if (_taskActivityTimer == NULL) {
-		log_e("Task activity timer creation failed");
-	}
+	assert(_taskActivityTimer != NULL);
 }
 
 ScopedTaskCounter SleepManager::scopedTaskCount() { return ScopedTaskCounter{this}; }

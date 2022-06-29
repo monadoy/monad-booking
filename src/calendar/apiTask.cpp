@@ -12,15 +12,11 @@ namespace cal {
 void task(void* arg) {
 	APITask* apiTask = static_cast<APITask*>(arg);
 
-	Serial.print("API Task created");
-
 	for (;;) {
 		void* reqTemp;
-		Serial.print("API Task: waiting for queue receive");
 		xQueueReceive(apiTask->_queueHandle, &reqTemp, portMAX_DELAY);
 		auto count = sleepManager.scopedTaskCount();
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
-		Serial.print("API Task: queue item received");
 
 		auto startTime = millis();
 
@@ -45,7 +41,7 @@ void task(void* arg) {
 				break;
 			}
 			default:
-				Serial.println("APITask: Unhandled request type " + String((uint8_t)req->type));
+				log_e("APITask: Unhandled request type %u", req->type);
 				break;
 		}
 
