@@ -223,6 +223,13 @@ class GUITask {
 	 * 
 	 */
 	void stopLoading();
+
+	/**
+	 * @brief Shows shutdownscreen with preferred text
+	 * 
+	 * @param shutdownText text to be shown under the logo
+	 */
+	void showShutdown(String shutdownText);
   private:
 	TaskHandle_t _taskHandle;
 	void enqueue(ActionType at, void* func);

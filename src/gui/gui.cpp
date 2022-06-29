@@ -688,7 +688,6 @@ void createRegularLabels() {
 	    = new EPDGUI_Textbox(144, 164, 450, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
 	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
-
 }
 
 void createBoldLabels() {
@@ -725,8 +724,10 @@ void toSleep() {
 }
 
 void setLoadingText(String text) {
+	lbls[LABEL_LOADING]->SetHide(false);
 	lbls[LABEL_LOADING]->SetText(text);
-	M5.EPD.UpdateArea(292, 355, 376, 78, UPDATE_MODE_A2);
+	Serial.println("Settings loading text....");
+	M5.EPD.UpdateArea(242, 394, 476, 140, UPDATE_MODE_A2);
 }
 
 void initLoading() {
@@ -747,6 +748,20 @@ void endLoading() {
 	gotResponse = true;
 	_animation->resetAnimation();
 	log_i("Stopping animation");
+}
+
+void shutDown(String text) {
+	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
+	     p != epdgui_object_list.end(); p++) {
+		(*p)->SetHide(true);
+	}
+	M5.EPD.Active();
+	canvasCurrentEvent.fillCanvas(0);
+	canvasNextEvent.fillCanvas(0);
+	updateScreen(true, true);
+	M5.EPD.Active();
+	_animation->showLogo();
+	_guiTask->showLoadingText(text);
 }
 }  // namespace
 
@@ -771,9 +786,8 @@ void initGui() {
 	font.createRender(FONT_SIZE_CLOCK, 128);
 	epdgui_object_list.reserve(40);
 
-	lbls[LABEL_LOADING] = new EPDGUI_Textbox(292, 394, 376, 78, 0, 15, FONT_SIZE_HEADER, false);
+	lbls[LABEL_LOADING] = new EPDGUI_Textbox(242, 394, 476, 140, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
-	lbls[LABEL_LOADING]->centerText();
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
@@ -962,6 +976,10 @@ void GUITask::showLoadingText(String data) {
 
 void GUITask::stopLoading() {
 	enqueue(ActionType::LOADING, new QueueFunc([=]() { return endLoading(); }));
+}
+
+void GUITask::showShutdown(String shutdownText) {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return shutDown(shutdownText); }));
 }
 
 GUITask::GUITask() {

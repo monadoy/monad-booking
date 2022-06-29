@@ -106,6 +106,7 @@ void setup() {
 	guiTask = utils::make_unique<gui::GUITask>();
 	gui::registerAnimation(animation.get());
 	guiTask->startLoading();
+	guiTask->showLoadingText("            Käynnistetään...");
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
@@ -116,7 +117,7 @@ void setup() {
 		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
 			log_i("Didn't get internet access during boot up sequence, shutting down...");
-			guiTask->showLoadingText("Couldn't connect WIFI: " + wifiManager.getDisconnectReason()
+			guiTask->showLoadingText("Couldn't connect WIFI:\n" + wifiManager.getDisconnectReason()
 			                         + ".");
 			guiTask->stopLoading();
 			return;

@@ -12,6 +12,7 @@ namespace anim {
             Animation();
             void showNextFrame();
             void resetAnimation();
+            void showLogo();
         private:
             void _drawFrame();
             void _reverseDirection();

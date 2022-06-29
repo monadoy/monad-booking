@@ -46,14 +46,25 @@ Animation::Animation() {
 
 void Animation::showNextFrame() {
 	_currentFrame += _direction;
-	if (_currentFrame == NUM_OF_FRAMES || _currentFrame == 1)
+	if (_currentFrame == NUM_OF_FRAMES || _currentFrame == 0)
 		_reverseDirection();
 	_drawFrame();
 }
 
 void Animation::resetAnimation() {
-	_currentFrame = 1;
+	_currentFrame = 0;
 	_direction = 1;
+}
+
+void Animation::showLogo() {
+	M5.EPD.SetColorReverse(true);
+	String pngName = "/images/frame1.png";
+	int rc = png.open(pngName.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDraw);
+	if (rc == PNG_SUCCESS) {
+		png.decode(NULL, 0);
+		M5.EPD.UpdateArea(292, 107, 376, 248, UPDATE_MODE_GC16);
+	}
+	M5.EPD.SetColorReverse(false);
 }
 
 void Animation::_drawFrame() {
