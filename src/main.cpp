@@ -140,6 +140,8 @@ void setup() {
 		guiTask->initMain(calendarModel.get());
 
 		calendarModel->registerGUITask(guiTask.get());
+		calendarModel->updateStatus();
+
 		utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 	} else {
 		Serial.println("Starting in setup mode.");
@@ -174,7 +176,6 @@ void setup() {
 	for (int i = entries.size() - 1; i >= 0; --i) {
 		Serial.println(entries[i]);
 	}
-	calendarModel->updateStatus();
 }
 
 void loop() { vTaskDelete(NULL); }
