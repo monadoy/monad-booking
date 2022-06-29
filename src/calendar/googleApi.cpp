@@ -65,10 +65,9 @@ GoogleAPI::GoogleAPI(const Token& token, const String& calendarId)
 };
 
 bool GoogleAPI::refreshAuth() {
-	int beginTime=millis();
-	Serial.println("Refreshing token...");
+	log_i("Refreshing token...");
 	if (_token.unixExpiry + 60 > safeUTC.now()) {
-		Serial.println("Token doesn't need refreshing");
+		log_i("Token doesn't need refreshing");
 		return true;
 	}
 
@@ -84,7 +83,7 @@ bool GoogleAPI::refreshAuth() {
 	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
-	Serial.println("Received refresh auth response:\n" + responseBody + "\n");
+	log_i("Received refresh auth response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
 	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
@@ -93,9 +92,7 @@ bool GoogleAPI::refreshAuth() {
 	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
 	_token.unixExpiry = safeUTC.now() + doc["expires_in"].as<long>();
-	Serial.print("The animation froze for ");
-	Serial.print(millis()-beginTime);
-	Serial.println(" milliseconds");
+
 	return true;
 };
 
@@ -127,7 +124,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
-	Serial.println("Received event list response:\n" + responseBody + "\n");
+	log_i("Received event list response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
 	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
@@ -186,7 +183,7 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	String responseBody = _http.getString();
 	_http.end();
 
-	Serial.println("Received event patch response:\n" + responseBody + "\n");
+	log_i("Received event patch response:\n%s", responseBody.c_str());
 	StaticJsonDocument<1024> doc;
 	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
@@ -222,7 +219,7 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	String payload = "";
 	serializeJson(payloadDoc, payload);
 
-	Serial.println("Sending event insert payload:\n" + payload + "\n");
+	log_i("Sending event insert payload:\n%s", payload.c_str());
 
 	// SEND REQUEST
 	int httpCode = _http.POST(payload);
@@ -232,7 +229,7 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	String responseBody = _http.getString();
 	_http.end();
 
-	Serial.println("Received event insert response:\n" + responseBody + "\n");
+	log_i("Received event insert response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(1024);
 	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
@@ -272,7 +269,7 @@ Result<Event> GoogleAPI::getEvent(const String& eventId) {
 	String responseBody = _http.getString();
 	_http.end();
 
-	Serial.println("Received event get response:\n" + responseBody + "\n");
+	log_i("Received event get response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(1024);
 	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)

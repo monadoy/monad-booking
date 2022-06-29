@@ -22,11 +22,11 @@ void task(void* arg) {
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 		Serial.print("API Task: queue item received");
 
+		auto startTime = millis();
+
 		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
 
 		apiTask->_api->refreshAuth();
-
-		auto startTime = millis();
 
 		switch (req->type) {
 			case APITask::RequestType::CALENDAR_STATUS: {
