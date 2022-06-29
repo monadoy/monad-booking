@@ -111,22 +111,23 @@ void setup() {
 	JsonObjectConst config = configStore->getConfigJson();
 
 	if (config.begin() != config.end()) {
-
 		initAwakeTimes(config);
 
 		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
 			log_i("Didn't get internet access during boot up sequence, shutting down...");
-			guiTask->showLoadingText("Couldn't connect WIFI: " + wifiManager.getDisconnectReason() );
+			guiTask->showLoadingText("Couldn't connect WIFI: " + wifiManager.getDisconnectReason()
+			                         + ".");
 			guiTask->stopLoading();
-			// TODO: show error on screen
 			return;
 		}
 		if (!setupTime(config["timezone"])) {
 			log_i("Couldn't sync with NTP server, shutting down...");
-			// TODO: show error on screen
+			guiTask->showLoadingText("Couldn't sync with NTP server.");
+			guiTask->stopLoading();
 			return;
 		}
+
 		syncRTCFromEzTime();
 		// ezTime uses millis() and drifts over time, sync it from rtc after every wake from sleep
 		sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
@@ -135,8 +136,8 @@ void setup() {
 		auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
 
 		if (tokenRes.isErr()) {
-			guiTask->stopLoading();
 			guiTask->showLoadingText(tokenRes.err()->message);
+			guiTask->stopLoading();
 			return;
 		}
 
@@ -157,9 +158,6 @@ void setup() {
 		// Try to sync from rtc in case there is some kind of time
 		syncEzTimeFromRTC();
 
-		Serial.println("No config stored");
-		Serial.println("Entering setup-mode...");
-
 		wifiManager.openAccessPoint();
 
 		auto info = wifiManager.getAccessPointInfo();
@@ -167,6 +165,8 @@ void setup() {
 
 		log_i("\nAPInfo:\nssid: %s\npass: %s\nIP: %s", info.ssid.c_str(), info.password.c_str(),
 		      info.ip.toString().c_str());
+
+		guiTask->stopLoading();
 
 		// TODO: Refactor gui init to work without model or config
 		// guiTask = utils::make_unique<gui::GUITask>();

@@ -288,13 +288,13 @@ Result<Event> GoogleAPI::getEvent(const String& eventId) {
 utils::Result<Token, utils::Error> GoogleAPI::parseToken(const JsonObjectConst& obj) {
 	if (!obj) {
 		return utils::Result<Token, utils::Error>::makeErr(
-		    new utils::Error{"Token parse failed, token is null"});
+		    new utils::Error{"Token parse failed, token is null."});
 	}
 
 	if (!(obj["token"] && obj["refresh_token"] && obj["token_uri"] && obj["client_id"]
 	      && obj["client_secret"] && obj["scopes"][0])) {
 		return utils::Result<Token, utils::Error>::makeErr(
-		    new utils::Error{"Token parse failed, missing some required keys"});
+		    new utils::Error{"Token parse failed, missing some required keys."});
 	}
 
 	return utils::Result<Token, utils::Error>::makeOk(
