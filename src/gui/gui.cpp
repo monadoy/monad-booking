@@ -926,6 +926,8 @@ void task(void* arg) {
 		auto req = toSmartPtr<GUITask::GuiQueueElement>(reqTemp);
 		auto func = toSmartPtr<GUITask::QueueFunc>(req->func);
 		(*func)();
+
+		// Fix "watchdog triggered" crash by giving some processing time to idle tasks
 		delay(1);
 	}
 
