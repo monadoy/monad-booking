@@ -12,6 +12,7 @@
 #include "globals.h"
 #include "gui/animManager.h"
 #include "gui/gui.h"
+#include "localization.h"
 #include "safeTimezone.h"
 #include "sleepManager.h"
 #include "timeUtils.h"
@@ -78,6 +79,15 @@ void syncRTCFromEzTime() {
 	M5.RTC.setTime(&dateTime.time);
 }
 
+void handleBootError(const String& message) {
+	log_e("%s", message.c_str());
+	if (guiTask) {
+		guiTask->showLoadingText(message);
+		guiTask->stopLoading();
+	}
+	sleepManager.requestShutdown();
+};
+
 void setup() {
 #ifdef USE_EXTERNAL_SERIAL
 	Serial.begin(115200, SERIAL_8N1, GPIO_NUM_18, GPIO_NUM_19);
@@ -92,10 +102,10 @@ void setup() {
 
 	Serial.println("Setting up LittleFS...");
 	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
-		Serial.println("LittleFS Mount Failed");
-		Serial.println("Please ensure your partition layout has spiffs partition defined");
+		handleBootError("LittleFS Mount Failed");
 		return;
 	}
+
 	animation = utils::make_unique<anim::Animation>();
 	Serial.println("Setting up E-ink display...");
 	M5.EPD.SetRotation(0);
@@ -106,26 +116,29 @@ void setup() {
 	guiTask = utils::make_unique<gui::GUITask>();
 	gui::registerAnimation(animation.get());
 	guiTask->startLoading();
-	guiTask->showLoadingText("Käynnistetään...");
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
 	if (config.begin() != config.end()) {
-		initAwakeTimes(config);
-
-		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
-		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-			log_i("Didn't get internet access during boot up sequence, shutting down...");
-			guiTask->showLoadingText("Couldn't connect WIFI:\n" + wifiManager.getDisconnectReason()
-			                         + ".");
-			guiTask->stopLoading();
+		auto error = loc::setLanguage(config["language"]);
+		if (error) {
+			handleBootError(error->message);
 			return;
 		}
+
+		initAwakeTimes(config);
+
+		if (true
+		    || !wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
+		                                BOOT_WIFI_CONNECT_MAX_RETRIES)) {
+			handleBootError(String(loc::getMessage(loc::Message::BOOT_WIFI_FAIL))
+			                + wifiManager.getDisconnectReason() + ".");
+			return;
+		}
+
 		if (!setupTime(config["timezone"])) {
-			log_i("Couldn't sync with NTP server, shutting down...");
-			guiTask->showLoadingText("Couldn't sync with NTP server.");
-			guiTask->stopLoading();
+			handleBootError(loc::getMessage(loc::Message::BOOT_NTP_FAIL));
 			return;
 		}
 
@@ -137,8 +150,7 @@ void setup() {
 		auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
 
 		if (tokenRes.isErr()) {
-			guiTask->showLoadingText(tokenRes.err()->message);
-			guiTask->stopLoading();
+			handleBootError(tokenRes.err()->message);
 			return;
 		}
 
