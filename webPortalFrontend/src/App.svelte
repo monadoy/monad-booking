@@ -123,6 +123,8 @@
 		<form class="content" on:submit|preventDefault={submit}>
 			<label for="name">Name</label>
 			<input id="name" type="text" bind:value={config.name} />
+			<label for="language">Language Code</label>
+			<input id="language" type="text" bind:value={config.language} />
 			<label for="wifissid">WIFI SSID</label>
 			<input id="wifissid" type="text" bind:value={config.wifi.ssid} />
 			<label for="wifipassword">WIFI Password</label>

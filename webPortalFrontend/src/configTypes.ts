@@ -23,7 +23,8 @@ export let defaultConfig: Config = {
 			sat: false,
 			sun: false,
 		}
-	}
+	},
+	language: "FI"
 }
 
 export interface Config {
@@ -52,4 +53,5 @@ export interface Config {
 			sun: boolean
 		}
 	}
+	language: string
 }
