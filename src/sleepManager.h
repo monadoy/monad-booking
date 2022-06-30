@@ -65,6 +65,12 @@ class SleepManager {
 	 */
 	void refreshTouchWake();
 
+	/**
+	 * Asks sleepmanager to shut down as soon as tasks have completed.
+	 * Mostly used by error states.
+	 */
+	void requestShutdown();
+
 	enum class Callback : size_t {
 		/*
 		 * Is called on both touch and timer wake up

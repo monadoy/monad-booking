@@ -198,6 +198,8 @@ SleepManager::WakeReason SleepManager::_sleep() {
 	return WakeReason::UNKNOWN;
 }
 
+void SleepManager::requestShutdown() { _enqueue(Action::SHUTDOWN); }
+
 void SleepManager::setOnTimes(const std::array<bool, 7>& days, const std::array<uint8_t, 2>& hours,
                               const std::array<uint8_t, 2>& minutes) {
 	std::lock_guard<std::mutex> lock(_onTimesMutex);

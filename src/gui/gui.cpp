@@ -727,7 +727,7 @@ void toSleep() {
 void setLoadingText(String text) {
 	lbls[LABEL_LOADING]->SetHide(false);
 	lbls[LABEL_LOADING]->SetText(text);
-	M5.EPD.UpdateArea(242, 394, 476, 140, UPDATE_MODE_A2);
+	M5.EPD.UpdateArea(0, 394, 960, 140, UPDATE_MODE_A2);
 }
 
 void initLoading() {
@@ -761,7 +761,10 @@ void shutDown(String text) {
 	updateScreen(true, true);
 	M5.EPD.Active();
 	_animation->showLogo();
-	_guiTask->showLoadingText(text);
+
+	// Don't overwrite old text, because it probably contains error information
+	if (lbls[LABEL_LOADING]->GetText() == "")
+		_guiTask->showLoadingText(text);
 }
 }  // namespace
 
@@ -786,7 +789,7 @@ void initGui() {
 	font.createRender(FONT_SIZE_CLOCK, 128);
 	epdgui_object_list.reserve(40);
 
-	lbls[LABEL_LOADING] = new EPDGUI_Textbox(242, 394, 476, 140, 0, 15, FONT_SIZE_HEADER, false);
+	lbls[LABEL_LOADING] = new EPDGUI_Textbox(0, 394, 960, 140, 0, 15, FONT_SIZE_HEADER, false);
 	lbls[LABEL_LOADING]->centerText();
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
 }
