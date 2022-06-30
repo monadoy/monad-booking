@@ -106,7 +106,7 @@ void setup() {
 	guiTask = utils::make_unique<gui::GUITask>();
 	gui::registerAnimation(animation.get());
 	guiTask->startLoading();
-	guiTask->showLoadingText("            Käynnistetään...");
+	guiTask->showLoadingText("Käynnistetään...");
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();

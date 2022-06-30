@@ -12,6 +12,7 @@ EPDGUI_Textbox::EPDGUI_Textbox(int16_t x, int16_t y, int16_t w, int16_t h, int16
 	_color = color;
 	_txt_color = txt_color;
 	_thiscreat = false;
+	_is_center = false;
 
 	_canvas->createCanvas(_w, _h);
 
@@ -83,7 +84,11 @@ void EPDGUI_Textbox::Draw(m5epd_update_mode_t mode) {
 		_canvas->fillCanvas(_color);
 		_canvas->drawRect(0, 0, _w, _h, _color);
 		_canvas->setTextArea(_margin_left, _margin_top, _w - _margin_right, _h - _margin_bottom);
-		_canvas->print(_data);
+		if (_is_center) {
+			this->_canvas->drawString(_data, _w / 2, _h / 2 + 3);
+		} else {
+			_canvas->print(_data);
+		}
 		_canvas->pushCanvas(_x, _y, mode);
 	} else {
 		_canvas->setTextSize(_size);
@@ -92,7 +97,12 @@ void EPDGUI_Textbox::Draw(m5epd_update_mode_t mode) {
 		_canvas->drawRect(1, 1, _w - 2, _h - 2, _color);
 		_canvas->drawRect(2, 2, _w - 4, _h - 4, _color);
 		_canvas->setTextArea(_margin_left, _margin_top, _w - _margin_right, _h - _margin_bottom);
-		_canvas->print(_data);
+		if (_is_center) {
+			this->_canvas->drawString(_data, _w / 2, _h / 2 + 3);
+		} else {
+			_canvas->print(_data);
+		}
+
 		_canvas->pushCanvas(_x, _y, mode);
 	}
 }
@@ -212,5 +222,6 @@ void EPDGUI_Textbox::setColors(int16_t color, int16_t txt_color) {
 }
 
 void EPDGUI_Textbox::centerText() {
-	_canvas->setTextDatum(5);
+	_canvas->setTextDatum(CC_DATUM);
+	_is_center = true;
 }

@@ -60,11 +60,6 @@ EPDGUI_Base(x, y, w, h)
         _CanvasNormal->preRender('a' + i);
         _CanvasNormal->preRender('A' + i);
     }
-
-    if(style & STYLE_SOLIDBORDER)
-    {
-        this->_CanvasNormal->drawRect(0, 0, _w, _h, 15);
-    }
     
     if(style & STYLE_ALIGN_LEFT)
     {
@@ -257,4 +252,8 @@ void EPDGUI_Button::AddArgs(int16_t event, uint16_t n, void* arg)
 void EPDGUI_Button::setInvisable(bool isinvisable)
 {
     _is_invisable = isinvisable;
+}
+
+void EPDGUI_Button::drawBorders() {
+    this->_CanvasNormal->drawRect(0, 0, _w, _h, 15);
 }

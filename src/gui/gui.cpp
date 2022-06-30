@@ -514,11 +514,10 @@ void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
 	if (!isHide) {
-		if (currentScreen == SCREEN_BOOKING) {
-			hideBookingConfirmationButtons(true);
-		} else {
-			hideFreeConfirmationButtons(true);
-		}
+		hideBookingConfirmationButtons(true);
+		hideConfirmBooking(0, true);
+		hideFreeConfirmationButtons(true);
+		hideFreeBooking(true);
 		_guiTask->startLoading();
 	}
 }
@@ -570,6 +569,7 @@ void createButtons() {
 
 	// cancel booking button
 	btns[BUTTON_CANCELBOOKING] = new EPDGUI_Button("PERUUTA", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_CANCELBOOKING]->drawBorders();
 	EPDGUI_AddObject(btns[BUTTON_CANCELBOOKING]);
 	btns[BUTTON_CANCELBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
 	                                    btns[BUTTON_CANCELBOOKING]);
@@ -583,6 +583,7 @@ void createButtons() {
 
 	// cancel booking button
 	btns[BUTTON_CANCELFREE] = new EPDGUI_Button("PERUUTA", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_CANCELFREE]->drawBorders();
 	EPDGUI_AddObject(btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
@@ -726,7 +727,6 @@ void toSleep() {
 void setLoadingText(String text) {
 	lbls[LABEL_LOADING]->SetHide(false);
 	lbls[LABEL_LOADING]->SetText(text);
-	Serial.println("Settings loading text....");
 	M5.EPD.UpdateArea(242, 394, 476, 140, UPDATE_MODE_A2);
 }
 
@@ -787,6 +787,7 @@ void initGui() {
 	epdgui_object_list.reserve(40);
 
 	lbls[LABEL_LOADING] = new EPDGUI_Textbox(242, 394, 476, 140, 0, 15, FONT_SIZE_HEADER, false);
+	lbls[LABEL_LOADING]->centerText();
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
 }
 
@@ -925,6 +926,7 @@ void task(void* arg) {
 		auto req = toSmartPtr<GUITask::GuiQueueElement>(reqTemp);
 		auto func = toSmartPtr<GUITask::QueueFunc>(req->func);
 		(*func)();
+		delay(1);
 	}
 
 	vTaskDelete(NULL);
