@@ -8,8 +8,6 @@
 
 namespace loc {
 
-enum class Language { NONE, FINNISH, ENGLISH, SIZE };
-
 enum class Message {
 	BOOT_WIFI_FAIL,
 	BOOT_NTP_FAIL,
@@ -21,7 +19,7 @@ enum class Message {
 	SIZE
 };
 
-std::unique_ptr<utils::Error> setLanguage(String langCode);
+std::unique_ptr<utils::Error> setLanguage(const String& lang);
 
 const char* const& getMessage(Message message);
 
