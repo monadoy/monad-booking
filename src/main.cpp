@@ -129,9 +129,8 @@ void setup() {
 
 		initAwakeTimes(config);
 
-		if (true
-		    || !wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
-		                                BOOT_WIFI_CONNECT_MAX_RETRIES)) {
+		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
+		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
 			handleBootError(String(loc::getMessage(loc::Message::BOOT_WIFI_FAIL))
 			                + wifiManager.getDisconnectReason() + ".");
 			return;
