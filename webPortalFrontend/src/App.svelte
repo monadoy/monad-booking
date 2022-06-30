@@ -177,14 +177,15 @@
 			<label for="calendarid">Calendar ID</label>
 			<input id="calendarid" type="email" bind:value={config.gcalsettings.calendarid} />
 			<label for="tokenjson">Token.json</label>
-			<input id="tokenjsonfile" type="file" bind:files />
-			<div />
-			<textarea
-				rows="10"
-				id="tokenjson"
-				placeholder="< choose file OR paste file contents here >"
-				bind:value={tokenString}
-			/>
+			<div class="multi-input-vertical">
+				<input id="tokenjsonfile" type="file" bind:files />
+				<textarea
+					rows="10"
+					id="tokenjson"
+					placeholder="< choose file OR paste file contents here >"
+					bind:value={tokenString}
+				/>
+			</div>
 			<button id="submit" type="submit">Submit</button>
 		</form>
 		{#if message.content}
@@ -209,7 +210,7 @@
 	label,
 	h4 {
 		display: inline-block;
-		margin: 0.4rem 0 0.2rem 0;
+		margin: 0.8rem 0 0.2rem 0;
 		font-weight: normal;
 		font-size: 1rem;
 	}
@@ -225,7 +226,7 @@
 
 	form {
 		display: grid;
-		grid-template-rows: repeat(8, minmax(1.8rem, auto));
+		grid-template-rows: repeat(50, minmax(1.8rem, auto));
 		grid-template-columns: minmax(0, auto);
 	}
 
@@ -245,7 +246,7 @@
 	}
 
 	input[type="file"] {
-		margin: 0 0 0.4rem 0;
+		margin: auto 0;
 	}
 
 	input.time {
@@ -260,9 +261,15 @@
 		gap: 8px;
 	}
 
+	.multi-input-vertical {
+		display: flex;
+		align-items: stretch;
+		flex-flow: column wrap;
+		gap: 8px;
+	}
+
 	.multi-input > input {
 		display: flex;
-
 		margin-right: 8px;
 	}
 
@@ -288,11 +295,7 @@
 		}
 
 		label {
-			margin: auto 0;
-		}
-
-		input[type="file"] {
-			margin: auto 0;
+			margin: 0.4rem 0 0 0;
 		}
 	}
 </style>
