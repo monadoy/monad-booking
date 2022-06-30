@@ -210,11 +210,11 @@ void SleepManager::setOnTimes(const std::array<bool, 7>& days, const std::array<
 	      _onMinutes[1]);
 }
 
-time_t SleepManager::calculateTurnOnTime(time_t now) {
+time_t SleepManager::calculateTurnOnTimeUTC(time_t localNow) {
 	std::lock_guard<std::mutex> lock(_onTimesMutex);
 
 	tmElements_t tm;
-	ezt::breakTime(now, tm);
+	ezt::breakTime(localNow, tm);
 	if (tm.Hour > _onHours[0]) {
 		tm.Day += 1;
 	}
@@ -240,7 +240,7 @@ bool SleepManager::_shouldShutdown() {
 
 void SleepManager::_shutdown() {
 	time_t now = safeMyTZ.now();
-	time_t turnOnTime = calculateTurnOnTime(now);
+	time_t turnOnTime = calculateTurnOnTimeUTC(now);
 
 	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTime);
 

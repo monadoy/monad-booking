@@ -997,5 +997,11 @@ GUITask::GUITask() {
 	gui::initGui();
 
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() { sleep(); });
+	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SHUTDOWN, [this]() {
+		// TODO: remember if a fatal error happened and show that instead of this shut down message
+		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
+		showShutdown("Shut down. Waking up at "
+		             + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
+	});
 }
 }  // namespace gui
