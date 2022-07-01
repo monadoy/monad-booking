@@ -120,6 +120,10 @@ components:
                   type: boolean
                 sun:
                   type: boolean
+        language:
+          type: string
+          description: Language code for language used in device (FI and EN supported by default)
+          example: FI
             
     WiFiSettings:
       title: WiFi settings
