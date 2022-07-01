@@ -221,7 +221,7 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
                                          time_t newEndTime) {
 	// Check that reschedule is possible
-	Result<bool> isFreeRes = isFree(newStartTime, newEndTime);
+	Result<bool> isFreeRes = isFree(newStartTime, newEndTime, event->id);
 	if (isFreeRes.isErr())
 		return Result<Event>::makeErr(isFreeRes.err());
 	if (*isFreeRes.ok() == false) {
