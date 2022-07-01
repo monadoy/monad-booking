@@ -561,7 +561,7 @@ void createButtons() {
 	             cancelButton);
 	createButton(BUTTON_FREEROOM, l10n.msg(L10nMessage::FREE_ROOM), 80, 399, 77, 0, 15, 15, true,
 	             freeRoomButton);
-	createButton(BUTTON_CONTINUE, "+15", 440, 399, 77, 0, 15, 15, true, continueButton);
+	createButton(BUTTON_CONTINUE, "+15", 410, 399, 77, 0, 15, 15, true, continueButton);
 	createButton(BUTTON_SETUP, "SETUP", 684, 399, 77, 15, 0, 0, true, setupButton);
 }
 
