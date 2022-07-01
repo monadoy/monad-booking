@@ -22,7 +22,7 @@ std::shared_ptr<cal::Event> currentEvent = nullptr;
 std::shared_ptr<cal::Event> nextEvent = nullptr;
 cal::Model* _model = nullptr;
 gui::GUITask* _guiTask = nullptr;
-anim::Animation* _animation = nullptr;
+std::unique_ptr<anim::Animation> _animation = nullptr;
 
 cal::Token token;
 String calendarId = "";
@@ -726,9 +726,9 @@ namespace gui {
 
 void registerModel(cal::Model* model) { _model = model; }
 
-void registerAnimation(anim::Animation* loadingAnimation) { _animation = loadingAnimation; }
-
 void initGui() {
+	_animation = utils::make_unique<anim::Animation>();
+
 	M5EPD_Canvas font(&M5.EPD);
 	font.setTextFont(1);
 	font.loadFont(interBold, LittleFS);
@@ -777,6 +777,8 @@ void loadSetup() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	toSetupScreen();
+
+	// TODO: actually open setup server
 }
 
 String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done with an array
@@ -804,16 +806,8 @@ void toSetupScreen() {
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
 	String configData;
 
-	if (wifiManager.isAccessPoint()) {
-		WiFiInfo info = wifiManager.getAccessPointInfo();
-		configData = "WIFI Access Point:\nSSID: " + info.ssid + "\nPassword: " + info.password
-		             + "\nIP: " + info.ip.toString();
-		const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
-		canvasNextEvent.qrcode(qrString, 0, 120, 300, 7);
-	} else {
-		WiFiInfo info = wifiManager.getStationInfo();
-		configData = "WIFI SSID: " + info.ssid + "\nIP: " + info.ip.toString();
-	}
+	WiFiInfo info = wifiManager.getStationInfo();
+	configData = "WIFI SSID: " + info.ssid + "\nIP: " + info.ip.toString();
 
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
 	updateScreen(true, true);

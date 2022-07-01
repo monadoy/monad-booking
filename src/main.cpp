@@ -31,8 +31,26 @@ std::unique_ptr<Config::ConfigServer> configServer = nullptr;
 std::unique_ptr<Config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
-std::unique_ptr<anim::Animation> animation = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
+
+void showSetupModeAPScreen() {
+	auto info = wifiManager.getAccessPointInfo();
+	log_i("\nAPInfo:\nssid: %s\npass: %s\nIP: %s", info.ssid.c_str(), info.password.c_str(),
+	      info.ip.toString().c_str());
+	M5EPD_Canvas canvas(&M5.EPD);
+	M5.EPD.Active();
+	canvas.createCanvas(960, 540);
+	canvas.setTextSize(4);
+	canvas.setTextColor(15);
+	canvas.printf("SETUP MODE - Access Point\n\n  SSID: %s\n  PASS: %s\n  IP:   %s",
+	              info.ssid.c_str(), info.password.c_str(), info.ip.toString().c_str());
+	const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
+	canvas.qrcode(qrString, 500, 140, 360, 7);
+	canvas.pushCanvas(0, 0, UPDATE_MODE_NONE);
+	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+	delay(1000);
+	M5.EPD.Sleep();
+}
 
 void initAwakeTimes(JsonObjectConst config) {
 	const JsonObjectConst onDaysJson = config["awake"]["weekdays"];
@@ -88,108 +106,100 @@ void handleBootError(const String& message) {
 	sleepManager.requestShutdown();
 };
 
+void normalBoot(JsonObjectConst config) {
+	guiTask = utils::make_unique<gui::GUITask>();
+	guiTask->startLoading();
+
+	auto error = l10n.setLanguage(config["language"]);
+	if (error) {
+		handleBootError(error->message);
+		return;
+	}
+
+	initAwakeTimes(config);
+
+	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
+	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
+		handleBootError(l10n.msg(L10nMessage::BOOT_WIFI_FAIL) + wifiManager.getDisconnectReason()
+		                + ".");
+		return;
+	}
+
+	if (!setupTime(config["timezone"])) {
+		handleBootError(l10n.msg(L10nMessage::BOOT_NTP_FAIL));
+		return;
+	}
+
+	syncRTCFromEzTime();
+	// ezTime uses millis() and drifts over time, sync it from rtc after every wake from sleep
+	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
+	                              []() { syncEzTimeFromRTC(); });
+
+	auto tokenRes
+	    = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"].as<JsonObjectConst>());
+	if (tokenRes.isErr()) {
+		handleBootError(tokenRes.err()->message);
+		return;
+	}
+	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), config["gcalsettings"]["calendarid"]};
+	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
+
+	calendarModel = utils::make_unique<cal::Model>(*apiTask);
+	calendarModel->registerGUITask(guiTask.get());
+	guiTask->initMain(calendarModel.get());
+	calendarModel->updateStatus();
+
+	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
+}
+
+void setupBoot() {
+	Serial.println("Starting in setup mode.");
+
+	// Try to sync from rtc in case there is some kind of time
+	syncEzTimeFromRTC();
+
+	// Increment without decrementing to keep device on until reset
+	sleepManager.incrementTaskCounter();
+
+	wifiManager.openAccessPoint();
+
+	showSetupModeAPScreen();
+
+	configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
+	configServer->start();
+
+	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
+	                       + "] setup boot (timestamp unreliable)");
+}
+
 void setup() {
+	vTaskPrioritySet(NULL, 5);
+
 #ifdef USE_EXTERNAL_SERIAL
 	Serial.begin(115200, SERIAL_8N1, GPIO_NUM_18, GPIO_NUM_19);
 	delay(100);
 #endif
 
 	M5.begin(true, false, !USE_EXTERNAL_SERIAL, true, true);
-	vTaskPrioritySet(NULL, 5);
+	M5.EPD.SetRotation(0);
+	M5.EPD.Clear(true);
+	M5.RTC.begin();
 
 	Serial.println("========== Monad Booking ==========");
 	Serial.println("Booting up...");
 
-	Serial.println("Setting up LittleFS...");
 	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
-		handleBootError("LittleFS Mount Failed");
+		log_e("LittleFS Mount Failed");
 		return;
 	}
-
-	animation = utils::make_unique<anim::Animation>();
-	Serial.println("Setting up E-ink display...");
-	M5.EPD.SetRotation(0);
-	M5.EPD.Clear(true);  // TODO: move debug texts to startup text
-
-	Serial.println("Setting up RTC...");
-	M5.RTC.begin();
-	guiTask = utils::make_unique<gui::GUITask>();
-	gui::registerAnimation(animation.get());
-	guiTask->startLoading();
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
 	if (config.begin() != config.end()) {
-		auto error = l10n.setLanguage(config["language"]);
-		if (error) {
-			handleBootError(error->message);
-			return;
-		}
-
-		initAwakeTimes(config);
-
-		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
-		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-			handleBootError(l10n.msg(L10nMessage::BOOT_WIFI_FAIL)
-			                + wifiManager.getDisconnectReason() + ".");
-			return;
-		}
-
-		if (!setupTime(config["timezone"])) {
-			handleBootError(l10n.msg(L10nMessage::BOOT_NTP_FAIL));
-			return;
-		}
-
-		syncRTCFromEzTime();
-		// ezTime uses millis() and drifts over time, sync it from rtc after every wake from sleep
-		sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
-		                              []() { syncEzTimeFromRTC(); });
-
-		auto tokenRes
-		    = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"].as<JsonObjectConst>());
-
-		if (tokenRes.isErr()) {
-			handleBootError(tokenRes.err()->message);
-			return;
-		}
-
-		cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), config["gcalsettings"]["calendarid"]};
-		apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
-
-		calendarModel = utils::make_unique<cal::Model>(*apiTask);
-
-		guiTask->initMain(calendarModel.get());
-
-		calendarModel->registerGUITask(guiTask.get());
-		calendarModel->updateStatus();
-
-		utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
+		normalBoot(config);
 	} else {
-		Serial.println("Starting in setup mode.");
-
-		// Try to sync from rtc in case there is some kind of time
-		syncEzTimeFromRTC();
-
-		wifiManager.openAccessPoint();
-
-		auto info = wifiManager.getAccessPointInfo();
-		Serial.println(info.ip);
-
-		log_i("\nAPInfo:\nssid: %s\npass: %s\nIP: %s", info.ssid.c_str(), info.password.c_str(),
-		      info.ip.toString().c_str());
-
-		guiTask->stopLoading();
-
-		// TODO: Refactor gui init to work without model or config
-		// guiTask = utils::make_unique<gui::GUITask>();
-		// guiTask.showSetupScreen();
-
-		configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
-		configServer->start();
-
-		utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
-		                       + "] setup boot (timestamp unreliable)");
+		setupBoot();
 	}
 
 	Serial.println("Boot log: ");
