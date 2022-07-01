@@ -659,7 +659,8 @@ void createRegularLabels() {
 	    = new EPDGUI_Textbox(80, 297, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
 
-	lbls[LABEL_ERROR] = new EPDGUI_Textbox(308, 0, 344, 120, 0, 15, FONT_SIZE_NORMAL, false);
+	lbls[LABEL_ERROR]
+	    = new EPDGUI_Textbox(308 - 20, 0, 344 + 40, 120, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_ERROR]);
 	lbls[LABEL_ERROR]->SetHide(true);
 
@@ -713,13 +714,13 @@ void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
 	lbls[LABEL_ERROR]->SetText(err);
 	EPDGUI_Draw(lbls[LABEL_ERROR], UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(308 - 20, 0, 344 + 40, 120, UPDATE_MODE_GC16);
 }
 
 void clearDebug() {
 	lbls[LABEL_ERROR]->SetText("");
 	lbls[LABEL_ERROR]->SetHide(true);
-	M5.EPD.UpdateArea(308, 0, 344, 120, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(308 - 20, 0, 344 + 40, 120, UPDATE_MODE_GC16);
 }
 
 void toSleep() {
