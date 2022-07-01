@@ -29,6 +29,7 @@ Model::Model(APITask& apiTask) : _apiTask{apiTask} {
 	_apiTask.callbackCalendarStatus = std::bind(&Model::_onCalendarStatus, this, _1);
 	_apiTask.callbackEndEvent = std::bind(&Model::_onEndEvent, this, _1);
 	_apiTask.callbackInsertEvent = std::bind(&Model::_onInsertEvent, this, _1);
+	_apiTask.callbackRescheduleEvent = std::bind(&Model::_onExtendEvent, this, _1);
 
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() {
 		time_t now = safeUTC.now();
@@ -124,6 +125,25 @@ void Model::endCurrentEvent() {
 	_apiTask.endEvent(_status->currentEvent->id);
 }
 
+void Model::extendCurrentEvent(int seconds) {
+	std::lock_guard<std::mutex> lock(_statusMutex);
+	log_i("Extending current event %d seconds.", seconds);
+	if (!_status->currentEvent) {
+		return _handleError(
+		    (size_t)GuiReq::FREE,
+		    std::make_shared<Error>(Error::Type::LOGICAL, "No current event exists to extend"));
+	}
+
+	// Avoid overlapping with next event
+	time_t newEndTime = _status->currentEvent->unixEndTime + seconds;
+	if (_status->nextEvent) {
+		newEndTime = min(newEndTime, _status->nextEvent->unixStartTime);
+	}
+
+	_apiTask.rescheduleEvent(_status->currentEvent, _status->currentEvent->unixStartTime,
+	                         newEndTime);
+}
+
 void Model::_onEndEvent(const Result<Event>& result) {
 	std::lock_guard<std::mutex> lock(_statusMutex);
 	log_i("Got end event response.");
@@ -135,6 +155,19 @@ void Model::_onEndEvent(const Result<Event>& result) {
 	_status->currentEvent = nullptr;
 
 	_guiTask->success(GuiReq::FREE, _status);
+}
+
+void Model::_onExtendEvent(const Result<Event>& result) {
+	std::lock_guard<std::mutex> lock(_statusMutex);
+	log_i("Got extend event response.");
+
+	if (result.isErr()) {
+		return _handleError((size_t)GuiReq::OTHER, result.err());
+	}
+
+	_status->currentEvent = result.ok();
+
+	_guiTask->success(GuiReq::OTHER, _status);
 }
 
 void Model::updateStatus() {

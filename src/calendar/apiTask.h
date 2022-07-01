@@ -15,15 +15,14 @@ class APITask {
   public:
 	APITask(std::unique_ptr<API>&& api);
 
-	enum class RequestType { CALENDAR_STATUS, END_EVENT, INSERT_EVENT };
+	enum class RequestType { CALENDAR_STATUS, END_EVENT, INSERT_EVENT, RESCHEDULE_EVENT };
 	struct QueueElement {
 		QueueElement(RequestType t, void* func) : type{t}, func{func} {}
 		RequestType type;
 		void* func;
 	};
 	using QueueFuncCalendarStatus = std::function<Result<CalendarStatus>()>;
-	using QueueFuncEndEvent = std::function<Result<Event>()>;
-	using QueueFuncInsertEvent = std::function<Result<Event>()>;
+	using QueueFuncEvent = std::function<Result<Event>()>;
 
 	// Callback must be set before calling
 	void fetchCalendarStatus();
@@ -36,6 +35,10 @@ class APITask {
 	// Callback must be set before calling
 	void insertEvent(time_t startTime, time_t endTime);
 	std::function<void(const Result<Event>&)> callbackInsertEvent;
+
+	// Callback must be set before calling
+	void rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime, time_t newEndTime);
+	std::function<void(const Result<Event>&)> callbackRescheduleEvent;
 
 	const std::unique_ptr<API> _api;
 	QueueHandle_t _queueHandle;

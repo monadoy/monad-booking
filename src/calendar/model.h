@@ -47,6 +47,11 @@ class Model {
 	void endCurrentEvent();
 
 	/**
+	 * Set the current event to end n seconds later than currently.
+	 */
+	void extendCurrentEvent(int seconds);
+
+	/**
 	 * Fetch the current status of the calendar.
 	 * Also updates sleep timings in sleep manager.
 	 */
@@ -56,6 +61,7 @@ class Model {
 	void _onCalendarStatus(const Result<CalendarStatus>& result);
 	void _onEndEvent(const Result<Event>& result);
 	void _onInsertEvent(const Result<Event>& result);
+	void _onExtendEvent(const Result<Event>& result);
 
 	bool _areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const;
 

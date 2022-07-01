@@ -84,7 +84,7 @@ class API {
 
 	/**
 	 * Request calendar to end the event pointed by eventId.
-	 * newEndTime should be lower than the current end time.
+	 * newEndTime must be lower than the current end time.
 	 * Returns the changed event on success and error on failure.
 	 */
 	virtual Result<Event> endEvent(const String& eventId) = 0;
@@ -95,6 +95,15 @@ class API {
 	 * Returns the new event on success and error on failure.
 	 */
 	virtual Result<Event> insertEvent(time_t startTime, time_t endTime) = 0;
+
+	/**
+	 * Extend an event in the calendar.
+	 * Fails if an event already exists between the newStartTime and newEndTime.
+	 * Returns the new event on success and error on failure.
+	 */
+	virtual Result<Event> rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
+	                                      time_t newEndTime)
+	    = 0;
 };
 
 }  // namespace cal

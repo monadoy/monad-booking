@@ -146,7 +146,8 @@ void setup() {
 		sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 		                              []() { syncEzTimeFromRTC(); });
 
-		auto tokenRes = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"]);
+		auto tokenRes
+		    = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"].as<JsonObjectConst>());
 
 		if (tokenRes.isErr()) {
 			handleBootError(tokenRes.err()->message);

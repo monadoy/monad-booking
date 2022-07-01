@@ -31,13 +31,18 @@ void task(void* arg) {
 				break;
 			}
 			case APITask::RequestType::END_EVENT: {
-				auto func = toSmartPtr<APITask::QueueFuncEndEvent>(req->func);
+				auto func = toSmartPtr<APITask::QueueFuncEvent>(req->func);
 				apiTask->callbackEndEvent((*func)());
 				break;
 			}
 			case APITask::RequestType::INSERT_EVENT: {
-				auto func = toSmartPtr<APITask::QueueFuncInsertEvent>(req->func);
+				auto func = toSmartPtr<APITask::QueueFuncEvent>(req->func);
 				apiTask->callbackInsertEvent((*func)());
+				break;
+			}
+			case APITask::RequestType::RESCHEDULE_EVENT: {
+				auto func = toSmartPtr<APITask::QueueFuncEvent>(req->func);
+				apiTask->callbackRescheduleEvent((*func)());
 				break;
 			}
 			default:
@@ -57,13 +62,19 @@ void APITask::fetchCalendarStatus() {
 }
 
 void APITask::endEvent(const String& eventId) {
-	enqueue(RequestType::END_EVENT,
-	        new QueueFuncEndEvent([=]() { return _api->endEvent(eventId); }));
+	enqueue(RequestType::END_EVENT, new QueueFuncEvent([=]() { return _api->endEvent(eventId); }));
 }
 
 void APITask::insertEvent(time_t startTime, time_t endTime) {
 	enqueue(RequestType::INSERT_EVENT,
-	        new QueueFuncInsertEvent([=]() { return _api->insertEvent(startTime, endTime); }));
+	        new QueueFuncEvent([=]() { return _api->insertEvent(startTime, endTime); }));
+}
+
+void APITask::rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
+                              time_t newEndTime) {
+	enqueue(RequestType::RESCHEDULE_EVENT, new QueueFuncEvent([=]() {
+		        return _api->rescheduleEvent(event, newStartTime, newEndTime);
+	        }));
 }
 
 void APITask::enqueue(RequestType rt, void* func) {

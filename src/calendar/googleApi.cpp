@@ -4,40 +4,7 @@
 #include "globals.h"
 #include "timeUtils.h"
 
-namespace {
-
-std::shared_ptr<cal::Event> extractEvent(const JsonObject& object) {
-	// Whole day events contain "date" key, ignore these for now
-	if (object["start"].containsKey("date"))
-		return nullptr;
-
-	// Check that this room has accepted the event.
-	// It will not be accepted if it would overlap with another event in this room.
-	JsonArray attendees = object["attendees"].as<JsonArray>();
-	bool roomAccepted = false;
-	for (JsonObject attendee : attendees) {
-		if ((attendee["resource"] | false) == true && attendee["responseStatus"] == "accepted") {
-			roomAccepted = true;
-			break;
-		}
-	}
-	if (!roomAccepted)
-		return nullptr;
-
-	// Extract the values from the JSON object
-
-	time_t startTime = timeutils::parseRfcTimestamp(object["start"]["dateTime"]);
-	time_t endTime = timeutils::parseRfcTimestamp(object["end"]["dateTime"]);
-
-	return std::shared_ptr<cal::Event>(new cal::Event{
-	    .id = object["id"],
-	    .creator = object["creator"]["displayName"] | object["creator"]["email"],
-	    .summary = object["summary"] | "(No title)",
-	    .unixStartTime = startTime,
-	    .unixEndTime = endTime,
-	});
-}
-}  // namespace
+namespace {}  // namespace
 
 namespace cal {
 
@@ -138,10 +105,10 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	};
 
 	status->name = doc["summary"].as<String>();
-	JsonArray items = doc["items"].as<JsonArray>();
+	JsonArrayConst items = doc["items"].as<JsonArrayConst>();
 	now = safeUTC.now();
 
-	for (JsonObject item : items) {
+	for (JsonObjectConst item : items) {
 		std::shared_ptr<Event> event = extractEvent(item);
 
 		if (!event)
@@ -169,7 +136,6 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
-	payloadDoc["end"] = JsonObject{};
 	payloadDoc["end"]["dateTime"] = nowStr;
 	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
 	String payload = "";
@@ -200,19 +166,26 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 }
 
 Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
+	// Check that insertion is possible
+	Result<bool> isFreeRes = isFree(startTime, endTime);
+	if (isFreeRes.isErr())
+		return Result<Event>::makeErr(isFreeRes.err());
+	if (*isFreeRes.ok() == false) {
+		return Result<Event>::makeErr(new Error(
+		    Error::Type::LOGICAL, "Couldn't insert, it would overlap with another event"));
+	}
+
 	// BUILD REQUEST
-	String url
-	    = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events?fields=id";
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId
+	             + "/events?fields=" + EVENT_FIELDS;
 	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
-	payloadDoc["start"] = JsonObject{};
 	payloadDoc["start"]["dateTime"] = safeMyTZ.dateTime(startTime, UTC_TIME, RFC3339);
 	payloadDoc["start"]["timeZone"] = safeMyTZ.getOlson();
-	payloadDoc["end"] = JsonObject{};
 	payloadDoc["end"]["dateTime"] = safeMyTZ.dateTime(endTime, UTC_TIME, RFC3339);
 	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
 	payloadDoc["summary"] = NEW_EVENT_SUMMARY;
@@ -235,57 +208,68 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	if (err)
 		return Result<Event>::makeErr(err);
 
-	// PARSE JSON TO GET EVENT ID
-	String eventId = doc["id"];
-
-	// We need to fetch the room to check if the room has accepted it.
-	// It will be declined if it overlaps with an existing events.
-
-	// Google may not instantly update if room accepts or not, so try a few times.
-	int i = 0;
-	auto res = getEvent(eventId);
-
-	while (i < INSERT_EVENT_VERIFY_MAX_RETRIES && res.isErr()
-	       && res.err()->type == Error::Type::LOGICAL) {
-		res = getEvent(eventId);
-		i++;
-	}
-
-	return res;
-}
-
-Result<Event> GoogleAPI::getEvent(const String& eventId) {
-	// BUILD REQUEST
-	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
-	             + eventId + "?maxAttendees=1&fields=" + EVENT_FIELDS;
-	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
-	_http.addHeader("Content-Type", "application/json");
-	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
-
-	// SEND REQUEST
-	int httpCode = _http.GET();
-
-	// PARSE RESPONSE AS JSON
-	String responseBody = _http.getString();
-	_http.end();
-
-	log_i("Received event get response:\n%s", responseBody.c_str());
-	DynamicJsonDocument doc(1024);
-	auto err = deserializeResponse(doc, httpCode, responseBody);
-	if (err)
-		return Result<Event>::makeErr(err);
-
 	// PARSE JSON AS EVENT STRUCT
-	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>());
+	std::shared_ptr<Event> event = extractEvent(doc.as<JsonObject>(), true);
 	if (!event) {
 		return Result<Event>::makeErr(
-		    new Error{Error::Type::LOGICAL, "Event overlaps with another event"});
+		    new Error{Error::Type::LOGICAL, "INSERT didn't return a valid event"});
 	}
 
 	return Result<Event>::makeOk(event);
 }
 
-utils::Result<Token, utils::Error> GoogleAPI::parseToken(const JsonObjectConst& obj) {
+Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
+                                         time_t newEndTime) {
+	// Check that reschedule is possible
+	Result<bool> isFreeRes = isFree(newStartTime, newEndTime);
+	if (isFreeRes.isErr())
+		return Result<Event>::makeErr(isFreeRes.err());
+	if (*isFreeRes.ok() == false) {
+		return Result<Event>::makeErr(new Error(
+		    Error::Type::LOGICAL, "Couldn't reschedule, it would overlap with another event"));
+	}
+
+	// BUILD REQUEST
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
+	             + event->id + "?fields=" + EVENT_FIELDS;
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
+
+	// CREATE PAYLOAD
+	StaticJsonDocument<256> payloadDoc;
+	payloadDoc["start"]["dateTime"] = safeMyTZ.dateTime(newStartTime, UTC_TIME, RFC3339);
+	payloadDoc["start"]["timeZone"] = safeMyTZ.getOlson();
+	payloadDoc["end"]["dateTime"] = safeMyTZ.dateTime(newEndTime, UTC_TIME, RFC3339);
+	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
+	String payload = "";
+	serializeJson(payloadDoc, payload);
+
+	// SEND REQUEST
+	int httpCode = _http.PATCH(payload);
+	payload.clear();
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
+	log_i("Received event patch response:\n%s", responseBody.c_str());
+	StaticJsonDocument<1024> doc;
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
+
+	// PARSE JSON AS EVENT STRUCT
+	std::shared_ptr<Event> newEvent = extractEvent(doc.as<JsonObject>(), true);
+	if (!newEvent) {
+		return Result<Event>::makeErr(
+		    new Error{Error::Type::LOGICAL, "PATCH didn't return a valid event"});
+	}
+
+	return Result<Event>::makeOk(newEvent);
+}
+
+utils::Result<Token, utils::Error> GoogleAPI::parseToken(JsonObjectConst obj) {
 	if (!obj) {
 		return utils::Result<Token, utils::Error>::makeErr(
 		    new utils::Error{"Token parse failed, token is null."});
@@ -333,6 +317,87 @@ std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc, in
 	}
 
 	return nullptr;
+}
+
+bool GoogleAPI::isRoomAccepted(JsonObjectConst eventObject) {
+	JsonArrayConst attendees = eventObject["attendees"].as<JsonArrayConst>();
+	for (JsonObjectConst attendee : attendees) {
+		if ((attendee["resource"] | false) == true && attendee["responseStatus"] == "accepted") {
+			return true;
+		}
+	}
+	return false;
+}
+
+Result<bool> GoogleAPI::isFree(time_t startTime, time_t endTime, const String& ignoreId) {
+	// BUILD REQUEST
+	String timeMin = safeMyTZ.dateTime(startTime, RFC3339);
+	timeMin.replace("+", "%2b");
+	String timeMax = safeMyTZ.dateTime(endTime, RFC3339);
+	timeMax.replace("+", "%2b");
+	String timeZone = safeMyTZ.getOlson();
+
+	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId
+	             + "/events?timeMin=" + timeMin + "&timeMax=" + timeMax + "&timeZone=" + timeZone
+	             + "&maxResults=" + LIST_MAX_EVENTS
+	             + "&maxAttendees=1&singleEvents=true&orderBy=startTime"
+	             + "&fields=items(id,attendees(resource,responseStatus))";
+
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
+
+	// SEND REQUEST
+	int httpCode = _http.GET();
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+	log_i("Received event isFree response:\n%s", responseBody.c_str());
+	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<bool>::makeErr(err);
+
+	JsonArrayConst items = doc["items"].as<JsonArrayConst>();
+
+	for (JsonObjectConst item : items) {
+		if (!isRoomAccepted(item))
+			continue;
+
+		if (item["id"].as<String>() == ignoreId)
+			continue;
+
+		// Is not free, because an accepted event overlaps
+		// with timespan between startTime and endTime
+		return Result<bool>::makeOk(new bool(false));
+	}
+
+	return Result<bool>::makeOk(new bool(true));
+}
+
+std::shared_ptr<Event> GoogleAPI::extractEvent(JsonObjectConst object, bool ignoreRoomAccept) {
+	// Whole day events contain "date" key, ignore these for now
+	if (object["start"].containsKey("date"))
+		return nullptr;
+
+	// Check that this room has accepted the event.
+	// It will not be accepted if it would overlap with another event in this room.
+	if (!ignoreRoomAccept && !isRoomAccepted(object))
+		return nullptr;
+
+	// Extract the values from the JSON object
+
+	time_t startTime = timeutils::parseRfcTimestamp(object["start"]["dateTime"]);
+	time_t endTime = timeutils::parseRfcTimestamp(object["end"]["dateTime"]);
+
+	return std::shared_ptr<Event>(new Event{
+	    .id = object["id"],
+	    .creator = object["creator"]["displayName"] | object["creator"]["email"],
+	    .summary = object["summary"] | "(No title)",
+	    .unixStartTime = startTime,
+	    .unixEndTime = endTime,
+	});
 }
 
 }  // namespace cal
