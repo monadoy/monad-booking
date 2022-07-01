@@ -5,6 +5,7 @@
 #include "animManager.h"
 #include "configServer.h"
 #include "globals.h"
+#include "localization.h"
 #include "safeTimezone.h"
 
 namespace {
@@ -278,7 +279,7 @@ void loadNextBooking() {
 		lbls[i]->setColors(3, 15);
 	}
 	lbls[LABEL_NEXT_EVENT]->SetPos(701, 161);
-	lbls[LABEL_NEXT_EVENT]->SetText("Seuraava\nvaraus");
+	lbls[LABEL_NEXT_EVENT]->SetText(l10n.msg(L10nMessage::NEXT_EVENT));
 	lbls[LABEL_NEXT_EVENT_CREATOR]->SetText(nextEvent->creator);
 	lbls[LABEL_NEXT_EVENT_DESC]->SetText(nextEvent->summary);
 	lbls[LABEL_NEXT_EVENT_TIME]->SetText(
@@ -310,7 +311,7 @@ void loadNextFree() {
 	lbls[LABEL_NEXT_EVENT]->SetPos(701, 359);
 	lbls[LABEL_NEXT_EVENT]->SetHide(false);
 	lbls[LABEL_NEXT_EVENT]->setColors(0, 15);
-	lbls[LABEL_NEXT_EVENT]->SetText("Ei seuraavia\nvarauksia");
+	lbls[LABEL_NEXT_EVENT]->SetText(l10n.msg(L10nMessage::NO_UPCOMING_EVENTS));
 }
 
 void hideCurrentBookingLabels(bool isHide) {
@@ -329,7 +330,7 @@ void loadCurrentBooking() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(15, 0);
 	lbls[LABEL_CLOCK_MID]->SetText(safeMyTZ.dateTime("G:i"));
 	lbls[LABEL_RESOURCE]->SetText(resourceName);
-	lbls[LABEL_CURRENT_BOOKING]->SetText("Varattu");
+	lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::BOOKED));
 	lbls[LABEL_BOOK_EVENT]->SetHide(true);
 	lbls[LABEL_CURRENT_EVENT_CREATOR]->setColors(15, 0);
 	lbls[LABEL_CURRENT_EVENT_DESC]->setColors(15, 0);
@@ -360,7 +361,7 @@ void loadCurrentFree() {
 	lbls[LABEL_RESOURCE]->setColors(0, 15);
 	lbls[LABEL_RESOURCE]->SetText(resourceName);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
-	lbls[LABEL_CURRENT_BOOKING]->SetText("Vapaa");
+	lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::FREE));
 	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
 	lbls[LABEL_CLOCK_MID]->SetText(safeMyTZ.dateTime("G:i"));
 	hideMainButtons(false);  //
@@ -554,21 +555,23 @@ void createButtons() {
 	btns[BUTTON_90MIN]->Bind(EPDGUI_Button::EVENT_RELEASED, ninetyButton);
 
 	// book till next event button
-	btns[BUTTON_TILLNEXT] = new EPDGUI_Button("SEURAAVAAN ASTI", 223, 399, 365, 77, 15, 0, 0, true);
+	btns[BUTTON_TILLNEXT]
+	    = new EPDGUI_Button(l10n.msg(L10nMessage::UNTIL_NEXT), 223, 399, 365, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_TILLNEXT]);
 	btns[BUTTON_TILLNEXT]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_TILLNEXT]);
 	btns[BUTTON_TILLNEXT]->Bind(EPDGUI_Button::EVENT_RELEASED, tillNextButton);
 
 	// confirm booking button
 	btns[BUTTON_CONFIRMBOOKING]
-	    = new EPDGUI_Button("VARAA HUONE", 684, 399, 232, 77, 15, 0, 0, true);
+	    = new EPDGUI_Button(l10n.msg(L10nMessage::BOOK_ROOM), 684, 399, 232, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_CONFIRMBOOKING]);
 	btns[BUTTON_CONFIRMBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
 	                                     btns[BUTTON_CONFIRMBOOKING]);
 	btns[BUTTON_CONFIRMBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, confirmBookingButton);
 
 	// cancel booking button
-	btns[BUTTON_CANCELBOOKING] = new EPDGUI_Button("PERUUTA", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_CANCELBOOKING]
+	    = new EPDGUI_Button(l10n.msg(L10nMessage::CANCEL), 521, 399, 157, 77, 0, 15, 15, true);
 	btns[BUTTON_CANCELBOOKING]->drawBorders();
 	EPDGUI_AddObject(btns[BUTTON_CANCELBOOKING]);
 	btns[BUTTON_CANCELBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
@@ -576,20 +579,23 @@ void createButtons() {
 	btns[BUTTON_CANCELBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
 
 	// confirm booking button
-	btns[BUTTON_CONFIRMFREE] = new EPDGUI_Button("VAPAUTA", 684, 399, 167, 77, 15, 0, 0, true);
+	btns[BUTTON_CONFIRMFREE]
+	    = new EPDGUI_Button(l10n.msg(L10nMessage::FREE), 684, 399, 167, 77, 15, 0, 0, true);
 	EPDGUI_AddObject(btns[BUTTON_CONFIRMFREE]);
 	btns[BUTTON_CONFIRMFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CONFIRMFREE]);
 	btns[BUTTON_CONFIRMFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, confirmFreeButton);
 
 	// cancel booking button
-	btns[BUTTON_CANCELFREE] = new EPDGUI_Button("PERUUTA", 521, 399, 157, 77, 0, 15, 15, true);
+	btns[BUTTON_CANCELFREE]
+	    = new EPDGUI_Button(l10n.msg(L10nMessage::CANCEL), 521, 399, 157, 77, 0, 15, 15, true);
 	btns[BUTTON_CANCELFREE]->drawBorders();
 	EPDGUI_AddObject(btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
 
 	// free room button
-	btns[BUTTON_FREEROOM] = new EPDGUI_Button("VAPAUTA VARAUS", 80, 399, 287, 77, 0, 15, 15, true);
+	btns[BUTTON_FREEROOM]
+	    = new EPDGUI_Button(l10n.msg(L10nMessage::FREE_ROOM), 80, 399, 287, 77, 0, 15, 15, true);
 	EPDGUI_AddObject(btns[BUTTON_FREEROOM]);
 	btns[BUTTON_FREEROOM]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_FREEROOM]);
 	btns[BUTTON_FREEROOM]->Bind(EPDGUI_Button::EVENT_RELEASED, freeRoomButton);
@@ -629,7 +635,7 @@ void createRegularLabels() {
 	// book event label
 	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
-	lbls[LABEL_BOOK_EVENT]->AddText("Varaa huone");
+	lbls[LABEL_BOOK_EVENT]->AddText(l10n.msg(L10nMessage::BOOK_ROOM));
 
 	// next event label
 	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, false);
@@ -682,13 +688,13 @@ void createRegularLabels() {
 	lbls[LABEL_CONFIRM_BOOKING]
 	    = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
-	lbls[LABEL_CONFIRM_BOOKING]->AddText("Varataanko huone");
+	lbls[LABEL_CONFIRM_BOOKING]->AddText(l10n.msg(L10nMessage::BOOK_ROOM_QUESTION));
 
 	// current event desc label
 	lbls[LABEL_CONFIRM_FREE]
 	    = new EPDGUI_Textbox(144, 164, 450, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
-	lbls[LABEL_CONFIRM_FREE]->AddText("Vapautetaanko varaus");
+	lbls[LABEL_CONFIRM_FREE]->AddText(l10n.msg(L10nMessage::RELEASE_QUESTION));
 }
 
 void createBoldLabels() {

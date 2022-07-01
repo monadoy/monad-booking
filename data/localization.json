@@ -11,20 +11,48 @@
 		"FI": "Käynnistetään...",
 		"EN": "Booting up..."
 	},
-	"RESERVE": {
-		"FI": "VARAA",
-		"EN": "RESERVE"
+	"BOOK": {
+		"FI": "Varaa",
+		"EN": "Book"
 	},
 	"FREE": {
-		"FI": "VAPAUTA",
-		"EN": "FREE"
+		"FI": "Vapauta",
+		"EN": "Free"
 	},
 	"CANCEL": {
-		"FI": "PERUUTA",
-		"EN": "CANCEL"
+		"FI": "Peruuta",
+		"EN": "Cancel"
 	},
 	"UNTIL_NEXT": {
-		"FI": "SEURAAVAAN ASTI",
-		"EN": "UNTIL NEXT"
+		"FI": "Seuraavaan asti",
+		"EN": "Until next"
+	},
+	"FREE_ROOM": {
+		"FI": "Vapauta huone",
+		"EN": "Free the room"
+	},
+	"BOOK_ROOM": {
+		"FI": "Varaa huone",
+		"EN": "Book the room"
+	},
+	"NEXT_EVENT": {
+		"FI": "Seuraava\nvaraus",
+		"EN": "Next\nevent"
+	},
+	"NO_UPCOMING_EVENTS": {
+		"FI": "Ei seuraavia\nvarauksia",
+		"EN": "No upcoming\nevents"
+	},
+	"BOOKED": {
+		"FI": "Varattu",
+		"EN": "Booked"
+	},
+	"BOOK_ROOM_QUESTION": {
+		"FI": "Varataanko huone",
+		"EN": "Book the room"
+	},
+	"RELEASE_QUESTION": {
+		"FI": "Vapautetaanko varaus",
+		"EN": "Release the booking"
 	}
 }

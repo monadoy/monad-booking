@@ -5,22 +5,11 @@
 
 #include "utils.h"
 
-namespace loc {
-
-String currentLang = "";
-
-const std::array<const char*, (size_t)Message::SIZE> messageNames
-    = {"BOOT_WIFI_FAIL", "BOOT_NTP_FAIL", "BOOTING", "RESERVE", "FREE", "CANCEL", "UNTIL_NEXT"};
-
-using MessagesArray = std::array<const char*, (size_t)Message::SIZE>;
-
-MessagesArray messages{};
-
 /**
  * Read localized messages from file and insert them into global "messages" as a side effect.
  * Returns an error or nullptr.
  */
-std::unique_ptr<utils::Error> readMessages(const String& lang) {
+std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 	log_i("Trying to load localization.json from flash...");
 	DynamicJsonDocument doc(1024 * 16);
 	File handle = LittleFS.open("/localization.json", FILE_READ);
@@ -41,9 +30,9 @@ std::unique_ptr<utils::Error> readMessages(const String& lang) {
 		                                        + err.c_str());
 	}
 
-	for (size_t msg = 0; msg < (size_t)Message::SIZE; msg++) {
-		messages[msg] = doc[messageNames[msg]][lang];
-		if (messages[msg] == "") {
+	for (size_t msg = 0; msg < (size_t)L10nMessage::SIZE; msg++) {
+		_messages[msg] = doc[messageNames[msg]][lang].as<String>();
+		if (_messages[msg] == "") {
 			return utils::make_unique<utils::Error>(String("Localization '") + messageNames[msg]
 			                                        + "-" + lang + "' not found or empty");
 		}
@@ -54,13 +43,12 @@ std::unique_ptr<utils::Error> readMessages(const String& lang) {
 	return nullptr;
 }
 
-std::unique_ptr<utils::Error> setLanguage(const String& lang) {
-	if (currentLang == lang)
+std::unique_ptr<utils::Error> Localization::setLanguage(const String& lang) {
+	if (_currentLang == lang)
 		return nullptr;
 
-	currentLang = lang;
-	return readMessages(currentLang);
+	_currentLang = lang;
+	return _readMessages(_currentLang);
 }
 
-const char* const& getMessage(Message message) { return messages[(size_t)message]; }
-}  // namespace loc
+String Localization::msg(L10nMessage message) { return _messages[(size_t)message]; }

@@ -121,7 +121,7 @@ void setup() {
 	JsonObjectConst config = configStore->getConfigJson();
 
 	if (config.begin() != config.end()) {
-		auto error = loc::setLanguage(config["language"]);
+		auto error = l10n.setLanguage(config["language"]);
 		if (error) {
 			handleBootError(error->message);
 			return;
@@ -131,13 +131,13 @@ void setup() {
 
 		if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 		                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-			handleBootError(String(loc::getMessage(loc::Message::BOOT_WIFI_FAIL))
+			handleBootError(l10n.msg(L10nMessage::BOOT_WIFI_FAIL)
 			                + wifiManager.getDisconnectReason() + ".");
 			return;
 		}
 
 		if (!setupTime(config["timezone"])) {
-			handleBootError(loc::getMessage(loc::Message::BOOT_NTP_FAIL));
+			handleBootError(l10n.msg(L10nMessage::BOOT_NTP_FAIL));
 			return;
 		}
 

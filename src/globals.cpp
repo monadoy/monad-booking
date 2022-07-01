@@ -5,3 +5,4 @@ SafeTimezone safeMyTZ{_myTZ};
 SafeTimezone safeUTC{UTC};
 SleepManager sleepManager;
 WiFiManager wifiManager;
+Localization l10n;
