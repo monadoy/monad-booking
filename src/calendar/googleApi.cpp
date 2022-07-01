@@ -331,9 +331,9 @@ bool GoogleAPI::isRoomAccepted(JsonObjectConst eventObject) {
 
 Result<bool> GoogleAPI::isFree(time_t startTime, time_t endTime, const String& ignoreId) {
 	// BUILD REQUEST
-	String timeMin = safeMyTZ.dateTime(startTime, RFC3339);
+	String timeMin = safeMyTZ.dateTime(startTime, UTC_TIME, RFC3339);
 	timeMin.replace("+", "%2b");
-	String timeMax = safeMyTZ.dateTime(endTime, RFC3339);
+	String timeMax = safeMyTZ.dateTime(endTime, UTC_TIME, RFC3339);
 	timeMax.replace("+", "%2b");
 	String timeZone = safeMyTZ.getOlson();
 
