@@ -572,7 +572,6 @@ void createButtons() {
 	// cancel booking button
 	btns[BUTTON_CANCELBOOKING]
 	    = new EPDGUI_Button(l10n.msg(L10nMessage::CANCEL), 521, 399, 157, 77, 0, 15, 15, true);
-	btns[BUTTON_CANCELBOOKING]->drawBorders();
 	EPDGUI_AddObject(btns[BUTTON_CANCELBOOKING]);
 	btns[BUTTON_CANCELBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
 	                                    btns[BUTTON_CANCELBOOKING]);
@@ -588,7 +587,6 @@ void createButtons() {
 	// cancel booking button
 	btns[BUTTON_CANCELFREE]
 	    = new EPDGUI_Button(l10n.msg(L10nMessage::CANCEL), 521, 399, 157, 77, 0, 15, 15, true);
-	btns[BUTTON_CANCELFREE]->drawBorders();
 	EPDGUI_AddObject(btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CANCELFREE]);
 	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
