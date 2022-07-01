@@ -31,6 +31,8 @@ uint16_t timeToBeBooked = 15;
 
 const uint32_t BAT_LOW = 3300;
 const uint32_t BAT_HIGH = 4200;
+const uint16_t TEXT_PADDING_X = 48;
+const uint16_t PIXELS_PER_LETTER_AVG = 16;
 
 uint16_t currentScreen = SCREEN_MAIN;
 uint16_t currentBtnIndex = 4;
@@ -528,103 +530,39 @@ void hideLoading(bool isHide) {
 	}
 }
 
-void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t w, int16_t h,
-                  uint16_t color, uint16_t txt_color, uint16_t color_pressed, bool use_bold,
+void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t h, uint16_t color,
+                  uint16_t txt_color, uint16_t color_pressed, bool use_bold,
                   void (*func_cb)(epdgui_args_vector_t&)) {
+
+	int width = label.length() * PIXELS_PER_LETTER_AVG + 2 * TEXT_PADDING_X;
+
 	btns[ButtonEnum]
-	    = new EPDGUI_Button(label, x, y, w, h, color, txt_color, color_pressed, use_bold);
+	    = new EPDGUI_Button(label, x, y, width, h, color, txt_color, color_pressed, use_bold);
 	EPDGUI_AddObject(btns[ButtonEnum]);
 	btns[ButtonEnum]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[ButtonEnum]);
-	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, func_cb);
+	btns[ButtonEnum]->Bind(EPDGUI_Button::EVENT_RELEASED, func_cb);
 }
 
 void createButtons() {
-	// Options button
-	btns[BUTTON_SETTINGS] = new EPDGUI_Button("o", 0, 0, 64, 64, 0, 15, 15, false);
-	EPDGUI_AddObject(btns[BUTTON_SETTINGS]);
-	btns[BUTTON_SETTINGS]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETTINGS]);
-	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, settingsButton);
-
-	// 15 min booking button
-	btns[BUTTON_15MIN] = new EPDGUI_Button("15", 80, 306, 135, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_15MIN]);
-	btns[BUTTON_15MIN]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_15MIN]);
-	btns[BUTTON_15MIN]->Bind(EPDGUI_Button::EVENT_RELEASED, fifteenButton);
-
-	// 30 min booking button
-	btns[BUTTON_30MIN] = new EPDGUI_Button("30", 223, 306, 135, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_30MIN]);
-	btns[BUTTON_30MIN]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_30MIN]);
-	btns[BUTTON_30MIN]->Bind(EPDGUI_Button::EVENT_RELEASED, thirtyButton);
-
-	// 60 min booking button
-	btns[BUTTON_60MIN] = new EPDGUI_Button("60", 371, 306, 135, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_60MIN]);
-	btns[BUTTON_60MIN]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_60MIN]);
-	btns[BUTTON_60MIN]->Bind(EPDGUI_Button::EVENT_RELEASED, sixtyButton);
-
-	// 90 min booking button
-	btns[BUTTON_90MIN] = new EPDGUI_Button("90", 80, 399, 135, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_90MIN]);
-	btns[BUTTON_90MIN]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_90MIN]);
-	btns[BUTTON_90MIN]->Bind(EPDGUI_Button::EVENT_RELEASED, ninetyButton);
-
-	// book till next event button
-	btns[BUTTON_TILLNEXT]
-	    = new EPDGUI_Button(l10n.msg(L10nMessage::UNTIL_NEXT), 223, 399, 365, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_TILLNEXT]);
-	btns[BUTTON_TILLNEXT]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_TILLNEXT]);
-	btns[BUTTON_TILLNEXT]->Bind(EPDGUI_Button::EVENT_RELEASED, tillNextButton);
-
-	// confirm booking button
-	btns[BUTTON_CONFIRMBOOKING]
-	    = new EPDGUI_Button(l10n.msg(L10nMessage::BOOK_ROOM), 684, 399, 232, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_CONFIRMBOOKING]);
-	btns[BUTTON_CONFIRMBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
-	                                     btns[BUTTON_CONFIRMBOOKING]);
-	btns[BUTTON_CONFIRMBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, confirmBookingButton);
-
-	// cancel booking button
-	btns[BUTTON_CANCELBOOKING]
-	    = new EPDGUI_Button(l10n.msg(L10nMessage::CANCEL), 521, 399, 157, 77, 0, 15, 15, true);
-	EPDGUI_AddObject(btns[BUTTON_CANCELBOOKING]);
-	btns[BUTTON_CANCELBOOKING]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0,
-	                                    btns[BUTTON_CANCELBOOKING]);
-	btns[BUTTON_CANCELBOOKING]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
-
-	// confirm booking button
-	btns[BUTTON_CONFIRMFREE]
-	    = new EPDGUI_Button(l10n.msg(L10nMessage::FREE), 684, 399, 167, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_CONFIRMFREE]);
-	btns[BUTTON_CONFIRMFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CONFIRMFREE]);
-	btns[BUTTON_CONFIRMFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, confirmFreeButton);
-
-	// cancel booking button
-	btns[BUTTON_CANCELFREE]
-	    = new EPDGUI_Button(l10n.msg(L10nMessage::CANCEL), 521, 399, 157, 77, 0, 15, 15, true);
-	EPDGUI_AddObject(btns[BUTTON_CANCELFREE]);
-	btns[BUTTON_CANCELFREE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CANCELFREE]);
-	btns[BUTTON_CANCELFREE]->Bind(EPDGUI_Button::EVENT_RELEASED, cancelButton);
-
-	// free room button
-	btns[BUTTON_FREEROOM]
-	    = new EPDGUI_Button(l10n.msg(L10nMessage::FREE_ROOM), 80, 399, 287, 77, 0, 15, 15, true);
-	EPDGUI_AddObject(btns[BUTTON_FREEROOM]);
-	btns[BUTTON_FREEROOM]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_FREEROOM]);
-	btns[BUTTON_FREEROOM]->Bind(EPDGUI_Button::EVENT_RELEASED, freeRoomButton);
-
-	// continue current booking
-	btns[BUTTON_CONTINUE] = new EPDGUI_Button("+15", 330, 399, 135, 77, 0, 15, 15, true);
-	EPDGUI_AddObject(btns[BUTTON_CONTINUE]);
-	btns[BUTTON_CONTINUE]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_CONTINUE]);
-	btns[BUTTON_CONTINUE]->Bind(EPDGUI_Button::EVENT_RELEASED, continueButton);
-	btns[BUTTON_CONTINUE]->SetHide(true);
-
-	// setup mode
-	btns[BUTTON_SETUP] = new EPDGUI_Button("SETUP", 684, 399, 157, 77, 15, 0, 0, true);
-	EPDGUI_AddObject(btns[BUTTON_SETUP]);
-	btns[BUTTON_SETUP]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETUP]);
-	btns[BUTTON_SETUP]->Bind(EPDGUI_Button::EVENT_RELEASED, setupButton);
+	createButton(BUTTON_SETTINGS, "o", 0, 0, 64, 0, 15, 15, true, settingsButton);
+	createButton(BUTTON_15MIN, "15", 80, 306, 77, 15, 0, 0, true, fifteenButton);
+	createButton(BUTTON_30MIN, "30", 223, 306, 77, 15, 0, 0, true, thirtyButton);
+	createButton(BUTTON_60MIN, "60", 371, 306, 77, 15, 0, 0, true, sixtyButton);
+	createButton(BUTTON_90MIN, "90", 80, 399, 77, 15, 0, 0, true, ninetyButton);
+	createButton(BUTTON_TILLNEXT, l10n.msg(L10nMessage::UNTIL_NEXT), 223, 399, 77, 15, 0, 0, true,
+	             tillNextButton);
+	createButton(BUTTON_CONFIRMBOOKING, l10n.msg(L10nMessage::BOOK_ROOM), 634, 399, 77, 15, 0, 0,
+	             true, confirmBookingButton);
+	createButton(BUTTON_CANCELBOOKING, l10n.msg(L10nMessage::CANCEL), 421, 399, 77, 0, 15, 15, true,
+	             cancelButton);  // TODO: Combine cancel buttons
+	createButton(BUTTON_CONFIRMFREE, l10n.msg(L10nMessage::FREE), 634, 399, 77, 15, 0, 0, true,
+	             confirmFreeButton);
+	createButton(BUTTON_CANCELFREE, l10n.msg(L10nMessage::CANCEL), 421, 399, 77, 0, 15, 15, true,
+	             cancelButton);
+	createButton(BUTTON_FREEROOM, l10n.msg(L10nMessage::FREE_ROOM), 80, 399, 77, 0, 15, 15, true,
+	             freeRoomButton);
+	createButton(BUTTON_CONTINUE, "+15", 440, 399, 77, 0, 15, 15, true, continueButton);
+	createButton(BUTTON_SETUP, "SETUP", 684, 399, 77, 15, 0, 0, true, setupButton);
 }
 
 void createRegularLabels() {
