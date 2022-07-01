@@ -41,15 +41,15 @@
 		"EN": "Next\nevent"
 	},
 	"NO_UPCOMING_EVENTS": {
-		"FI": "Ei seuraavia\nvarauksia",
-		"EN": "No upcoming\nevents"
+		"FI": "Ei muita\nvarauksia\ntänään",
+		"EN": "No other\nupcoming\nevents"
 	},
 	"BOOKED": {
 		"FI": "Varattu",
 		"EN": "Booked"
 	},
 	"NOT_BOOKED": {
-		"FI": "Vapaa",
+		"FI": "Huone vapaa",
 		"EN": "Free"
 	},
 	"BOOK_ROOM_QUESTION": {

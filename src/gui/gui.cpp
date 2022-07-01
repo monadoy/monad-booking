@@ -430,7 +430,7 @@ void hideSettings(bool isHide) {
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
 	} else {
-		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 171);
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 166);
 	}
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
@@ -645,15 +645,6 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
 	lbls[LABEL_RESOURCE]->AddText(resourceName);
 
-	// book event label
-	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, false);
-	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
-	lbls[LABEL_BOOK_EVENT]->AddText(l10n.msg(L10nMessage::BOOK_ROOM));
-
-	// next event label
-	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 90, 3, 15, FONT_SIZE_HEADER, false);
-	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
-
 	// next event creator label
 	lbls[LABEL_NEXT_EVENT_CREATOR]
 	    = new EPDGUI_Textbox(701, 246, 239, 40, 3, 15, FONT_SIZE_NORMAL, false);
@@ -684,19 +675,9 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
 
-	// next event time label
-	lbls[LABEL_NEXT_EVENT_TIME]
-	    = new EPDGUI_Textbox(701, 370, 231, 106, 3, 15, FONT_SIZE_CLOCK, false);
-	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_TIME]);
-
 	// current event time label
 	lbls[LABEL_CONFIRM_TIME] = new EPDGUI_Textbox(144, 244, 456, 77, 0, 15, FONT_SIZE_CLOCK, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
-
-	// current event time label
-	lbls[LABEL_CURRENT_EVENT_TIME]
-	    = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, false);
-	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
 
 	// current event creator label
 	lbls[LABEL_CONFIRM_BOOKING]
@@ -714,9 +695,28 @@ void createRegularLabels() {
 void createBoldLabels() {
 	// current booking status label
 	lbls[LABEL_CURRENT_BOOKING]
-	    = new EPDGUI_Textbox(80, 171, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
+	    = new EPDGUI_Textbox(80, 166, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(true);
+
+	// next event label
+	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 135, 3, 15, FONT_SIZE_HEADER, true);
+	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
+
+	// next event time label
+	lbls[LABEL_NEXT_EVENT_TIME]
+	    = new EPDGUI_Textbox(701, 370, 231, 106, 3, 15, FONT_SIZE_CLOCK, true);
+	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_TIME]);
+
+	// book event label
+	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, true);
+	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
+	lbls[LABEL_BOOK_EVENT]->AddText(l10n.msg(L10nMessage::BOOK_ROOM));
+
+	// current event time label
+	lbls[LABEL_CURRENT_EVENT_TIME]
+	    = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, true);
+	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
 }
 
 void tryToPutSleep() {
