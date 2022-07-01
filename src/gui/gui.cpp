@@ -229,16 +229,21 @@ void hideFreeConfirmationButtons(bool isHide) {
 
 void hideFreeRoomButton(bool isHide) {
 	btns[BUTTON_FREEROOM]->SetHide(isHide);
-	/* if(isHide) {
-	    btns[BUTTON_CONTINUE]->SetHide(true);
+	if (isHide) {
+		btns[BUTTON_CONTINUE]->SetHide(true);
 	} else {
-	    if(nextEvent) {
-	        uint16_t deltaTime = int(difftime(nextEvent->unixStartTime, safeUTC.now()) /
-	SECS_PER_MIN); if (deltaTime <= 15) { btns[BUTTON_CONTINUE]->SetHide(true); } else {
-	            btns[BUTTON_CONTINUE]->SetHide(false);
-	        }
-	    }
-	} */
+		if (nextEvent) {
+			uint16_t deltaTime
+			    = int(difftime(nextEvent->unixStartTime, currentEvent->unixEndTime) / SECS_PER_MIN);
+			if (deltaTime < 15) {
+				btns[BUTTON_CONTINUE]->SetHide(true);
+			} else {
+				btns[BUTTON_CONTINUE]->SetHide(false);
+			}
+		} else {
+			btns[BUTTON_CONTINUE]->SetHide(true);
+		}
+	}
 }
 
 void hideConfirmBooking(uint16_t time, bool isHide) {
@@ -508,7 +513,7 @@ void confirmFreeButton(epdgui_args_vector_t& args) {
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
-void continueButton(epdgui_args_vector_t& args) {}
+void continueButton(epdgui_args_vector_t& args) {_model->extendCurrentEvent(15*SECS_PER_MIN); }
 
 void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
