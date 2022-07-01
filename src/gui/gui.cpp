@@ -424,8 +424,9 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
-		lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" + safeMyTZ.dateTime(RFC3339));
+		// lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
+		// lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" +
+		// safeMyTZ.dateTime(RFC3339));
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
 	} else {
