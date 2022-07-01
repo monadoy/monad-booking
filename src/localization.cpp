@@ -20,6 +20,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 
 	// Create filter to not waste memory on unused languages
 	DynamicJsonDocument filter(1024 * 2);
+	filter["supportedLanguages"] = true;
 	for (const String& name : messageNames) {
 		filter[name][lang] = true;
 	}
@@ -29,6 +30,16 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 		return utils::make_unique<utils::Error>(String("Error deserializing localization.json: ")
 		                                        + err.c_str());
 	}
+
+	bool isSupported = false;
+	for (JsonVariantConst obj : doc["supportedLanguages"].as<JsonArrayConst>()) {
+		if (lang == obj.as<String>()) {
+			isSupported = true;
+		}
+	}
+	if (!isSupported)
+		return utils::make_unique<utils::Error>("localization.json: language '" + lang
+		                                        + "' not supported.");
 
 	for (size_t msg = 0; msg < (size_t)L10nMessage::SIZE; msg++) {
 		_messages[msg] = doc[messageNames[msg]][lang].as<String>();
@@ -44,6 +55,10 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 }
 
 std::unique_ptr<utils::Error> Localization::setLanguage(const String& lang) {
+	if (lang == "null") {
+		return utils::make_unique<utils::Error>("'language' key not set in config.json");
+	}
+
 	if (_currentLang == lang)
 		return nullptr;
 

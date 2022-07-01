@@ -1,4 +1,5 @@
 {
+	"supportedLanguages": ["FI", "EN"],
 	"BOOT_WIFI_FAIL": {
 		"FI": "WIFI-yhdistäminen epäonnistui: ",
 		"EN": "Connecting to WIFI failed: "
