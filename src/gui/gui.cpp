@@ -657,12 +657,12 @@ void createRegularLabels() {
 
 	// current event creator label
 	lbls[LABEL_CURRENT_EVENT_CREATOR]
-	    = new EPDGUI_Textbox(80, 264, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 252, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_CREATOR]);
 
 	// current event desc label
 	lbls[LABEL_CURRENT_EVENT_DESC]
-	    = new EPDGUI_Textbox(80, 297, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 289, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
 
 	lbls[LABEL_ERROR]
@@ -695,7 +695,7 @@ void createRegularLabels() {
 void createBoldLabels() {
 	// current booking status label
 	lbls[LABEL_CURRENT_BOOKING]
-	    = new EPDGUI_Textbox(80, 166, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
+	    = new EPDGUI_Textbox(80, 164, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(true);
 
@@ -709,7 +709,7 @@ void createBoldLabels() {
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_TIME]);
 
 	// book event label
-	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 241, 300, 60, 0, 15, FONT_SIZE_HEADER, true);
+	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 249, 300, 60, 0, 15, FONT_SIZE_HEADER, true);
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
 	lbls[LABEL_BOOK_EVENT]->AddText(l10n.msg(L10nMessage::BOOK_ROOM));
 
