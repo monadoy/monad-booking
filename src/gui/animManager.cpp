@@ -77,9 +77,7 @@ void Animation::_drawFrame() {
 		M5.EPD.UpdateArea(292, 107, 376, 248, UPDATE_MODE_DU4);
 	}
 	M5.EPD.SetColorReverse(false);
-	Serial.print("Frame drawing took ");
-	Serial.print(millis() - beginTime);
-	Serial.println(" milliseconds.");
+	log_d("Frame drawing took %u ms.", millis() - beginTime);
 	png.close();
 }
 

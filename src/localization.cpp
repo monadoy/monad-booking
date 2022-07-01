@@ -49,7 +49,9 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 		}
 	}
 
+#if CORE_DEBUG_LEVEL > 3
 	serializeJsonPretty(doc, Serial);
+#endif
 
 	return nullptr;
 }

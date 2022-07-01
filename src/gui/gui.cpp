@@ -63,7 +63,7 @@ void EPDGUI_Draw(m5epd_update_mode_t mode) {
 void EPDGUI_Draw(EPDGUI_Base* object, m5epd_update_mode_t mode) { object->Draw(mode); }
 
 void EPDGUI_Process(void) {
-	Serial.println("Finger lifted");
+	log_d("Finger lifted");
 	bool isGoingToSleep = false;
 	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
@@ -78,10 +78,7 @@ void EPDGUI_Process(void) {
 
 void EPDGUI_Process(int16_t x, int16_t y) {
 	M5.EPD.Active();
-	Serial.print("Touch at coordinates ");
-	Serial.print(x);
-	Serial.print(" - ");
-	Serial.println(y);
+	log_d("Touch at coordinates %u - %u", x, y);
 	sleepManager.refreshTouchWake();
 	bool isGoingToSleep = false;
 	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
