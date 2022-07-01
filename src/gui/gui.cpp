@@ -302,10 +302,10 @@ void loadNextBooking() {
 }
 
 void loadNextFree() {
-	canvasNextEvent.fillCanvas(0);
+	canvasNextEvent.fillCanvas(1);
 	// set up the top bar
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
-		lbls[i]->setColors(0, 15);
+		lbls[i]->setColors(1, 15);
 		lbls[i]->SetHide(false);
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(safeMyTZ.dateTime("G:i"));
@@ -317,7 +317,7 @@ void loadNextFree() {
 	}
 	lbls[LABEL_NEXT_EVENT]->SetPos(701, 359);
 	lbls[LABEL_NEXT_EVENT]->SetHide(false);
-	lbls[LABEL_NEXT_EVENT]->setColors(0, 15);
+	lbls[LABEL_NEXT_EVENT]->setColors(1, 15);
 	lbls[LABEL_NEXT_EVENT]->SetText(l10n.msg(L10nMessage::NO_UPCOMING_EVENTS));
 }
 
@@ -533,7 +533,6 @@ void hideLoading(bool isHide) {
 void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t h, uint16_t color,
                   uint16_t txt_color, uint16_t color_pressed, bool use_bold,
                   void (*func_cb)(epdgui_args_vector_t&)) {
-
 	int width = label.length() * PIXELS_PER_LETTER_AVG + 2 * TEXT_PADDING_X;
 
 	btns[ButtonEnum]
