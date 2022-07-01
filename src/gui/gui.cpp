@@ -361,7 +361,7 @@ void loadCurrentFree() {
 	lbls[LABEL_RESOURCE]->setColors(0, 15);
 	lbls[LABEL_RESOURCE]->SetText(resourceName);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
-	lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::FREE));
+	lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::NOT_BOOKED));
 	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
 	lbls[LABEL_CLOCK_MID]->SetText(safeMyTZ.dateTime("G:i"));
 	hideMainButtons(false);  //

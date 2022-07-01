@@ -47,6 +47,10 @@
 		"FI": "Varattu",
 		"EN": "Booked"
 	},
+	"NOT_BOOKED": {
+		"FI": "Vapaa",
+		"EN": "Free"
+	},
 	"BOOK_ROOM_QUESTION": {
 		"FI": "Varataanko huone",
 		"EN": "Book the room"

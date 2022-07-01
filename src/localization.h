@@ -19,6 +19,7 @@ enum class L10nMessage {
 	NEXT_EVENT,
 	NO_UPCOMING_EVENTS,
 	BOOKED,
+	NOT_BOOKED,
 	BOOK_ROOM_QUESTION,
 	RELEASE_QUESTION,
 	SIZE
@@ -38,6 +39,7 @@ const L10nMessageArray messageNames{"BOOT_WIFI_FAIL",
                                     "NEXT_EVENT",
                                     "NO_UPCOMING_EVENTS",
                                     "BOOKED",
+                                    "NOT_BOOKED",
                                     "BOOK_ROOM_QUESTION",
                                     "RELEASE_QUESTION"};
 

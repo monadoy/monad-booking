@@ -20,7 +20,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 
 	// Create filter to not waste memory on unused languages
 	DynamicJsonDocument filter(1024 * 2);
-	for (auto name : messageNames) {
+	for (const String& name : messageNames) {
 		filter[name][lang] = true;
 	}
 
