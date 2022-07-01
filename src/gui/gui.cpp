@@ -425,7 +425,7 @@ void hideSettings(bool isHide) {
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
 	} else {
-		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 158);
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 171);
 	}
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
@@ -700,7 +700,7 @@ void createRegularLabels() {
 void createBoldLabels() {
 	// current booking status label
 	lbls[LABEL_CURRENT_BOOKING]
-	    = new EPDGUI_Textbox(80, 160, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
+	    = new EPDGUI_Textbox(80, 171, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(true);
 }
