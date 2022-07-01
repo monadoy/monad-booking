@@ -32,7 +32,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 
 	for (size_t msg = 0; msg < (size_t)L10nMessage::SIZE; msg++) {
 		_messages[msg] = doc[messageNames[msg]][lang].as<String>();
-		if (_messages[msg] == "") {
+		if (_messages[msg] == "null") {
 			return utils::make_unique<utils::Error>(String("Localization '") + messageNames[msg]
 			                                        + "-" + lang + "' not found or empty");
 		}
