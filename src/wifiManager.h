@@ -58,8 +58,6 @@ class WiFiManager {
 
 	WiFiInfo getStationInfo();
 
-	static const IPAddress AP_IP;
-
 	/*
 	 * Protects variables below (_connectTimer, _connected, _disconnectReason),
 	 * also blocks tasks in waitWiFi when connection is in progress.

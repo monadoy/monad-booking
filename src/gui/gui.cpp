@@ -802,27 +802,19 @@ void toSetupScreen() {
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
-	String configData = "";
+	String configData;
 
 	if (wifiManager.isAccessPoint()) {
-		configData += "Yhdistä WiFiin:\nSSID: ";
-		configData += wifiManager.getAccessPointInfo().ssid + "\n";
-		configData += "Salasana: ";
-		configData += wifiManager.getAccessPointInfo().password + "\n";
-		configData += "Navigoi osoitteeseen: " + wifiManager.AP_IP;
-		const String qrString = "WIFI:S:" + wifiManager.getAccessPointInfo().ssid
-		                        + ";T:WPA;P:" + wifiManager.getAccessPointInfo().password + ";;";
+		WiFiInfo info = wifiManager.getAccessPointInfo();
+		configData = "WIFI Access Point:\nSSID: " + info.ssid + "\nPassword: " + info.password
+		             + "\nIP: " + info.ip.toString();
+		const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
 		canvasNextEvent.qrcode(qrString, 0, 120, 300, 7);
 	} else {
-		String wifiSSID = wifiManager.getStationInfo().ssid;
-		configData += "Yhdistetty WiFiin: ";
-		configData += wifiSSID + "\nLaitteen IP: ";
-		configData += WiFi.localIP().toString();
+		WiFiInfo info = wifiManager.getStationInfo();
+		configData = "WIFI SSID: " + info.ssid + "\nIP: " + info.ip.toString();
 	}
 
-	if (!wifiManager.isAccessPoint()) {
-		wifiManager.openAccessPoint();
-	}
 	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
 	updateScreen(true, true);
 }

@@ -7,8 +7,6 @@
 const char* AP_SSID = "BOOKING-SETUP-";
 const char* AP_PASS = "Monad-";
 
-const IPAddress WiFiManager::AP_IP(192, 168, 1, 1);
-
 // Just make sure that we don't go to sleep while being an access point.
 void onAPEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 	switch (event) {
