@@ -241,7 +241,7 @@ void hideFreeRoomButton(bool isHide) {
 				btns[BUTTON_CONTINUE]->SetHide(false);
 			}
 		} else {
-			btns[BUTTON_CONTINUE]->SetHide(true);
+			btns[BUTTON_CONTINUE]->SetHide(isHide);
 		}
 	}
 }
@@ -513,7 +513,7 @@ void confirmFreeButton(epdgui_args_vector_t& args) {
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
-void continueButton(epdgui_args_vector_t& args) {_model->extendCurrentEvent(15*SECS_PER_MIN); }
+void continueButton(epdgui_args_vector_t& args) { _model->extendCurrentEvent(15 * SECS_PER_MIN); }
 
 void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
@@ -526,6 +526,16 @@ void hideLoading(bool isHide) {
 		hideFreeBooking(true);
 		_guiTask->startLoading();
 	}
+}
+
+void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t w, int16_t h,
+                  uint16_t color, uint16_t txt_color, uint16_t color_pressed, bool use_bold,
+                  void (*func_cb)(epdgui_args_vector_t&)) {
+	btns[ButtonEnum]
+	    = new EPDGUI_Button(label, x, y, w, h, color, txt_color, color_pressed, use_bold);
+	EPDGUI_AddObject(btns[ButtonEnum]);
+	btns[ButtonEnum]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[ButtonEnum]);
+	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, func_cb);
 }
 
 void createButtons() {

@@ -123,6 +123,9 @@ void continueButton(epdgui_args_vector_t& args);
 void setupButton(epdgui_args_vector_t& args);
 void hideLoading(bool isHide);
 
+void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color,
+                  uint16_t txt_color, uint16_t color_pressed, bool use_bold,
+                  void (*func_cb)(epdgui_args_vector_t&));
 void createButtons();
 void createRegularLabels();
 void createBoldLabels();
