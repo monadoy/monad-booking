@@ -6,7 +6,7 @@
 	},
 	"BOOT_NTP_FAIL": {
 		"FI": "Kellon tahdistus NTP-palvelimen kanssa epäonnistui.",
-		"EN": "Couldn't sync with clock with NTP-server."
+		"EN": "Couldn't sync the clock with NTP-server."
 	},
 	"BOOTING": {
 		"FI": "Käynnistetään...",
