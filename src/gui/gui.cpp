@@ -951,6 +951,7 @@ GUITask::GUITask() {
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
 		showShutdown("Shut down. Waking up at "
 		             + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
+		M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 	});
 }
 }  // namespace gui
