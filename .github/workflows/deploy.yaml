@@ -1,0 +1,56 @@
+name: Monad NoBooking Deploy
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github./workflows/monad-booking-build
+
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: firmware
+
+      - name: Download file system artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: file-system
+
+      - name: Get tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Compress firmware
+        run: gzip -c ./.pio/build/m5paper/firmware.bin > ./${{steps.tag.outputs.tag}}/firmware.bin.gz
+
+      - name: Compress file system
+        working-directory: ./data
+        run: tar -czvf ../${{steps.tag.outputs.tag}}/file-system.tar.gz ./*
+
+      - name: Make LATEST_VERSION file
+        run: echo -n ${{steps.tag.outputs.tag}} > LATEST_VERSION
+
+      - name: Authorize account for Google Storage
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ secrets.gcp_credentials }}"
+
+      - name: Upload to Google Storage bucket
+        uses: "google-github-actions/upload-cloud-storage@v0"
+          with:
+            path: "./${{steps.tag.outputs.tag}}"
+            destination: "no-booking-binaries"
+
+      - name: Update LATEST_VERSION in Google Storage bucket
+        uses: "google-github-actions/upload-cloud-storage@v0"
+        with:
+          path: "./LATEST_VERSION"
+          destination: "no-booking-binaries/LATEST_VERSION"
+          headers: |-
+            content-type: text/plain

@@ -1,0 +1,63 @@
+name: Monad NoBooking CI Build
+
+on:
+  push:
+  workflow_call:
+
+jobs:
+  build-firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v2
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+      - name: Set up Python with cache
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install Python requirements
+        run: pip install -r ./scripts/requirements.txt
+
+      - name: Build the firmware
+        run: pio run -e m5paper
+
+      - name: Store firmware artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware
+          path: .pio/build/m5paper/firmware.bin
+
+  build-file-system:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python with cache
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: "pip"
+
+    - name: Install Python requirements
+      run: pip install -r ./scripts/requirements.txt
+
+    - name: Setup NodeJS
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: "npm"
+        cache-dependency-path: webPortalFrontend/package-lock.json
+
+    - name: Build frontend
+      run: python ./scripts/setup.py frontend
+
+    - name: Store file system artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: file-system
+        path: data
