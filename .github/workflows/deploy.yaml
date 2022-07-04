@@ -15,11 +15,13 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: firmware
+          path: ./artifacts
 
       - name: Download file system artifact
         uses: actions/download-artifact@v3
         with:
           name: file-system
+          path: ./artifacts/data
 
       - name: Get tag
         uses: dawidd6/action-get-tag@v1
@@ -27,11 +29,11 @@ jobs:
           strip_v: true
 
       - name: Compress firmware
-        run: gzip -c ./firmware.bin > ./${{ steps.tag.outputs.tag }}/firmware.bin.gz
+        run: gzip -c ./artifacts/firmware.bin > ./${{ steps.tag.outputs.tag }}/firmware.bin.gz
 
       - name: Compress file system
-        working-directory: ./data
-        run: tar -czvf ../${{ steps.tag.outputs.tag }}/file-system.tar.gz ./*
+        working-directory: ./artifacts/data
+        run: tar -czvf ../../${{ steps.tag.outputs.tag }}/file-system.tar.gz ./*
 
       - name: Make LATEST_VERSION file
         run: echo -n ${{ steps.tag.outputs.tag }} > LATEST_VERSION
