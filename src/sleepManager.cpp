@@ -217,7 +217,7 @@ time_t SleepManager::calculateTurnOnTimeUTC(time_t localNow) {
 
 	tmElements_t tm;
 	ezt::breakTime(localNow, tm);
-	if (tm.Hour > _onHours[0]) {
+	if (tm.Hour > _onHours[0] || (tm.Hour == _onHours[0] && tm.Minute >= _onMinutes[0])) {
 		tm.Day += 1;
 	}
 	tm.Hour = _onHours[0];
