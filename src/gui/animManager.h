@@ -10,11 +10,11 @@ namespace anim {
     class Animation {
         public:
             Animation();
-            void showNextFrame();
+            void showNextFrame(bool isReverse);
             void resetAnimation();
             void showLogo();
         private:
-            void _drawFrame();
+            void _drawFrame(bool isReverse);
             void _reverseDirection();
             int _currentFrame;
             int _direction;

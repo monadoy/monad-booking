@@ -44,11 +44,11 @@ Animation::Animation() {
 	resetAnimation();
 }
 
-void Animation::showNextFrame() {
+void Animation::showNextFrame(bool isReverse) {
 	_currentFrame += _direction;
 	if (_currentFrame == NUM_OF_FRAMES || _currentFrame == 0)
 		_reverseDirection();
-	_drawFrame();
+	_drawFrame(isReverse);
 }
 
 void Animation::resetAnimation() {
@@ -67,16 +67,18 @@ void Animation::showLogo() {
 	M5.EPD.SetColorReverse(false);
 }
 
-void Animation::_drawFrame() {
+void Animation::_drawFrame(bool isReverse) {
 	int beginTime = millis();
-	M5.EPD.SetColorReverse(true);
+	if(!isReverse)
+		M5.EPD.SetColorReverse(true);
 	String pngName = "/images/frame" + String(15 - _currentFrame) + ".png";
 	int rc = png.open(pngName.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDraw);
 	if (rc == PNG_SUCCESS) {
 		png.decode(NULL, 0);
 		M5.EPD.UpdateArea(292, 107, 376, 248, UPDATE_MODE_DU4);
 	}
-	M5.EPD.SetColorReverse(false);
+	if(!isReverse)
+		M5.EPD.SetColorReverse(false);
 	log_d("Frame drawing took %u ms.", millis() - beginTime);
 	png.close();
 }

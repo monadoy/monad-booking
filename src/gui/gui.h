@@ -83,7 +83,7 @@ void EPDGUI_Process(int16_t x, int16_t y);
 String getBatteryPercent();
 String getWifiStatus();
 void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy);
-void updateScreen(bool pushLeft, bool pushRight);
+void updateScreen(bool pushLeft, bool pushRight, m5epd_update_mode_t updateMode = UPDATE_MODE_GC16);
 void updateClocksWifiBattery();
 void hideNextBooking(bool isHide);
 int configureMainButtonPos(bool isHide);
@@ -205,14 +205,14 @@ class GUITask {
 	 * @brief Starts loading
 	 *
 	 */
-	void startLoading();
+	void startLoading(bool isReverse = false);
 
 	/**
 	 * @brief Calls next animation frame to be loaded, recursively calls itself until success or
 	 * error appears.
 	 *
 	 */
-	void loadNextFrame();
+	void loadNextFrame(bool isReverse);
 
 	/**
 	 * @brief Shows text during loading

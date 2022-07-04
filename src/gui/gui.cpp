@@ -129,10 +129,11 @@ void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
 	currentBtnIndex = newBtnIndex;
 	if (currentScreen == SCREEN_MAIN) {
 		toMainScreen(!updateLeft, !updateRight);
-	}
+	} else
+		M5.EPD.Sleep();
 }
 
-void updateScreen(bool pushLeft, bool pushRight) {
+void updateScreen(bool pushLeft, bool pushRight, m5epd_update_mode_t updateMode) {
 	if (pushLeft) {
 		canvasCurrentEvent.pushCanvas(0, 0, UPDATE_MODE_NONE);
 	}
@@ -140,7 +141,7 @@ void updateScreen(bool pushLeft, bool pushRight) {
 		canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
 	}
 	EPDGUI_Draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+	M5.EPD.UpdateFull(updateMode);
 }
 
 // hides the next event on the right side
@@ -394,7 +395,7 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 	hideNextBooking(true);
 	hideBookingConfirmationButtons(false);
 	hideConfirmBooking(timeToBeBooked, false);
-	updateScreen(true, true);
+	updateScreen(true, true, UPDATE_MODE_GLD16);
 }
 
 void toFreeBooking() {
@@ -513,7 +514,10 @@ void confirmFreeButton(epdgui_args_vector_t& args) {
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
-void continueButton(epdgui_args_vector_t& args) { _model->extendCurrentEvent(15 * SECS_PER_MIN); }
+void continueButton(epdgui_args_vector_t& args) { 
+	_model->extendCurrentEvent(15 * SECS_PER_MIN);
+	_guiTask->startLoading(true);
+}
 
 void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
 
@@ -685,17 +689,18 @@ void setLoadingText(String text) {
 	M5.EPD.UpdateArea(0, 394, 960, 140, UPDATE_MODE_A2);
 }
 
-void initLoading() {
+void initLoading(bool isReverse) {
+	M5.EPD.Active();
 	log_i("Loading initialized...");
 	gotResponse = false;
-	_guiTask->loadNextFrame();
+	_guiTask->loadNextFrame(isReverse);
 }
 
-void checkLoadNextFrame() {
+void checkLoadNextFrame(bool isReverse) {
 	if (!gotResponse) {
-		_animation->showNextFrame();
+		_animation->showNextFrame(isReverse);
 		delay(10);
-		_guiTask->loadNextFrame();
+		_guiTask->loadNextFrame(isReverse);
 	}
 }
 
@@ -910,12 +915,12 @@ void GUITask::enqueue(ActionType at, void* func) {
 
 void GUITask::initMain(cal::Model* model) { initMainScreen(model); }
 
-void GUITask::startLoading() {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return initLoading(); }));
+void GUITask::startLoading(bool isReverse) {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return initLoading(isReverse); }));
 }
 
-void GUITask::loadNextFrame() {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return checkLoadNextFrame(); }));
+void GUITask::loadNextFrame(bool isReverse) {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return checkLoadNextFrame(isReverse); }));
 }
 
 void GUITask::showLoadingText(String data) {
