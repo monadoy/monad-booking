@@ -6,13 +6,13 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
+  build:
+    uses: ./.github/workflows/build.yaml
   deploy:
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/build.yaml
+    needs: build
     steps:
       - uses: actions/checkout@v3
-
-      - run: ls -R ./data
 
       - name: Download firmware artifact
         uses: actions/download-artifact@v3
