@@ -8,10 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    uses: ./.github/workflows/build.yaml
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/workflows/build.yaml
+      - run: ls -R ./data
 
       - name: Download firmware artifact
         uses: actions/download-artifact@v3
