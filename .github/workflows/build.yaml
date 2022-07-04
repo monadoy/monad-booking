@@ -1,4 +1,4 @@
-name: Monad NoBooking CI Build
+name: Build
 
 on:
   push:

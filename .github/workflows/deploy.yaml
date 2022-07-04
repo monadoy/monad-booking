@@ -1,4 +1,4 @@
-name: Monad NoBooking Deploy
+name: Deploy
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github./workflows/monad-booking-build
+      - uses: ./.github./workflows/build
 
       - name: Download firmware artifact
         uses: actions/download-artifact@v3
