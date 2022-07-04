@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/workflows/build
+      - uses: ./.github/workflows/build.yaml
 
       - name: Download firmware artifact
         uses: actions/download-artifact@v3
