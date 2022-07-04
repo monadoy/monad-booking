@@ -32,12 +32,14 @@ jobs:
         with:
           strip_v: true
 
+      - run: mkdir ./v${{ steps.tag.outputs.tag }}
+
       - name: Compress firmware
-        run: gzip -c ./artifacts/firmware.bin > ./${{ steps.tag.outputs.tag }}/firmware.bin.gz
+        run: gzip -c ./artifacts/firmware.bin > ./v${{ steps.tag.outputs.tag }}/firmware.bin.gz
 
       - name: Compress file system
         working-directory: ./artifacts/data
-        run: tar -czvf ../../${{ steps.tag.outputs.tag }}/file-system.tar.gz ./*
+        run: tar -czvf ../../v${{ steps.tag.outputs.tag }}/file-system.tar.gz ./*
 
       - name: Make LATEST_VERSION file
         run: echo -n ${{ steps.tag.outputs.tag }} > LATEST_VERSION
@@ -50,7 +52,7 @@ jobs:
       - name: Upload to Google Storage bucket
         uses: "google-github-actions/upload-cloud-storage@v0"
         with:
-          path: "./${{ steps.tag.outputs.tag }}"
+          path: "./v${{ steps.tag.outputs.tag }}"
           destination: "no-booking-binaries"
 
       - name: Update LATEST_VERSION in Google Storage bucket
