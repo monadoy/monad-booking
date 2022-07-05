@@ -137,6 +137,15 @@
 					</option>
 				{/each}
 			</select>
+			<label for="autoupdate">Auto Update</label>
+			<div class="multi-input">
+				<input type="checkbox" id="autoupdate" bind:checked={config.autoUpdate} />
+				{#if config.autoUpdate}
+					(Enabled)
+				{:else}
+					(Disabled)
+				{/if}
+			</div>
 			<h4>Awake Times</h4>
 			<div class="multi-input">
 				<label for="awaketimefrom">from</label>

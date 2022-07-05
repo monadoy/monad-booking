@@ -24,7 +24,8 @@ export let defaultConfig: Config = {
 			sun: false,
 		}
 	},
-	language: "FI"
+	language: "FI",
+	autoUpdate: false,
 }
 
 export interface Config {
@@ -53,5 +54,6 @@ export interface Config {
 			sun: boolean
 		}
 	}
-	language: string
+	language: string,
+	autoUpdate: boolean
 }
