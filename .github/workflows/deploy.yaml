@@ -34,8 +34,8 @@ jobs:
 
       - run: mkdir ./v${{ steps.tag.outputs.tag }}
 
-      - name: Compress firmware
-        run: gzip -c ./artifacts/firmware.bin > ./v${{ steps.tag.outputs.tag }}/firmware.bin.gz
+      - name: Move firmware
+        run: mv ./artifacts/firmware.bin ./v${{ steps.tag.outputs.tag }}/firmware.bin
 
       - name: Compress file system
         working-directory: ./artifacts/data
