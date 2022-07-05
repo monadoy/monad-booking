@@ -15,7 +15,7 @@
 #include "safeTimezone.h"
 #include "sleepManager.h"
 #include "timeUtils.h"
-#include "update.h"
+#include "myUpdate.h"
 #include "utils.h"
 
 // Format the filesystem automatically if not formatted already

@@ -1,5 +1,5 @@
-#ifndef UPDATE_H
-#define UPDATE_H
+#ifndef MY_UPDATE_H
+#define MY_UPDATE_H
 
 #include <Arduino.h>
 
