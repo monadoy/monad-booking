@@ -14,6 +14,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Verify that platformio.ini defines the same version as the tag
+        run: |
+          MAJOR="$(cut -d'.' -f1 <<< '{{ steps.tag.outputs.tag }}')"
+          MINOR="$(cut -d'.' -f2 <<< '{{ steps.tag.outputs.tag }}')"
+          PATCH="$(cut -d'.' -f3 <<< '{{ steps.tag.outputs.tag }}')"
+          grep "\-DVERSION_MAJOR=$MAJOR" ./platformio.ini
+          grep "\-DVERSION_MINOR=$MINOR" ./platformio.ini
+          grep "\-DVERSION_PATCH=$PATCH" ./platformio.ini
+
       - name: Download firmware artifact
         uses: actions/download-artifact@v3
         with:
@@ -25,12 +40,6 @@ jobs:
         with:
           name: file-system
           path: ./artifacts/data
-
-      - name: Get tag
-        id: tag
-        uses: dawidd6/action-get-tag@v1
-        with:
-          strip_v: true
 
       - run: mkdir ./v${{ steps.tag.outputs.tag }}
 
