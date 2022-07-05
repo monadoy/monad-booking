@@ -172,21 +172,18 @@
 			<h4>Awake Days</h4>
 			<div class="multi-input">
 				{#each ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as day}
-					<label for={`awakeday${day}`}
-						>{day.charAt(0).toUpperCase() + day.slice(1)}
-						<input
-							type="checkbox"
-							id={`awakeday${day}`}
-							bind:checked={config.awake.weekdays[day]}
-						/></label
-					>
+					<label for={`awakeday${day}`}>{day.charAt(0).toUpperCase() + day.slice(1)}</label>
+					<input
+						type="checkbox"
+						id={`awakeday${day}`}
+						bind:checked={config.awake.weekdays[day]}
+					/>
 				{/each}
 			</div>
-
 			<label for="calendarid">Calendar ID</label>
 			<input id="calendarid" type="email" bind:value={config.gcalsettings.calendarid} />
 			<label for="tokenjson">Token.json</label>
-			<div class="multi-input-vertical">
+			<div class="multi-input vertical">
 				<input id="tokenjsonfile" type="file" bind:files />
 				<textarea
 					rows="10"
@@ -214,6 +211,7 @@
 	main {
 		padding: 0;
 		margin: 0 auto;
+		max-width: 800px;
 	}
 
 	label,
@@ -235,7 +233,7 @@
 
 	form {
 		display: grid;
-		grid-template-rows: repeat(50, minmax(1.8rem, auto));
+		grid-template-rows: repeat(50, auto);
 		grid-template-columns: minmax(0, auto);
 	}
 
@@ -254,39 +252,45 @@
 		border: 1px solid red;
 	}
 
-	input[type="file"] {
-		margin: auto 0;
-	}
-
 	input.time {
-		width: 50px;
+		width: 70px;
 		text-align: center;
 	}
 
 	.multi-input {
 		display: flex;
-		align-items: stretch;
+		align-items: center;
 		flex-flow: row wrap;
 		gap: 8px;
 	}
 
-	.multi-input-vertical {
-		display: flex;
+	.multi-input.vertical {
 		align-items: stretch;
 		flex-flow: column wrap;
-		gap: 8px;
 	}
 
-	.multi-input > input {
-		display: flex;
-		margin-right: 8px;
+	.multi-input > label {
+		margin: 0;
 	}
 
 	input[type="checkbox"] {
 		width: 1.2rem;
 		height: 1.2rem;
-		margin: 0 8px 0 0;
-		transform: translatey(+4px);
+		margin-right: 0.5rem;
+	}
+
+	input {
+		height: 1.2rem;
+		margin: 2px;
+	}
+
+	select {
+		height: 1.7rem;
+		margin: 2px;
+	}
+
+	input[type="file"] {
+		height: auto;
 	}
 
 	@media only screen and (min-width: 768px) {
