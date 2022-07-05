@@ -49,7 +49,7 @@ String versionToString(std::array<int, 3> version) {
 std::array<int, 3> getAvailableFirmwareVersion() {
 	HTTPClient http;
 	http.setReuse(false);
-	http.begin(String(UPDATE_STORAGE_URL) + "/LATEST_VERSION", UPDATE_SERVER_CERT);
+	http.begin(String(UPDATE_STORAGE_URL) + "/current-version", UPDATE_SERVER_CERT);
 
 	const int httpCode = http.GET();
 
@@ -72,11 +72,14 @@ std::array<int, 3> getAvailableFirmwareVersion() {
 	return {versionParts[0], versionParts[1], versionParts[2]};
 }
 
-bool isNewer(std::array<int, 3> newVersion) {
-	return VERSION_MAJOR < newVersion[0]
-	       || (VERSION_MAJOR == newVersion[0] && VERSION_MINOR < newVersion[1])
-	       || (VERSION_MAJOR == newVersion[0] && VERSION_MINOR == newVersion[1]
-	           && VERSION_PATCH < newVersion[2]);
+bool isVersionDifferent(std::array<int, 3> newVersion) {
+	// All zeros means invalid version
+	if (newVersion[0] == 0 && newVersion[1] == 0 && newVersion[2] == 0) {
+		return false;
+	}
+
+	return VERSION_MAJOR != newVersion[0] || VERSION_MINOR != newVersion[1]
+	       || VERSION_PATCH != newVersion[2];
 }
 
 std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String& filename) {

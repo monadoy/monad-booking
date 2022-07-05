@@ -12,10 +12,10 @@
 #include "gui/animManager.h"
 #include "gui/gui.h"
 #include "localization.h"
+#include "myUpdate.h"
 #include "safeTimezone.h"
 #include "sleepManager.h"
 #include "timeUtils.h"
-#include "myUpdate.h"
 #include "utils.h"
 
 // Format the filesystem automatically if not formatted already
@@ -142,7 +142,7 @@ void normalBoot(JsonObjectConst config) {
 
 	if (config["autoUpdate"] | false) {
 		std::array<int, 3> newVersion = getAvailableFirmwareVersion();
-		if (isNewer(newVersion)) {
+		if (isVersionDifferent(newVersion)) {
 			guiTask->showLoadingText("Updating to new firmware: v" + versionToString(newVersion)
 			                         + ". This takes a while...");
 			auto err = updateFirmware(newVersion, onBeforeFormatFlash);
