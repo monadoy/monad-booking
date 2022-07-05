@@ -5,32 +5,19 @@
 namespace Config {
 
 void ConfigStore::loadConfig() {
-	File configFileHandle;
-
-	log_i("Trying to load %s.msgpack from flash...", configFileName_.c_str());
-
 	// Release old memory if it exists
-	config_ = StaticJsonDocument<2048>();
+	config_ = DynamicJsonDocument(2048);
 
-	configFileHandle = fs_.open(configFileName_ + ".msgpack", FILE_READ);
-	if (configFileHandle) {
-		auto err = deserializeMsgPack(config_, configFileHandle);
-		if (err) {
-			log_e("Error deserializing %s.msgpack: %s", configFileName_.c_str(), err.c_str());
-		}
-		log_i("%s.msgpack loaded from flash", configFileName_.c_str());
-		return;
-	}
+	log_i("Trying to load %s.json from flash...", configFileName_.c_str());
 
-	log_i("FALLBACK: Trying to load %s.json from flash...", configFileName_.c_str());
-
-	configFileHandle = fs_.open(configFileName_ + ".json", FILE_READ);
+	File configFileHandle = fs_.open(configFileName_ + ".json", FILE_READ);
 	if (configFileHandle) {
 		auto err = deserializeJson(config_, configFileHandle);
 		if (err) {
 			log_e("Error deserializing %s.json: %s", configFileName_.c_str(), err.c_str());
 		}
 		log_i("%s.json loaded from flash", configFileName_.c_str());
+		configFileHandle.close();
 		return;
 	}
 
@@ -38,9 +25,7 @@ void ConfigStore::loadConfig() {
 };
 
 Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
-	File configFileHandle;
-
-	configFileHandle = fs_.open(configFileName_ + ".msgpack", FILE_WRITE);
+	File configFileHandle = fs_.open(configFileName_ + ".json", FILE_WRITE);
 
 	if (!configFileHandle) {
 		String errMsg = "Cannot open configfile for writing";
@@ -50,8 +35,9 @@ Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
 	}
 
 	String configString = "";
-	serializeMsgPack(newConfig, configString);
+	serializeJson(newConfig, configString);
 	configFileHandle.print(configString);
+	configFileHandle.close();
 
 	return Result<bool>::makeOk(std::make_shared<bool>(true));
 };

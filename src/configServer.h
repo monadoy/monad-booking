@@ -32,7 +32,7 @@ class ConfigStore {
 	 * Load existing configuration from flash to memory, if any any
 	 */
 	ConfigStore(fs::FS& fs, String configFileName = "/config")
-	    : fs_(fs), configFileName_(configFileName) {
+	    : fs_(fs), configFileName_(configFileName), config_{DynamicJsonDocument(2048)} {
 		loadConfig();
 	};
 	/**
@@ -59,7 +59,7 @@ class ConfigStore {
   protected:
 	fs::FS& fs_;
 	String configFileName_;
-	StaticJsonDocument<2048> config_;
+	DynamicJsonDocument config_;
 };
 
 class ConfigServer : public AsyncWebHandler {
