@@ -425,9 +425,8 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		// lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
-		// lbls[LABEL_SETTINGS_STARTUP]->SetText("Viime käynnistys:\n" +
-		// safeMyTZ.dateTime(RFC3339));
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
+		lbls[LABEL_SETTINGS_STARTUP]->SetText("Versio: " + CURRENT_VERSION_STRING);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
 	} else {
@@ -514,7 +513,7 @@ void confirmFreeButton(epdgui_args_vector_t& args) {
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
-void continueButton(epdgui_args_vector_t& args) { 
+void continueButton(epdgui_args_vector_t& args) {
 	_model->extendCurrentEvent(15 * SECS_PER_MIN);
 	_guiTask->startLoading(true);
 }

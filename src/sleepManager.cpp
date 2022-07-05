@@ -255,7 +255,5 @@ void SleepManager::_shutdown() {
 
 	Serial.flush();
 
-	// TODO: show shutdown screen in GUI, maybe with BEFORE_SHUTDOWN event
-
 	M5.shutdown(turnOnTimeRTC.date, turnOnTimeRTC.time);
 }

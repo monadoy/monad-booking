@@ -11,5 +11,6 @@ extern SafeTimezone safeUTC;
 extern SleepManager sleepManager;
 extern WiFiManager wifiManager;
 extern Localization l10n;
+extern const String CURRENT_VERSION_STRING;
 
 #endif

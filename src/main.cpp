@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <M5EPD.h>
@@ -16,6 +15,7 @@
 #include "safeTimezone.h"
 #include "sleepManager.h"
 #include "timeUtils.h"
+#include "update.h"
 #include "utils.h"
 
 // Format the filesystem automatically if not formatted already
@@ -106,6 +106,11 @@ void handleBootError(const String& message) {
 	sleepManager.requestShutdown();
 };
 
+void onBeforeFormatFlash() {
+	guiTask->stopLoading();
+	delay(500);
+}
+
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
@@ -135,6 +140,19 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
+	if (config["autoUpdate"] | false) {
+		std::array<int, 3> newVersion = getAvailableFirmwareVersion();
+		if (isNewer(newVersion)) {
+			guiTask->showLoadingText("Updating to new firmware: v" + versionToString(newVersion)
+			                         + ". This takes a while...");
+			auto err = updateFirmware(newVersion, onBeforeFormatFlash);
+			if (err) {
+				handleBootError(err->message);
+			}
+			return;
+		}
+	}
+
 	auto tokenRes
 	    = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"].as<JsonObjectConst>());
 	if (tokenRes.isErr()) {
@@ -149,14 +167,12 @@ void normalBoot(JsonObjectConst config) {
 	guiTask->initMain(calendarModel.get());
 	calendarModel->updateStatus();
 
+	guiTask->showLoadingText("");
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 }
 
 void setupBoot() {
 	Serial.println("Starting in setup mode.");
-
-	// Try to sync from rtc in case there is some kind of time
-	syncEzTimeFromRTC();
 
 	// Increment without decrementing to keep device on until reset
 	sleepManager.incrementTaskCounter();
@@ -185,13 +201,15 @@ void setup() {
 	M5.EPD.Clear(true);
 	M5.RTC.begin();
 
-	Serial.println("========== Monad Booking ==========");
+	Serial.println("========== Monad Booking v" + CURRENT_VERSION_STRING + " ==========");
 	Serial.println("Booting up...");
 
 	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
 		log_e("LittleFS Mount Failed");
 		return;
 	}
+	// Try to sync from rtc in case there is some kind of time
+	syncEzTimeFromRTC();
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
