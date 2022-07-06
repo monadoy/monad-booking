@@ -84,7 +84,7 @@ void handleBootError(const String& message) {
 	if (guiTask) {
 		guiTask->showLoadingText(message);
 		guiTask->stopLoading();
-		guiTask->goSetup(true);
+		sleepManager.requestShutdown();
 	}
 };
 
