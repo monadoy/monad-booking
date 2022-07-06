@@ -1,17 +1,5 @@
 {
 	"supportedLanguages": ["FI", "EN"],
-	"BOOT_WIFI_FAIL": {
-		"FI": "WIFI-yhdistäminen epäonnistui: ",
-		"EN": "Connecting to WIFI failed: "
-	},
-	"BOOT_NTP_FAIL": {
-		"FI": "Kellon tahdistus NTP-palvelimen kanssa epäonnistui.",
-		"EN": "Couldn't sync the clock with NTP-server."
-	},
-	"BOOTING": {
-		"FI": "Käynnistetään...",
-		"EN": "Booting up..."
-	},
 	"BOOK": {
 		"FI": "Varaa",
 		"EN": "Book"

@@ -7,9 +7,6 @@
 #include "utils.h"
 
 enum class L10nMessage {
-	BOOT_WIFI_FAIL,
-	BOOT_NTP_FAIL,
-	BOOTING,
 	BOOK,
 	FREE,
 	CANCEL,
@@ -27,10 +24,7 @@ enum class L10nMessage {
 
 using L10nMessageArray = std::array<String, (size_t)L10nMessage::SIZE>;
 
-const L10nMessageArray messageNames{"BOOT_WIFI_FAIL",
-                                    "BOOT_NTP_FAIL",
-                                    "BOOTING",
-                                    "BOOK",
+const L10nMessageArray messageNames{"BOOK",
                                     "FREE",
                                     "CANCEL",
                                     "UNTIL_NEXT",
