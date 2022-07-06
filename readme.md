@@ -59,18 +59,18 @@ When booting for the first time, the device will go to **setup mode**. It opens 
 
 Connect to the WIFI corresponding to the SSID shown on the device. Navigate to the shown IP address in your browser and fill in the configuration options shown on the page.
 
-|Option|description|
+|Option|Description|
 |--|--|
-|Name| Can be anything, you can use it to differentiate between devices|
-|Language Code| Language of the device, **FI** and **EN** are supported by default|
-|WIFI SSID| SSID of the WIFI where the device should connect|
-|WIFI Password| Password of the WIFI where the device should connect|
-|IANA Time Zone| Your time zone|
-|Auto Update| Enable if you wan the device to check for new updates on every boot up and update automatically|
-|Awake Times| The device saves battery by shutting down at night, choose times where the device should be awake|
-|Awake Days| The device also saves battery by being shut down in some days of the week (weekends by default), choose the days where the device should be awake|
-|Calendar ID| The ID of the room's calendar|
-|Token.json| The token.json file generated earlier|
+|Name| Can be anything, you can use it to differentiate between devices. |
+|Language Code| Language of the device, **FI** and **EN** are supported by default. |
+|WIFI SSID| SSID of the WIFI where the device should connect. |
+|WIFI Password| Password of the WIFI where the device should connect. |
+|IANA Time Zone| Your time zone. |
+|Auto Update| Enable if you want the device to check for new updates on every boot up and update automatically. <!-- TODO: add mention of manual updates when ready -->|
+|Awake Times| The device saves battery by shutting down at night, choose a time span where the device should be awake. |
+|Awake Days| The device saves battery by being shut down in some days of the week (weekends by default), choose the days where the device should be awake. |
+|Calendar ID| The ID of the room's calendar. |
+|Token.json| The token.json file generated earlier. |
 
 After you have filled in the options and submitted them, restart the device by pressing the reset button in the back and then holding the side button down for a few seconds.
 
