@@ -21,12 +21,12 @@ jobs:
           strip_v: true
 
       - name: Verify that platformio.ini defines the same version as the tag
-        run: >
-          MAJOR="$(cut -d'.' -f1 <<< '{{ steps.tag.outputs.tag }}')" &&
-          MINOR="$(cut -d'.' -f2 <<< '{{ steps.tag.outputs.tag }}')" &&
-          PATCH="$(cut -d'.' -f3 <<< '{{ steps.tag.outputs.tag }}')" &&
-          grep "\-DVERSION_MAJOR=$MAJOR" ./platformio.ini &&
-          grep "\-DVERSION_MINOR=$MINOR" ./platformio.ini &&
+        run: |
+          MAJOR="$(cut -d'.' -f1 <<< '${{ steps.tag.outputs.tag }}')"
+          MINOR="$(cut -d'.' -f2 <<< '${{ steps.tag.outputs.tag }}')"
+          PATCH="$(cut -d'.' -f3 <<< '${{ steps.tag.outputs.tag }}')"
+          grep "\-DVERSION_MAJOR=$MAJOR" ./platformio.ini
+          grep "\-DVERSION_MINOR=$MINOR" ./platformio.ini
           grep "\-DVERSION_PATCH=$PATCH" ./platformio.ini
 
       - name: Download firmware artifact
