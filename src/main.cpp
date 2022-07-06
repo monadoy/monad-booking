@@ -65,7 +65,7 @@ void syncRTCFromEzTime() {
 void handleBootError(const String& message) {
 	log_e("%s", message.c_str());
 	if (guiTask) {
-		guiTask->showLoadingText(message);
+		guiTask->showLoadingText(message + " Reboot to retry.");
 		guiTask->stopLoading();
 	}
 	sleepManager.requestShutdown();
@@ -91,15 +91,14 @@ void normalBoot(JsonObjectConst config) {
 
 	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-		handleBootError(l10n.msg(L10nMessage::BOOT_WIFI_FAIL) + wifiManager.getDisconnectReason()
-		                + ".");
+		handleBootError("Couldn't connect to WIFI: " + wifiManager.getDisconnectReason() + ".");
 		return;
 	}
 
 	if (!setupTime(config["timezone"])) {
 		// Try to sync from rtc in case there is some kind of time
 		syncEzTimeFromRTC();
-		handleBootError(l10n.msg(L10nMessage::BOOT_NTP_FAIL));
+		handleBootError("Couldn't sync with NTP server.");
 		return;
 	}
 
