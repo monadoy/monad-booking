@@ -62,9 +62,8 @@ void task(void* arg) {
 
 		// BEFORE_* callbacks may spin up tasks that keep us awake.
 		// Wait until they are done.
-		// TODO: could use semaphores instead of polling
-		delay(10);
 		log_i("Waiting for BEFORE_* tasks to complete");
+		delay(50);
 		while (manager->_anyActivity()) {
 			delay(10);
 		}
