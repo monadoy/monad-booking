@@ -233,7 +233,7 @@
 
 	form {
 		display: grid;
-		grid-template-rows: repeat(50, auto);
+		grid-template-rows: auto;
 		grid-template-columns: minmax(0, auto);
 	}
 
