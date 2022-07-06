@@ -199,12 +199,29 @@ SleepManager::WakeReason SleepManager::_sleep() {
 
 void SleepManager::requestShutdown() { _enqueue(Action::SHUTDOWN); }
 
-void SleepManager::setOnTimes(const std::array<bool, 7>& days, const std::array<uint8_t, 2>& hours,
-                              const std::array<uint8_t, 2>& minutes) {
+void SleepManager::setOnTimes(JsonObjectConst config) {
 	std::lock_guard<std::mutex> lock(_onTimesMutex);
-	_onDays = days;
-	_onHours = hours;
-	_onMinutes = minutes;
+
+	auto parseHM = [](const String& input) {
+		int colonIndex = input.indexOf(":");
+		if (colonIndex == -1)
+			return std::pair<uint8_t, uint8_t>(0, 0);
+
+		return std::pair<uint8_t, uint8_t>(input.substring(0, colonIndex).toInt(),
+		                                   input.substring(colonIndex + 1, input.length()).toInt());
+	};
+
+	JsonObjectConst wd = config["weekdays"];
+
+	_onDays = {wd["sun"] | true, wd["mon"] | true, wd["tue"] | true, wd["wed"] | true,
+	           wd["thu"] | true, wd["fri"] | true, wd["sat"] | true};
+
+	auto fromHM = parseHM(config["time"]["from"]);
+	auto toHM = parseHM(config["time"]["to"]);
+
+	_onHours = {fromHM.first, toHM.first};
+	_onMinutes = {toHM.second, toHM.second};
+
 	log_i("Awake days: %d %d %d %d %d %d %d.", _onDays[0], _onDays[1], _onDays[2], _onDays[3],
 	      _onDays[4], _onDays[5], _onDays[6]);
 	log_i("Awake times: from: %02d:%02d, to: %02d:%02d.", _onHours[0], _onMinutes[0], _onHours[1],

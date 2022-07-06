@@ -1,6 +1,7 @@
 #ifndef SLEEP_MANAGER_H
 #define SLEEP_MANAGER_H
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ezTime.h>
 
 #include <atomic>
@@ -95,8 +96,7 @@ class SleepManager {
 	std::array<std::vector<std::function<void()>>, (size_t)Callback::SIZE> _callbacks{};
 	void _dispatchCallbacks(Callback type);
 
-	void setOnTimes(const std::array<bool, 7>& days, const std::array<uint8_t, 2>& hours,
-	                const std::array<uint8_t, 2>& minutes);
+	void setOnTimes(JsonObjectConst config);
 	std::mutex _onTimesMutex;  // Protects onDays, onHours and onMinutes
 	std::array<bool, 7> _onDays{1, 1, 1, 1, 1, 1, 1};
 	std::array<uint8_t, 2> _onHours{0, 0};

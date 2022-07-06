@@ -34,23 +34,6 @@ std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
 
-void initAwakeTimes(JsonObjectConst config) {
-	const JsonObjectConst onDaysJson = config["awake"]["weekdays"];
-	const JsonObjectConst onTimesJson = config["awake"]["time"];
-	const String onTimeFrom = onTimesJson["from"];
-	const String onTimeTo = onTimesJson["to"];
-
-	const std::array<bool, 7> onDays{onDaysJson["sun"], onDaysJson["mon"], onDaysJson["tue"],
-	                                 onDaysJson["wed"], onDaysJson["thu"], onDaysJson["fri"],
-	                                 onDaysJson["sat"]};
-	const std::array<uint8_t, 2> onHours{(uint8_t)onTimeFrom.substring(0, 2).toInt(),
-	                                     (uint8_t)onTimeTo.substring(0, 2).toInt()};
-	const std::array<uint8_t, 2> onMinutes{(uint8_t)onTimeFrom.substring(2, 4).toInt(),
-	                                       (uint8_t)onTimeTo.substring(2, 4).toInt()};
-
-	sleepManager.setOnTimes(onDays, onHours, onMinutes);
-}
-
 bool setupTime(const String& IANATimeZone) {
 	Serial.println("Setting up time");
 
@@ -104,11 +87,10 @@ void normalBoot(JsonObjectConst config) {
 		return;
 	}
 
-	initAwakeTimes(config);
+	sleepManager.setOnTimes(config["awake"]);
 
 	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-		wifiManager.openAccessPoint();
 		handleBootError(l10n.msg(L10nMessage::BOOT_WIFI_FAIL) + wifiManager.getDisconnectReason()
 		                + ".");
 		return;
