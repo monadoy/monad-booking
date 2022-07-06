@@ -162,13 +162,15 @@ void setupBoot() {
 	syncEzTimeFromRTC();
 
 	Serial.println("Starting in setup mode.");
-
-	// Increment without decrementing to keep device on until reset
-	sleepManager.incrementTaskCounter();
+	guiTask = utils::make_unique<gui::GUITask>();
+	delay(100);
+	gui::createSetupButton();
 
 	wifiManager.openAccessPoint();
 
-	guiTask->goSetup();
+	configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
+	configServer->start();
+	guiTask->goSetup(true);
 
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
 	                       + "] setup boot (timestamp unreliable)");

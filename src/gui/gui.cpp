@@ -427,7 +427,7 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 640, 360);
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 680, 360);
 		lbls[LABEL_SETTINGS_STARTUP]->SetText("      Versio: " + CURRENT_VERSION_STRING);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
@@ -520,7 +520,7 @@ void continueButton(epdgui_args_vector_t& args) {
 	_guiTask->startLoading(true);
 }
 
-void setupButton(epdgui_args_vector_t& args) { gui::toSetupScreen(); }
+void setupButton(epdgui_args_vector_t& args) { _guiTask->goSetup(false); }
 
 void hideLoading(bool isHide) {
 	lbls[LABEL_LOADING]->SetHide(isHide);
@@ -747,7 +747,7 @@ void initGui() {
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
 
 	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(0, 180, 640, 360, 0, 15, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(0, 180, 500, 360, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 
 	lbls[LABEL_CURRENT_BOOKING]
@@ -775,17 +775,6 @@ void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatu
 	updateStatus(status);
 }
 
-void loadSetup() {
-	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
-	     p != epdgui_object_list.end(); p++) {
-		(*p)->SetHide(true);
-	}
-	hideSettings(false);
-	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
-	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
-	toSetupScreen();
-}
-
 String enumToString(gui::GUITask::GuiRequest type) {
 	switch (type) {
 		case GUITask::GuiRequest::RESERVE:
@@ -807,10 +796,10 @@ void toSetupScreen(bool fromMain) {
 	if (!fromMain)
 		btns[BUTTON_CANCELBOOKING]->SetHide(true);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 500, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_LOADING]->SetHide(true);
-	lbls[LABEL_SETTINGS_STARTUP]->SetPos(80, 180);
-	if (wifiManager.isAccessPoint()) {
+		if (wifiManager.isAccessPoint() && fromMain) {
 		M5EPD_Canvas canvasQR(&M5.EPD);
 		canvasQR.createCanvas(960, 400);
 		WiFiInfo info = wifiManager.getAccessPointInfo();
@@ -818,7 +807,7 @@ void toSetupScreen(bool fromMain) {
 		canvasQR.qrcode(qrString, 580, 20, 360, 7);
 		canvasQR.pushCanvas(0, 0, UPDATE_MODE_NONE);
 		M5.EPD.UpdateArea(600, 140, 360, 360, UPDATE_MODE_GC16);
-		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);	
 		String configString
 		    = "SSID: " + info.ssid + "\nPASS: " + info.password + "\nIP: " + info.ip.toString();
 		lbls[LABEL_SETTINGS_STARTUP]->SetText(configString);
@@ -854,7 +843,7 @@ void showBootLog() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetPos(40, 92);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 640, 360);
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 580, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
