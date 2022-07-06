@@ -84,8 +84,8 @@ void handleBootError(const String& message) {
 	if (guiTask) {
 		guiTask->showLoadingText(message);
 		guiTask->stopLoading();
-		sleepManager.requestShutdown();
 	}
+	sleepManager.requestShutdown();
 };
 
 void onBeforeFormatFlash() {
