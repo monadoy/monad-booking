@@ -53,7 +53,6 @@ std::array<int, 3> getAvailableFirmwareVersion() {
 
 	const int httpCode = http.GET();
 
-	// TODO: better error handling
 	if (httpCode != 200) {
 		log_e("http returned code %d", httpCode);
 		http.end();
@@ -92,7 +91,6 @@ std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String
 
 	const int httpCode = http.GET();
 
-	// TODO: better error handling
 	if (httpCode != 200) {
 		log_e("http returned code %d", httpCode);
 		http.end();
@@ -103,11 +101,17 @@ std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String
 	File file = LittleFS.open(filename, "w", true);
 
 	if (!file) {
-		log_e("Could not open %s", filename.c_str());
+		http.end();
 		return utils::make_unique<utils::Error>("Firmware updater couldn't open file " + filename);
 	}
 
-	http.writeToStream(&file);
+	int bytes = http.writeToStream(&file);
+	http.end();
+	if (bytes < 0) {
+		file.close();
+		return utils::make_unique<utils::Error>("Firmware updater file write failed, code: "
+		                                        + String(bytes));
+	}
 
 	log_i("Download done in %u ms", millis() - startTime);
 
