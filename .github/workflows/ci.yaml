@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build-firmware:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
 
@@ -33,7 +33,7 @@ jobs:
           path: .pio/build/m5paper/firmware.bin
 
   build-file-system:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
 
@@ -62,7 +62,7 @@ jobs:
           name: file-system
           path: data
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [build-firmware, build-file-system]
     if: startsWith(github.ref, 'refs/tags/v') # Runs only on tag push starting with 'v'
     steps:
