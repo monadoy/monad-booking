@@ -30,9 +30,9 @@ python ./scripts/setup.py littlefs frontend
   - Project needs to be created
   - Calendar API needs to be enabled in the project
   - OAuth client ID credentials need to be created and exported to file *credentials.json*
-- Organization
-  - Needs to create an user to handle the booking e.g. *booking@monad.fi*
-- Calendar
+- Google Workspace Admin
+  - Needs to create a user to handle the booking e.g. *booking@monad.fi*
+- Google Calendar
   - A room and an automatic calendar for the room needs to be created
   - The room calendar needs to be shared with edit access with our user
   - Id of the room calendar is needed for code operation, it can be retrieved from the settings of the calendar
@@ -52,7 +52,7 @@ Connect the M5Paper to your computer with USB and run the command below.
 ```sh
 pio run -t uploadfs && pio run -t upload
 ```
-This should work most of the time, but sometimes `--upload-port` switch is necessary if PIO can't find the correct port automatically.
+This should work most of the time, but sometimes the `--upload-port` option is necessary if PIO can't find the correct port automatically.
 
 ### Device Setup
 When booting for the first time, the device will go to **setup mode**. It opens a WIFI access point where you can connect in order to set up the device. Note that you will lose internet access when connecting to the access point, so take note of your calendar ID beforehand.
