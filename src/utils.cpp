@@ -19,6 +19,7 @@ std::vector<String> getBootLog() {
 			break;
 		entries.push_back(std::move(line));
 	}
+	readHandle.close();
 
 	return entries;
 }
@@ -32,7 +33,7 @@ bool addBootLogEntry(const String& entry) {
 
 	entries.push_back(entry);
 
-	fs::File writeHandle = LittleFS.open("/boot.log", FILE_WRITE);
+	fs::File writeHandle = LittleFS.open("/boot.log", FILE_WRITE, true);
 	if (!writeHandle) {
 		return false;
 	}
@@ -40,6 +41,7 @@ bool addBootLogEntry(const String& entry) {
 	for (const String& entry : entries) {
 		writeHandle.println(entry);
 	}
+	writeHandle.close();
 	return true;
 }
 
