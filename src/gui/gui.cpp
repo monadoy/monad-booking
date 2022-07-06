@@ -23,6 +23,8 @@ std::shared_ptr<cal::Event> nextEvent = nullptr;
 cal::Model* _model = nullptr;
 gui::GUITask* _guiTask = nullptr;
 std::unique_ptr<anim::Animation> _animation = nullptr;
+std::unique_ptr<Config::ConfigServer> configServer = nullptr;
+std::unique_ptr<Config::ConfigStore> _configStore = nullptr;
 
 cal::Token token;
 String calendarId = "";
@@ -425,8 +427,8 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 158, 500, 150);
-		lbls[LABEL_SETTINGS_STARTUP]->SetText("Versio: " + CURRENT_VERSION_STRING);
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 640, 360);
+		lbls[LABEL_SETTINGS_STARTUP]->SetText("      Versio: " + CURRENT_VERSION_STRING);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
 	} else {
@@ -562,7 +564,6 @@ void createButtons() {
 	createButton(BUTTON_FREEROOM, l10n.msg(L10nMessage::FREE_ROOM), 80, 399, 77, 0, 15, 15, true,
 	             freeRoomButton);
 	createButton(BUTTON_CONTINUE, "+15", 410, 399, 77, 0, 15, 15, true, continueButton);
-	createButton(BUTTON_SETUP, "SETUP", 684, 399, 77, 15, 0, 0, true, setupButton);
 }
 
 void createRegularLabels() {
@@ -608,11 +609,6 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_ERROR]);
 	lbls[LABEL_ERROR]->SetHide(true);
 
-	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(80, 158, 500, 150, 0, 15, FONT_SIZE_NORMAL, false);
-	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
-	lbls[LABEL_SETTINGS_STARTUP]->SetHide(true);
-
 	// current event time label
 	lbls[LABEL_CONFIRM_TIME] = new EPDGUI_Textbox(144, 244, 456, 77, 0, 15, FONT_SIZE_CLOCK, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
@@ -631,12 +627,6 @@ void createRegularLabels() {
 }
 
 void createBoldLabels() {
-	// current booking status label
-	lbls[LABEL_CURRENT_BOOKING]
-	    = new EPDGUI_Textbox(80, 164, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
-	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
-	lbls[LABEL_CURRENT_BOOKING]->SetHide(true);
-
 	// next event label
 	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 135, 3, 15, FONT_SIZE_HEADER, true);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
@@ -709,11 +699,12 @@ void endLoading() {
 	log_i("Stopping animation");
 }
 
-void shutDown(String text) {
+void shutDown(String text, bool isBootError) {
 	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		(*p)->SetHide(true);
 	}
+
 	M5.EPD.Active();
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
@@ -728,6 +719,9 @@ void shutDown(String text) {
 }  // namespace
 
 namespace gui {
+void createSetupButton() {
+	createButton(BUTTON_SETUP, "SETUP", 684, 399, 77, 15, 0, 0, true, setupButton);
+}
 
 void registerModel(cal::Model* model) { _model = model; }
 
@@ -751,6 +745,14 @@ void initGui() {
 	lbls[LABEL_LOADING] = new EPDGUI_Textbox(0, 394, 960, 140, 0, 15, FONT_SIZE_HEADER, false);
 	lbls[LABEL_LOADING]->centerText();
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
+
+	lbls[LABEL_SETTINGS_STARTUP]
+	    = new EPDGUI_Textbox(0, 180, 640, 360, 0, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
+
+	lbls[LABEL_CURRENT_BOOKING]
+	    = new EPDGUI_Textbox(80, 164, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
+	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
@@ -782,11 +784,9 @@ void loadSetup() {
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	toSetupScreen();
-
-	// TODO: actually open setup server
 }
 
-String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done with an array
+String enumToString(gui::GUITask::GuiRequest type) {
 	switch (type) {
 		case GUITask::GuiRequest::RESERVE:
 			return "RESERVE";
@@ -801,24 +801,47 @@ String enumToString(gui::GUITask::GuiRequest type) {  // TODO: this can be done 
 	}
 }
 
-void toSetupScreen() {
-	currentScreen = SCREEN_SETUP;
-	canvasCurrentEvent.fillCanvas(0);
+void toSetupScreen(bool fromMain) {
+	M5.EPD.Active();
 	btns[BUTTON_SETUP]->SetHide(true);
-	btns[BUTTON_CANCELBOOKING]->SetHide(true);
+	if (!fromMain)
+		btns[BUTTON_CANCELBOOKING]->SetHide(true);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
+	lbls[LABEL_LOADING]->SetHide(true);
+	lbls[LABEL_SETTINGS_STARTUP]->SetPos(80, 180);
+	if (wifiManager.isAccessPoint()) {
+		M5EPD_Canvas canvasQR(&M5.EPD);
+		canvasQR.createCanvas(960, 400);
+		WiFiInfo info = wifiManager.getAccessPointInfo();
+		const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
+		canvasQR.qrcode(qrString, 580, 20, 360, 7);
+		canvasQR.pushCanvas(0, 0, UPDATE_MODE_NONE);
+		M5.EPD.UpdateArea(600, 140, 360, 360, UPDATE_MODE_GC16);
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
+		String configString
+		    = "SSID: " + info.ssid + "\nPASS: " + info.password + "\nIP: " + info.ip.toString();
+		lbls[LABEL_SETTINGS_STARTUP]->SetText(configString);
+	} else {
+		_configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
+		configServer = utils::make_unique<Config::ConfigServer>(80, _configStore.get());
+		wifiManager.waitWiFi(1);
+		configServer->start();
+
+		currentScreen = SCREEN_SETUP;
+		String configData;
+		WiFiInfo info = wifiManager.getStationInfo();
+		configData = "WIFI SSID: " + info.ssid + "\nIP: " + info.ip.toString();
+		lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
+	}
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
-	String configData;
-
-	WiFiInfo info = wifiManager.getStationInfo();
-	configData = "WIFI SSID: " + info.ssid + "\nIP: " + info.ip.toString();
-
-	lbls[LABEL_SETTINGS_STARTUP]->SetText(configData);
 	updateScreen(true, true);
+	sleepManager.incrementTaskCounter();
+	M5.EPD.Sleep();
 }
 
 void showBootLog() {
+	M5.EPD.Active();
 	currentScreen = SCREEN_BOOTLOG;
 	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
@@ -827,23 +850,24 @@ void showBootLog() {
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	btns[BUTTON_SETTINGS]->SetHide(false);
+	delay(2);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetPos(40, 92);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(40, 180, 500, 460);
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 640, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
 	std::vector<String> entries = utils::getBootLog();
 	for (int i = entries.size() - 1; i >= 0; --i) {
 		lbls[LABEL_SETTINGS_STARTUP]->AddText(entries[i] + "\n");
+		delay(2);
 	}
-
 	updateScreen(true, true);
+	M5.EPD.Sleep();
 }
 
 void initMainScreen(cal::Model* model) {
-	int beginTime = millis();
 	canvasCurrentEvent.createCanvas(652, 540);
 	canvasNextEvent.createCanvas(308, 540);
 
@@ -853,9 +877,6 @@ void initMainScreen(cal::Model* model) {
 	canvasCurrentEvent.setTextFont(2);
 	createRegularLabels();
 	registerModel(model);
-	Serial.print("Screen froze for ");
-	Serial.print(millis() - beginTime);
-	Serial.println(" milliseconds.");
 }
 
 #define GUI_QUEUE_LENGTH 40
@@ -930,8 +951,13 @@ void GUITask::stopLoading() {
 	enqueue(ActionType::LOADING, new QueueFunc([=]() { return endLoading(); }));
 }
 
-void GUITask::showShutdown(String shutdownText) {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return shutDown(shutdownText); }));
+void GUITask::showShutdown(String shutdownText, bool isBootError) {
+	enqueue(ActionType::LOADING,
+	        new QueueFunc([=]() { return shutDown(shutdownText, isBootError); }));
+}
+
+void GUITask::goSetup(bool fromMain) {
+	enqueue(ActionType::LOADING, new QueueFunc([=]() { return toSetupScreen(fromMain); }));
 }
 
 GUITask::GUITask() {

@@ -232,14 +232,21 @@ class GUITask {
 	 * 
 	 * @param shutdownText text to be shown under the logo
 	 */
-	void showShutdown(String shutdownText);
+	void showShutdown(String shutdownText, bool isBootError = true);
+
+	/**
+	 * @brief Puts GUI to setupscreen
+	 * 
+	 */
+	void goSetup(bool fromMain = true);
   private:
 	TaskHandle_t _taskHandle;
 	void enqueue(ActionType at, void* func);
 };
 void initGui();
+void createSetupButton();
 void initMainScreen(cal::Model* model);
-void toSetupScreen();
+void toSetupScreen(bool fromMain = false);
 void showBootLog();
 void registerModel(cal::Model* model);
 void registerAnimation(anim::Animation* loadingAnimation);

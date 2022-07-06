@@ -1,3 +1,4 @@
+
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <M5EPD.h>
@@ -32,25 +33,6 @@ std::unique_ptr<Config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
-
-void showSetupModeAPScreen() {
-	auto info = wifiManager.getAccessPointInfo();
-	log_i("\nAPInfo:\nssid: %s\npass: %s\nIP: %s", info.ssid.c_str(), info.password.c_str(),
-	      info.ip.toString().c_str());
-	M5EPD_Canvas canvas(&M5.EPD);
-	M5.EPD.Active();
-	canvas.createCanvas(960, 540);
-	canvas.setTextSize(4);
-	canvas.setTextColor(15);
-	canvas.printf("SETUP MODE - Access Point\n\n  SSID: %s\n  PASS: %s\n  IP:   %s",
-	              info.ssid.c_str(), info.password.c_str(), info.ip.toString().c_str());
-	const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
-	canvas.qrcode(qrString, 500, 140, 360, 7);
-	canvas.pushCanvas(0, 0, UPDATE_MODE_NONE);
-	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
-	delay(1000);
-	M5.EPD.Sleep();
-}
 
 void initAwakeTimes(JsonObjectConst config) {
 	const JsonObjectConst onDaysJson = config["awake"]["weekdays"];
@@ -102,8 +84,8 @@ void handleBootError(const String& message) {
 	if (guiTask) {
 		guiTask->showLoadingText(message);
 		guiTask->stopLoading();
+		guiTask->goSetup(true);
 	}
-	sleepManager.requestShutdown();
 };
 
 void onBeforeFormatFlash() {
@@ -114,6 +96,7 @@ void onBeforeFormatFlash() {
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
+	gui::createSetupButton();
 
 	auto error = l10n.setLanguage(config["language"]);
 	if (error) {
@@ -125,6 +108,7 @@ void normalBoot(JsonObjectConst config) {
 
 	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
+		wifiManager.openAccessPoint();
 		handleBootError(l10n.msg(L10nMessage::BOOT_WIFI_FAIL) + wifiManager.getDisconnectReason()
 		                + ".");
 		return;
@@ -179,10 +163,7 @@ void setupBoot() {
 
 	wifiManager.openAccessPoint();
 
-	showSetupModeAPScreen();
-
-	configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
-	configServer->start();
+	guiTask->goSetup();
 
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
 	                       + "] setup boot (timestamp unreliable)");
