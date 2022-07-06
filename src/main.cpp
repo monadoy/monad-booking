@@ -115,6 +115,8 @@ void normalBoot(JsonObjectConst config) {
 	}
 
 	if (!setupTime(config["timezone"])) {
+		// Try to sync from rtc in case there is some kind of time
+		syncEzTimeFromRTC();
 		handleBootError(l10n.msg(L10nMessage::BOOT_NTP_FAIL));
 		return;
 	}
@@ -156,6 +158,9 @@ void normalBoot(JsonObjectConst config) {
 }
 
 void setupBoot() {
+	// Try to sync from rtc in case there is some kind of time
+	syncEzTimeFromRTC();
+
 	Serial.println("Starting in setup mode.");
 
 	// Increment without decrementing to keep device on until reset
@@ -189,8 +194,6 @@ void setup() {
 		log_e("LittleFS Mount Failed");
 		return;
 	}
-	// Try to sync from rtc in case there is some kind of time
-	syncEzTimeFromRTC();
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
