@@ -92,9 +92,15 @@ void ConfigServer::start() {
 
 	server_->addHandler(configHandler);
 
-	server_->serveStatic("/", LittleFS, "/webroot/")
-	    .setDefaultFile("index.html")
-	    .setCacheControl("max-age=60");
+	// Serve index.html without cache on the empty path
+	server_->on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send(LittleFS, "/webroot/index.html");
+	});
+
+	// Serve assets with a large max-age to save bandwith.
+	// They are fingerprinted to handle content updates.
+	server_->serveStatic("/assets/", LittleFS, "/webroot/assets")
+	    .setCacheControl("max-age=31536000");
 
 	server_->onNotFound([](AsyncWebServerRequest* request) {
 		request->send(404, "application/json", "{\"error\":\"Path does not exist\"}");
