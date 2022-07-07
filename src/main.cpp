@@ -139,6 +139,7 @@ void normalBoot(JsonObjectConst config) {
 }
 
 void setupBoot() {
+	sleepManager.incrementTaskCounter();
 	// Try to sync from rtc in case there is some kind of time
 	syncEzTimeFromRTC();
 
@@ -152,7 +153,7 @@ void setupBoot() {
 	configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
 	configServer->start();
 	guiTask->goSetup(true);
-	sleepManager.incrementTaskCounter();
+
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
 	                       + "] setup boot (timestamp unreliable)");
 }
