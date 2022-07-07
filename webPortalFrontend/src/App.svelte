@@ -3,14 +3,6 @@
 	import { timeZonesNames } from "@vvo/tzdb"
 	import { Config, defaultConfig } from "./configTypes"
 
-	const validateEmail = email => {
-		return String(email)
-			.toLowerCase()
-			.match(
-				/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-			)
-	}
-
 	const safeParseInt = (input: string) => {
 		const parsed = parseInt(input, 10)
 		if (isNaN(parsed)) {
@@ -35,24 +27,7 @@
 		if (message.content.startsWith(startsWith)) message = { isError: false, content: "" }
 	}
 
-	const validateConfig = () => {
-		if (config.wifi.ssid.length == 0) {
-			return "Empty WIFI SSID"
-		} else if (!validateEmail(config.gcalsettings.calendarid)) {
-			return "Invalid calendar ID"
-		} else if (config.gcalsettings.token === null) {
-			return "Empty or malformed token.json"
-		}
-		return ""
-	}
-
 	const submit = () => {
-		const errorMsg = validateConfig()
-		if (errorMsg) {
-			message = { isError: true, content: `Didn't submit, reason: ${errorMsg}` }
-			return
-		}
-
 		fetch("/config", {
 			method: "POST",
 			headers: {
