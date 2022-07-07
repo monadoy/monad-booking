@@ -8,6 +8,9 @@
     - [Token Generation](#token-generation)
     - [Build and Upload](#build-and-upload)
     - [Device Setup](#device-setup)
+  - [Troubleshooting](#troubleshooting)
+    - [Boot Errors](#boot-errors)
+    - [Runtime Errors](#runtime-errors)
 
 ## Setup
 
@@ -63,7 +66,7 @@ Connect to the WIFI corresponding to the SSID shown on the device. Navigate to t
 |--|--|
 |Name| Can be anything, you can use it to differentiate between devices. |
 |Language Code| Language of the device, **FI** and **EN** are supported by default. |
-|WIFI SSID| SSID of the WIFI where the device should connect. |
+|WIFI SSID| SSID of the WIFI where the device should connect. Only 2.4 GHz frequency is supported. |
 |WIFI Password| Password of the WIFI where the device should connect. |
 |IANA Time Zone| Your time zone. |
 |Auto Update| Enable if you want the device to check for new updates on every boot up and update automatically. <!-- TODO: add mention of manual updates when ready -->|
@@ -75,4 +78,41 @@ Connect to the WIFI corresponding to the SSID shown on the device. Navigate to t
 After you have filled in the options and submitted them, restart the device by pressing the reset button in the back and then holding the side button down for a few seconds.
 
 Now configuration is done and the device is ready to use.
+
+## Troubleshooting
+
+### Boot Errors
+
+During the boot sequence, there are a multitude of errors that can occur. The device prints the cause on the screen. Some issues are caused by invalid configuration and some are caused by external factors like spotty internet.
+
+Here are some solutions to common boot errors.
+|Error|Solution|
+|--|--|
+|*WIFI Error*| WIFI is unavailable for some reason. A simple reboot can fix the problem if it was caused by instability in the WIFI access point. Otherwise the device is probably set up incorrectly. Ensure that the WIFI is 2.4 GHz instead of 5 GHz. If it says *NO_AP_FOUND*, the WIFI SSID was probably set up incorrectly. If it says something about timeouts, the WIFI password was probably set up incorrectly. Fix by [rebuilding](#build-and-Upload) and redoing the setup with the WIFI credentials.
+|*Couldn't sync with NTP server.*| Usually there is nothing we can do except retry.
+|*Token parse failed*| Token was most likely copy pasted incorrectly or left completely blank. Fix by [rebuilding](#build-and-Upload) and redoing the setup with the correct token. |
+
+### Runtime Errors
+
+Some errors manifest after booting. These appear in the top middle of the screen. Most are caused by badly behaving WIFI, but some are caused by incorrect configuration.
+
+Here are some solutions to common runtime errors.
+|Error|Solution|
+|--|--|
+**WORK IN PROGRESS**
+<!-- TODO: More errors, e.g. not working tokens report issues after booting-->
+
+
+<!--
+
+FIXME: Custom localization won't actually work, because updates will overwrite the customized localization.json
+
+## Localization
+You can add your preferred language to the device. Languages using the latin alphabet should work easily. Other alphabets and right to left writing most likely won't work.
+
+Tranlations are stored under the *data* directory in the *localization.json* file. There you should add your language code to the *supportedLanguages* list. After that you can add your translations in the same way as "FI" and "EN" items are added already.
+-->
+
+
+
 
