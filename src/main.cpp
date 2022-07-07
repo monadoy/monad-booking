@@ -81,6 +81,8 @@ void onBeforeFormatFlash() {
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
+	guiTask->showLoadingText("Booting...");
+
 	auto error = l10n.setLanguage(config["language"]);
 	if (error) {
 		handleBootError(error->message);
@@ -91,7 +93,7 @@ void normalBoot(JsonObjectConst config) {
 
 	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-		handleBootError("Couldn't connect to WIFI: " + wifiManager.getDisconnectReason() + ".");
+		handleBootError("WIFI Error: " + wifiManager.getDisconnectReason() + ".");
 		return;
 	}
 
@@ -112,9 +114,9 @@ void normalBoot(JsonObjectConst config) {
 			                         + ". This takes a while...");
 			auto err = updateFirmware(newVersion, onBeforeFormatFlash);
 			if (err) {
-				handleBootError(err->message);
+				// Errors don't really matter here as they aren't fatal
+				// TODO: somehow show the error to user
 			}
-			return;
 		}
 	}
 

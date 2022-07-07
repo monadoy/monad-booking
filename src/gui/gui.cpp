@@ -676,7 +676,7 @@ void toSleep() {
 void setLoadingText(String text) {
 	lbls[LABEL_LOADING]->SetHide(false);
 	lbls[LABEL_LOADING]->SetText(text);
-	M5.EPD.UpdateArea(0, 394, 960, 140, UPDATE_MODE_A2);
+	M5.EPD.UpdateArea(0, 394, 960, 140, UPDATE_MODE_GC16);
 }
 
 void initLoading(bool isReverse) {
@@ -967,7 +967,6 @@ GUITask::GUITask() {
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
 		showShutdown("Shut down. Waking up at "
 		             + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
-		M5.EPD.UpdateFull(UPDATE_MODE_GC16);
 	});
 }
 }  // namespace gui
