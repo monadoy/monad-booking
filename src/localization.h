@@ -19,6 +19,8 @@ enum class L10nMessage {
 	NOT_BOOKED,
 	BOOK_ROOM_QUESTION,
 	RELEASE_QUESTION,
+	SETTINGS,
+	VERSION,
 	SIZE
 };
 
@@ -35,7 +37,9 @@ const L10nMessageArray messageNames{"BOOK",
                                     "BOOKED",
                                     "NOT_BOOKED",
                                     "BOOK_ROOM_QUESTION",
-                                    "RELEASE_QUESTION"};
+                                    "RELEASE_QUESTION",
+                                    "SETTINGS",
+                                    "VERSION"};
 
 class Localization {
   public:

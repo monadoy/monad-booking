@@ -428,9 +428,10 @@ void deleteBooking() {
 void hideSettings(bool isHide) {
 	if (!isHide) {
 		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 680, 360);
-		lbls[LABEL_SETTINGS_STARTUP]->SetText("      Versio: " + CURRENT_VERSION_STRING);
+		lbls[LABEL_SETTINGS_STARTUP]->SetText("      " + l10n.msg(L10nMessage::VERSION) + ": "
+		                                      + CURRENT_VERSION_STRING);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
-		lbls[LABEL_CURRENT_BOOKING]->SetText("Asetukset");
+		lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::SETTINGS));
 	} else {
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 166);
 	}
@@ -799,7 +800,7 @@ void toSetupScreen(bool fromMain) {
 	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 500, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_LOADING]->SetHide(true);
-		if (wifiManager.isAccessPoint() && fromMain) {
+	if (wifiManager.isAccessPoint() && fromMain) {
 		M5EPD_Canvas canvasQR(&M5.EPD);
 		canvasQR.createCanvas(960, 400);
 		WiFiInfo info = wifiManager.getAccessPointInfo();
@@ -807,7 +808,7 @@ void toSetupScreen(bool fromMain) {
 		canvasQR.qrcode(qrString, 580, 20, 360, 7);
 		canvasQR.pushCanvas(0, 0, UPDATE_MODE_NONE);
 		M5.EPD.UpdateArea(600, 140, 360, 360, UPDATE_MODE_GC16);
-		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);	
+		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		String configString
 		    = "SSID: " + info.ssid + "\nPASS: " + info.password + "\nIP: " + info.ip.toString();
 		lbls[LABEL_SETTINGS_STARTUP]->SetText(configString);

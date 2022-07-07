@@ -47,5 +47,13 @@
 	"RELEASE_QUESTION": {
 		"FI": "Vapautetaanko varaus",
 		"EN": "Release the booking"
+	},
+	"SETTINGS": {
+		"FI": "Asetukset",
+		"EN": "Settings"
+	},
+	"VERSION": {
+		"FI": "Versio",
+		"EN": "Version"
 	}
 }
