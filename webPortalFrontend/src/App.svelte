@@ -168,10 +168,10 @@
 				/>
 			</div>
 			<button id="submit" type="submit">Submit</button>
+			{#if message.content}
+				<div class={`message ${message.isError ? "error" : "ok"}`}>{message.content}</div>
+			{/if}
 		</form>
-		{#if message.content}
-			<div class={message.isError ? "error" : "ok"}>{message.content}</div>
-		{/if}
 	{:else}
 		<h2>Loading Config...</h2>
 	{/if}
@@ -208,23 +208,33 @@
 
 	form {
 		display: grid;
-		grid-template-rows: auto;
-		grid-template-columns: minmax(0, auto);
+		grid-template-columns: 1fr;
+		grid-template-rows: repeat(auto-fill, auto);
 	}
 
-	form > #submit {
-		margin: 8px auto;
+	button#submit {
 		font-size: 1.2rem;
-		padding: 8px;
+		padding: 0.5rem 2rem;
+		margin: 8px auto;
 	}
 
-	.ok {
-		padding: 8px;
-		border: 1px solid blue;
+	.message {
+		padding: 0.8rem;
+		text-align: center;
+		background-color: white;
+		margin: 2px;
+		position: sticky;
+		bottom: 4px;
 	}
-	.error {
-		padding: 8px;
-		border: 1px solid red;
+
+	.message.ok {
+		background-color: #ddf;
+		border: 2px solid blue;
+	}
+
+	.message.error {
+		background-color: #fdd;
+		border: 2px solid red;
 	}
 
 	input.time {
@@ -278,12 +288,13 @@
 			grid-gap: 0.8rem;
 		}
 
-		form > #submit {
-			grid-column: span 2;
-		}
-
 		label {
 			margin: 0.4rem 0 0 0;
+		}
+
+		button#submit,
+		.message {
+			grid-column: span 2;
 		}
 	}
 </style>
