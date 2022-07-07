@@ -8,6 +8,7 @@
 #include <M5EPD.h>
 
 #include "cert.h"
+#include "esp_ota_ops.h"
 #include "globals.h"
 #include "utils.h"
 
@@ -170,6 +171,17 @@ void HttpEvent(HttpEvent_t* event) {
 	}
 }
 
+void restart() {
+	Serial.flush();
+
+	M5.shutdown(1);
+
+	// Normally m5paper won't allow restarts while USB is plugged in.
+	// We induce a crash to shut down for sure.
+	String* shutdown = nullptr;
+	shutdown->toUpperCase();
+}
+
 std::unique_ptr<utils::Error> updateFirmware(std::array<int, 3> newVersion,
                                              std::function<void()> onBeforeFormat) {
 	auto count = sleepManager.scopedTaskCount();
@@ -197,13 +209,14 @@ std::unique_ptr<utils::Error> updateFirmware(std::array<int, 3> newVersion,
 			break;
 		} else if (status == HTTPS_OTA_FAIL) {
 			log_e("Firmware update failed.");
-			return utils::make_unique<utils::Error>(
-			    "Firmware updater failed to update new firmware");
+			return utils::make_unique<utils::Error>("Firmware updater failed.");
 		}
 		delay(100);
 	}
 
 	log_i("Updating filesystem...");
+
+	onBeforeFormat();
 
 	std::unique_ptr<TarGzUnpacker> TARGZUnpacker = makeTarGzUnpacker();
 
@@ -211,21 +224,18 @@ std::unique_ptr<utils::Error> updateFirmware(std::array<int, 3> newVersion,
 	if (!TARGZUnpacker->tarGzExpander(tarGzFS, "/tmp/file-system.tar.gz", tarGzFS, "/", nullptr)) {
 		log_e("tarGzExpander+intermediate file failed with return code #%d\n",
 		      TARGZUnpacker->tarGzGetError());
-		return utils::make_unique<utils::Error>(
-		    "Failed to expand new filesystem. Device won't work properly now.");
+		log_e("Filesystem update failed. Reverting firmware...");
+		// Revert update
+		const esp_partition_t* running_part = esp_ota_get_running_partition();
+		esp_ota_set_boot_partition(running_part);
+		TARGZUnpacker.reset();
+		return utils::make_unique<utils::Error>("Firmware updater failed.");
 	}
 	TARGZUnpacker.reset();
 
 	log_i("Firmware and filesystem update success. Restarting...");
 
-	Serial.flush();
-
-	M5.shutdown(1);
-
-	// Normally m5paper won't allow restarts while USB is plugged in.
-	// We induce a crash to shut down for sure.
-	String* shutdown = nullptr;
-	shutdown->toUpperCase();
+	restart();
 
 	// This is just to silence compiler warnings.
 	return nullptr;
