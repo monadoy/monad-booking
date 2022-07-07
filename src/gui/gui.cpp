@@ -754,6 +754,7 @@ void initGui() {
 	lbls[LABEL_CURRENT_BOOKING]
 	    = new EPDGUI_Textbox(80, 164, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
+	createSetupButton();
 }
 
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {

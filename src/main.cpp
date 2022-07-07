@@ -79,8 +79,6 @@ void onBeforeFormatFlash() {
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
-	gui::createSetupButton();
-
 	auto error = l10n.setLanguage(config["language"]);
 	if (error) {
 		handleBootError(error->message);
@@ -146,7 +144,6 @@ void setupBoot() {
 	Serial.println("Starting in setup mode.");
 	guiTask = utils::make_unique<gui::GUITask>();
 	delay(100);
-	gui::createSetupButton();
 
 	wifiManager.openAccessPoint();
 
