@@ -63,6 +63,8 @@ void syncRTCFromEzTime() {
 }
 
 void handleBootError(const String& message) {
+	// Try to sync from rtc in case there is some kind of time
+	syncEzTimeFromRTC();
 	log_e("%s", message.c_str());
 	if (guiTask) {
 		guiTask->showLoadingText(message + " Reboot to retry.");
@@ -94,8 +96,6 @@ void normalBoot(JsonObjectConst config) {
 	}
 
 	if (!setupTime(config["timezone"])) {
-		// Try to sync from rtc in case there is some kind of time
-		syncEzTimeFromRTC();
 		handleBootError("Couldn't sync with NTP server.");
 		return;
 	}
