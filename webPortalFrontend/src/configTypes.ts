@@ -25,7 +25,7 @@ export let defaultConfig: Config = {
 		}
 	},
 	language: "FI",
-	autoUpdate: false,
+	autoupdate: false,
 }
 
 export interface Config {
@@ -55,5 +55,5 @@ export interface Config {
 		}
 	}
 	language: string,
-	autoUpdate: boolean
+	autoupdate: boolean
 }

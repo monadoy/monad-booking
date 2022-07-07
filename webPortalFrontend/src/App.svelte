@@ -114,8 +114,8 @@
 			</select>
 			<label for="autoupdate">Auto Update</label>
 			<div class="multi-input">
-				<input type="checkbox" id="autoupdate" bind:checked={config.autoUpdate} />
-				{#if config.autoUpdate}
+				<input type="checkbox" id="autoupdate" bind:checked={config.autoupdate} />
+				{#if config.autoupdate}
 					(Enabled)
 				{:else}
 					(Disabled)

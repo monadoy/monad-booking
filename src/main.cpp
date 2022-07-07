@@ -105,7 +105,7 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
-	if (config["autoUpdate"] | false) {
+	if (config["autoupdate"] | false) {
 		std::array<int, 3> newVersion = getAvailableFirmwareVersion();
 		if (isVersionDifferent(newVersion)) {
 			guiTask->showLoadingText("Updating to new firmware: v" + versionToString(newVersion)
