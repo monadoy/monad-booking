@@ -6,7 +6,7 @@
 #define API_QUEUE_LENGTH 10
 #define API_TASK_PRIORITY 5
 #define API_TASK_STACK_SIZE 8192
-#define API_TASK_WIFI_CONNECT_MAX_RETRIES 1
+#define API_TASK_WIFI_CONNECT_MAX_RETRIES 3
 
 namespace cal {
 void task(void* arg) {
