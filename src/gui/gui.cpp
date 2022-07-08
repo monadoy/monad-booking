@@ -761,7 +761,7 @@ void initGui() {
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error) {
 	_guiTask->stopLoading();
 	hideLoading(true);
-	debug("Error: " + enumToString(type) + "\n- " + error.message);
+	debug(enumToString(type) + "\n" + error.message);
 	updateScreen(true, true);
 	toMainScreen(true, true);
 }

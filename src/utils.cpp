@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <HTTPClient.h>
 #include <LittleFS.h>
 
 namespace utils {
@@ -43,6 +44,129 @@ bool addBootLogEntry(const String& entry) {
 	}
 	writeHandle.close();
 	return true;
+}
+
+String httpCodeToString(int code) {
+	switch (code) {
+		case HTTP_CODE_CONTINUE:
+			return "continue";
+		case HTTP_CODE_SWITCHING_PROTOCOLS:
+			return "switching_protocols";
+		case HTTP_CODE_PROCESSING:
+			return "processing";
+		case HTTP_CODE_OK:
+			return "ok";
+		case HTTP_CODE_CREATED:
+			return "created";
+		case HTTP_CODE_ACCEPTED:
+			return "accepted";
+		case HTTP_CODE_NON_AUTHORITATIVE_INFORMATION:
+			return "non_authoritative_information";
+		case HTTP_CODE_NO_CONTENT:
+			return "no_content";
+		case HTTP_CODE_RESET_CONTENT:
+			return "reset_content";
+		case HTTP_CODE_PARTIAL_CONTENT:
+			return "partial_content";
+		case HTTP_CODE_MULTI_STATUS:
+			return "multi_status";
+		case HTTP_CODE_ALREADY_REPORTED:
+			return "already_reported";
+		case HTTP_CODE_IM_USED:
+			return "im_used";
+		case HTTP_CODE_MULTIPLE_CHOICES:
+			return "multiple_choices";
+		case HTTP_CODE_MOVED_PERMANENTLY:
+			return "moved_permanently";
+		case HTTP_CODE_FOUND:
+			return "found";
+		case HTTP_CODE_SEE_OTHER:
+			return "see_other";
+		case HTTP_CODE_NOT_MODIFIED:
+			return "not_modified";
+		case HTTP_CODE_USE_PROXY:
+			return "use_proxy";
+		case HTTP_CODE_TEMPORARY_REDIRECT:
+			return "temporary_redirect";
+		case HTTP_CODE_PERMANENT_REDIRECT:
+			return "permanent_redirect";
+		case HTTP_CODE_BAD_REQUEST:
+			return "bad_request";
+		case HTTP_CODE_UNAUTHORIZED:
+			return "unauthorized";
+		case HTTP_CODE_PAYMENT_REQUIRED:
+			return "payment_required";
+		case HTTP_CODE_FORBIDDEN:
+			return "forbidden";
+		case HTTP_CODE_NOT_FOUND:
+			return "not_found";
+		case HTTP_CODE_METHOD_NOT_ALLOWED:
+			return "method_not_allowed";
+		case HTTP_CODE_NOT_ACCEPTABLE:
+			return "not_acceptable";
+		case HTTP_CODE_PROXY_AUTHENTICATION_REQUIRED:
+			return "proxy_authentication_required";
+		case HTTP_CODE_REQUEST_TIMEOUT:
+			return "request_timeout";
+		case HTTP_CODE_CONFLICT:
+			return "conflict";
+		case HTTP_CODE_GONE:
+			return "gone";
+		case HTTP_CODE_LENGTH_REQUIRED:
+			return "length_required";
+		case HTTP_CODE_PRECONDITION_FAILED:
+			return "precondition_failed";
+		case HTTP_CODE_PAYLOAD_TOO_LARGE:
+			return "payload_too_large";
+		case HTTP_CODE_URI_TOO_LONG:
+			return "uri_too_long";
+		case HTTP_CODE_UNSUPPORTED_MEDIA_TYPE:
+			return "unsupported_media_type";
+		case HTTP_CODE_RANGE_NOT_SATISFIABLE:
+			return "range_not_satisfiable";
+		case HTTP_CODE_EXPECTATION_FAILED:
+			return "expectation_failed";
+		case HTTP_CODE_MISDIRECTED_REQUEST:
+			return "misdirected_request";
+		case HTTP_CODE_UNPROCESSABLE_ENTITY:
+			return "unprocessable_entity";
+		case HTTP_CODE_LOCKED:
+			return "locked";
+		case HTTP_CODE_FAILED_DEPENDENCY:
+			return "failed_dependency";
+		case HTTP_CODE_UPGRADE_REQUIRED:
+			return "upgrade_required";
+		case HTTP_CODE_PRECONDITION_REQUIRED:
+			return "precondition_required";
+		case HTTP_CODE_TOO_MANY_REQUESTS:
+			return "too_many_requests";
+		case HTTP_CODE_REQUEST_HEADER_FIELDS_TOO_LARGE:
+			return "request_header_fields_too_large";
+		case HTTP_CODE_INTERNAL_SERVER_ERROR:
+			return "internal_server_error";
+		case HTTP_CODE_NOT_IMPLEMENTED:
+			return "not_implemented";
+		case HTTP_CODE_BAD_GATEWAY:
+			return "bad_gateway";
+		case HTTP_CODE_SERVICE_UNAVAILABLE:
+			return "service_unavailable";
+		case HTTP_CODE_GATEWAY_TIMEOUT:
+			return "gateway_timeout";
+		case HTTP_CODE_HTTP_VERSION_NOT_SUPPORTED:
+			return "http_version_not_supported";
+		case HTTP_CODE_VARIANT_ALSO_NEGOTIATES:
+			return "variant_also_negotiates";
+		case HTTP_CODE_INSUFFICIENT_STORAGE:
+			return "insufficient_storage";
+		case HTTP_CODE_LOOP_DETECTED:
+			return "loop_detected";
+		case HTTP_CODE_NOT_EXTENDED:
+			return "not_extended";
+		case HTTP_CODE_NETWORK_AUTHENTICATION_REQUIRED:
+			return "network_authentication_required";
+		default:
+			return "unknown";
+	}
 }
 
 }  // namespace utils

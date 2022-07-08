@@ -295,19 +295,19 @@ std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc, in
 		                                    "HTTP: " + String(httpCode) + ", " + errStr.c_str());
 	}
 
+	if (httpCode < 200 || httpCode >= 300) {
+		String errStr = utils::httpCodeToString(httpCode);
+		log_w("HTTP response: %d, %s", httpCode, errStr.c_str());
+		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
+		                                    "HTTP: " + String(httpCode) + ", " + errStr);
+	}
+
 	DeserializationError err = deserializeJson(doc, responseBody);
 	if (err) {
 		String errStr = err.f_str();
 		log_w("deserializeJson() failed with code %s", errStr.c_str());
 		return std::make_shared<cal::Error>(cal::Error::Type::PARSE,
 		                                    "deserializeJson() failed with code " + errStr);
-	}
-
-	if (httpCode < 200 || httpCode >= 300) {
-		String msg = doc["error"]["message"].as<String>();
-		log_w("HTTP response: %d, %s", httpCode, msg.c_str());
-		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
-		                                    "HTTP response: " + String(httpCode) + ", " + msg);
 	}
 
 	return nullptr;
