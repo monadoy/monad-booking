@@ -73,9 +73,27 @@ void handleBootError(const String& message) {
 	sleepManager.requestShutdown();
 };
 
+// Firmware update calls this before writing to flash.
+// Animation uses flash to load images, so stop it
+// to avoid writing and reading at the same time.
 void onBeforeFormatFlash() {
 	guiTask->stopLoading();
-	delay(500);
+	delay(500);  // Delay to make sure that the last frame has loaded.
+}
+
+void autoUpdateFirmware() {
+	std::array<int, 3> newVersion = getAvailableFirmwareVersion();
+	if (isVersionDifferent(newVersion)) {
+		guiTask->showLoadingText("Updating to firmware: v" + versionToString(newVersion)
+		                         + ". This takes a while...");
+		auto err = updateFirmware(newVersion, onBeforeFormatFlash);
+		if (err) {
+			// Errors don't really matter here as they aren't fatal
+			// TODO: somehow show the error to user
+		}
+		// onBeforeFormatFlash stops animation, continue it here
+		guiTask->startLoading();
+	}
 }
 
 void normalBoot(JsonObjectConst config) {
@@ -108,16 +126,7 @@ void normalBoot(JsonObjectConst config) {
 	                              []() { syncEzTimeFromRTC(); });
 
 	if (config["autoupdate"] | false) {
-		std::array<int, 3> newVersion = getAvailableFirmwareVersion();
-		if (isVersionDifferent(newVersion)) {
-			guiTask->showLoadingText("Updating to new firmware: v" + versionToString(newVersion)
-			                         + ". This takes a while...");
-			auto err = updateFirmware(newVersion, onBeforeFormatFlash);
-			if (err) {
-				// Errors don't really matter here as they aren't fatal
-				// TODO: somehow show the error to user
-			}
-		}
+		autoUpdateFirmware();
 	}
 
 	auto tokenRes
