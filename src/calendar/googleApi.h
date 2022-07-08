@@ -7,8 +7,6 @@
 #include "api.h"
 #include "utils.h"
 
-namespace {}  // namespace
-
 namespace cal {
 
 class GoogleAPI : public API {

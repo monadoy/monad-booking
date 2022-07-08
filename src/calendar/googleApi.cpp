@@ -3,15 +3,11 @@
 #include "cert.h"
 #include "globals.h"
 #include "timeUtils.h"
-
-namespace {}  // namespace
+#include "utils.h"
 
 namespace cal {
 
-const int INSERT_EVENT_VERIFY_MAX_RETRIES = 4;
-
 const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(resource,responseStatus)";
-const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 
 // Techincally we need to fetch only two events to gain knowledge of the current and next event.
 // The problem is that the fetch returns declined events. Fetching too many events will make us run
@@ -20,8 +16,6 @@ const char* NEW_EVENT_SUMMARY = "M5Paper Event";
 const int LIST_MAX_EVENTS = 16;
 
 // A single event takes around 600 bytes plus 50 per each additional attendee.
-// We limit the attendee count to one, because the room seems to be listed first, and it's the only
-// one we need to check.
 const int EVENT_MAX_SIZE = 1024;
 
 const int EVENT_LIST_MAX_SIZE = LIST_MAX_EVENTS * EVENT_MAX_SIZE;
