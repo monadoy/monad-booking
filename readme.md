@@ -73,7 +73,7 @@ Connect to the WIFI corresponding to the SSID shown on the device. Navigate to t
 |WIFI Password| Password of the WIFI where the device should connect. |
 |IANA Time Zone| Your time zone. |
 |Auto Update| Enable if you want the device to check for new updates on every boot up and update automatically. <!-- TODO: add mention of manual updates when ready -->|
-|Awake Times| The device saves battery by shutting down at night, choose a time span where the device should be awake. |
+|Awake Times| The device saves battery by shutting down at night, choose a time span where the device should be awake. To achieve a full week of battery life, the device should be set to shut down for about 12 hours each day. You can experiment with different values. |
 |Awake Days| The device saves battery by being shut down in some days of the week (weekends by default), choose the days where the device should be awake. |
 |Calendar ID| The ID of the room's calendar. |
 |Token.json| The token.json file generated earlier. |
@@ -96,7 +96,7 @@ Here are some solutions to common boot errors.
 |Error|Solution|
 |--|--|
 |*WIFI Error*| WIFI is unavailable for some reason. A simple reboot can fix the problem if it was caused by instability in the WIFI access point. Otherwise the device is probably set up incorrectly. Ensure that the WIFI is 2.4 GHz instead of 5 GHz. If it says *NO_AP_FOUND*, the WIFI SSID was probably set up incorrectly. If it says something about timeouts, the WIFI password was probably set up incorrectly. Fix by [rebuilding](#build-and-Upload) and redoing the setup with correct WIFI credentials.
-|*Couldn't sync with NTP server.*| Usually there is nothing we can do except retry.
+|*Couldn't sync with NTP server.*| Time synchronization server are unavailable for some reason. Usually there is nothing we can do except retry.
 |*Token parse failed*| Token was most likely copy pasted incorrectly or left completely blank. Fix by [rebuilding](#build-and-Upload) and redoing the setup with the correct token. |
 
 ### Runtime Errors
