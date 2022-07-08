@@ -21,6 +21,7 @@ enum class L10nMessage {
 	RELEASE_QUESTION,
 	SETTINGS,
 	VERSION,
+	NEW_EVENT_SUMMARY,
 	SIZE
 };
 
@@ -39,7 +40,8 @@ const L10nMessageArray messageNames{"BOOK",
                                     "BOOK_ROOM_QUESTION",
                                     "RELEASE_QUESTION",
                                     "SETTINGS",
-                                    "VERSION"};
+                                    "VERSION",
+                                    "NEW_EVENT_SUMMARY"};
 
 class Localization {
   public:

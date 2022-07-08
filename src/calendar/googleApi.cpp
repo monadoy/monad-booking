@@ -188,7 +188,7 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	payloadDoc["start"]["timeZone"] = safeMyTZ.getOlson();
 	payloadDoc["end"]["dateTime"] = safeMyTZ.dateTime(endTime, UTC_TIME, RFC3339);
 	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
-	payloadDoc["summary"] = NEW_EVENT_SUMMARY;
+	payloadDoc["summary"] = l10n.msg(L10nMessage::NEW_EVENT_SUMMARY);
 	String payload = "";
 	serializeJson(payloadDoc, payload);
 

@@ -55,5 +55,9 @@
 	"VERSION": {
 		"FI": "Versio",
 		"EN": "Version"
+	},
+	"NEW_EVENT_SUMMARY": {
+		"FI": "M5Paper varaus",
+		"EN": "M5Paper booking"
 	}
 }
