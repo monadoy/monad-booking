@@ -671,6 +671,7 @@ void toSleep() {
 	if (currentScreen == SCREEN_BOOKING || currentScreen == SCREEN_FREEING) {
 		toMainScreen(true, true);
 	}
+	M5.EPD.Sleep();
 }
 
 void setLoadingText(String text) {
