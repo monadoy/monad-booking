@@ -8,9 +8,12 @@
     - [Token Generation](#token-generation)
     - [Build and Upload](#build-and-upload)
     - [Device Setup](#device-setup)
+    - [Changing the Configuration](#changing-the-configuration)
   - [Troubleshooting](#troubleshooting)
     - [Boot Errors](#boot-errors)
     - [Runtime Errors](#runtime-errors)
+
+<!-- TODO: Add general information about this project and why it exists -->
 
 ## Setup
 
@@ -32,7 +35,7 @@ python ./scripts/setup.py littlefs frontend
 - Google Cloud Platform
   - Project needs to be created
   - Calendar API needs to be enabled in the project
-  - OAuth client ID credentials need to be created and exported to file *credentials.json*
+  - OAuth client ID credentials need to be created (Choose *Desktop app*) and exported to file *credentials.json*
 - Google Workspace Admin
   - Needs to create a user to handle the booking e.g. *booking@monad.fi*
 - Google Calendar
@@ -79,6 +82,10 @@ After you have filled in the options and submitted them, restart the device by p
 
 Now configuration is done and the device is ready to use.
 
+### Changing the Configuration
+
+If the device has successfully booted, you can change its configuration. Enter the options menu by pressing the button in the top left of the screen. Then press the *setup* button. Next you have to be connected to the same WIFI that the device is connected to, and navigate to the IP shown on the device in your browser. Change the configuration as needed and reboot the device when done.
+
 ## Troubleshooting
 
 ### Boot Errors
@@ -88,7 +95,7 @@ During the boot sequence, there are a multitude of errors that can occur. The de
 Here are some solutions to common boot errors.
 |Error|Solution|
 |--|--|
-|*WIFI Error*| WIFI is unavailable for some reason. A simple reboot can fix the problem if it was caused by instability in the WIFI access point. Otherwise the device is probably set up incorrectly. Ensure that the WIFI is 2.4 GHz instead of 5 GHz. If it says *NO_AP_FOUND*, the WIFI SSID was probably set up incorrectly. If it says something about timeouts, the WIFI password was probably set up incorrectly. Fix by [rebuilding](#build-and-Upload) and redoing the setup with the WIFI credentials.
+|*WIFI Error*| WIFI is unavailable for some reason. A simple reboot can fix the problem if it was caused by instability in the WIFI access point. Otherwise the device is probably set up incorrectly. Ensure that the WIFI is 2.4 GHz instead of 5 GHz. If it says *NO_AP_FOUND*, the WIFI SSID was probably set up incorrectly. If it says something about timeouts, the WIFI password was probably set up incorrectly. Fix by [rebuilding](#build-and-Upload) and redoing the setup with correct WIFI credentials.
 |*Couldn't sync with NTP server.*| Usually there is nothing we can do except retry.
 |*Token parse failed*| Token was most likely copy pasted incorrectly or left completely blank. Fix by [rebuilding](#build-and-Upload) and redoing the setup with the correct token. |
 
@@ -96,12 +103,13 @@ Here are some solutions to common boot errors.
 
 Some errors manifest after booting. These appear in the top middle of the screen. Most are caused by badly behaving WIFI, but some are caused by incorrect configuration.
 
+
 Here are some solutions to common runtime errors.
 |Error|Solution|
 |--|--|
-**WORK IN PROGRESS**
-<!-- TODO: More errors, e.g. not working tokens report issues after booting-->
-
+|*HTTP: 404, not_found*| This likely means that the the calendar ID is wrong. [Change the configuration](#changing-the-configuration) as needed. |
+|*HTTP: 401, unauthorized*| This means that the booking user doesn't have the correct permissions. Make sure to give the user [that you logged in with](#token-generation) edit access to the calendar. |
+|*HTTP: -1, connection refused*| This happens when WIFI is unavailable. Likely requires no action as WIFI can be unreliable at times. |
 
 <!--
 
