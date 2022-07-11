@@ -427,8 +427,8 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 680, 360);
-		lbls[LABEL_SETTINGS_STARTUP]->SetText("      " + l10n.msg(L10nMessage::VERSION) + ": "
+		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 420, 360);
+		lbls[LABEL_SETTINGS_STARTUP]->SetText(l10n.msg(L10nMessage::VERSION) + ": "
 		                                      + CURRENT_VERSION_STRING);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::SETTINGS));
@@ -547,7 +547,12 @@ void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t h,
 }
 
 void createButtons() {
-	createButton(BUTTON_SETTINGS, "o", 0, 0, 64, 0, 15, 15, true, settingsButton);
+	btns[BUTTON_SETTINGS]
+	    = new EPDGUI_Button("", 15, 15, 64, 56, 15, 0, 0, false);
+	EPDGUI_AddObject(btns[BUTTON_SETTINGS]);
+	btns[BUTTON_SETTINGS]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETTINGS]);
+	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, settingsButton);
+	btns[BUTTON_SETTINGS]->setPNGButton("/images/settings.png");
 	createButton(BUTTON_15MIN, "15", 80, 306, 77, 15, 0, 0, true, fifteenButton);
 	createButton(BUTTON_30MIN, "30", 223, 306, 77, 15, 0, 0, true, thirtyButton);
 	createButton(BUTTON_60MIN, "60", 371, 306, 77, 15, 0, 0, true, sixtyButton);
@@ -742,6 +747,7 @@ void initGui() {
 	font.createRender(FONT_SIZE_NORMAL, 64);
 	font.createRender(FONT_SIZE_HEADER, 64);
 	font.createRender(FONT_SIZE_CLOCK, 128);
+	font.createRender(FONT_SIZE_BOOTLOG, 64);
 	epdgui_object_list.reserve(40);
 
 	lbls[LABEL_LOADING] = new EPDGUI_Textbox(0, 394, 960, 140, 0, 15, FONT_SIZE_HEADER, false);
@@ -749,7 +755,7 @@ void initGui() {
 	EPDGUI_AddObject(lbls[LABEL_LOADING]);
 
 	lbls[LABEL_SETTINGS_STARTUP]
-	    = new EPDGUI_Textbox(0, 180, 500, 360, 0, 15, FONT_SIZE_NORMAL, false);
+	    = new EPDGUI_Textbox(80, 180, 420, 360, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 
 	lbls[LABEL_CURRENT_BOOKING]
@@ -796,8 +802,10 @@ String enumToString(gui::GUITask::GuiRequest type) {
 void toSetupScreen(bool fromMain) {
 	M5.EPD.Active();
 	btns[BUTTON_SETUP]->SetHide(true);
-	if (!fromMain)
+	if (!fromMain) {
+		btns[BUTTON_SETTINGS]->SetHide(true);
 		btns[BUTTON_CANCELBOOKING]->SetHide(true);
+	}
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 500, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
@@ -844,9 +852,8 @@ void showBootLog() {
 	btns[BUTTON_SETTINGS]->SetHide(false);
 	delay(2);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
-	lbls[LABEL_CURRENT_BOOKING]->SetPos(40, 92);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(0, 180, 580, 360);
+	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 500, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);

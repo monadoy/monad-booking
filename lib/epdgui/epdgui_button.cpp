@@ -1,4 +1,5 @@
 #include "epdgui_button.h"
+#include <LittleFS.h>
 
 EPDGUI_Button::EPDGUI_Button(int16_t x, int16_t y, int16_t w, int16_t h): 
 EPDGUI_Base(x, y, w, h)
@@ -184,6 +185,12 @@ bool EPDGUI_Button::UpdateState(int16_t x, int16_t y)
 		}
 		return false;
 	}
+}
+
+void EPDGUI_Button::setPNGButton(String path) {
+	_CanvasNormal->fillCanvas(_color);
+	_CanvasNormal->drawRect(0, 0, _w, _h, _color);
+	_CanvasNormal->drawPngFile(LittleFS, path.c_str(), 0, 0);
 }
 
 void EPDGUI_Button::setBMPButton(String label_l, String label_r, const uint8_t *bmp32x32)

@@ -55,6 +55,7 @@ enum {
 	LABEL_SIZE
 };
 
+const uint16_t FONT_SIZE_BOOTLOG = 16;
 const uint16_t FONT_SIZE_NORMAL = 24;
 const uint16_t FONT_SIZE_BUTTON = 28;
 const uint16_t FONT_SIZE_HEADER = 32;

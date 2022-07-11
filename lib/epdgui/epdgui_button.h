@@ -30,6 +30,7 @@ class EPDGUI_Button : public EPDGUI_Base {
 	void setLabel(String label);
 	String getLabel(void) { return _label; }
 	void AddArgs(int16_t event, uint16_t n, void* arg);
+	void setPNGButton(String path);
 	void setBMPButton(String label_l, String label_r, const uint8_t* bmp32x32);
 	void setInvisable(bool isinvisable);
     void drawBorders();
