@@ -132,6 +132,7 @@ void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
 	if (currentScreen == SCREEN_MAIN) {
 		toMainScreen(!updateLeft, !updateRight);
 	} else
+	
 		M5.EPD.Sleep();
 }
 
@@ -459,8 +460,10 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	M5.EPD.Active();
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
-	log_i("EPD Going to sleep...");
-	M5.EPD.Sleep();
+	if(needToPutSleep) {
+		log_i("EPD Going to sleep...");
+		M5.EPD.Sleep();	
+	}
 }
 
 void toSettingsScreen() {
@@ -552,7 +555,8 @@ void createButtons() {
 	EPDGUI_AddObject(btns[BUTTON_SETTINGS]);
 	btns[BUTTON_SETTINGS]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETTINGS]);
 	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, settingsButton);
-	btns[BUTTON_SETTINGS]->setPNGButton("/images/settings.png");
+	btns[BUTTON_SETTINGS]->setPNGButton("/images/settings2.png");
+	
 	createButton(BUTTON_15MIN, "15", 80, 306, 77, 15, 0, 0, true, fifteenButton);
 	createButton(BUTTON_30MIN, "30", 223, 306, 77, 15, 0, 0, true, thirtyButton);
 	createButton(BUTTON_60MIN, "60", 371, 306, 77, 15, 0, 0, true, sixtyButton);
@@ -837,7 +841,8 @@ void toSetupScreen(bool fromMain) {
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
 	updateScreen(true, true);
 	sleepManager.incrementTaskCounter();
-	M5.EPD.Sleep();
+	if(needToPutSleep)
+		M5.EPD.Sleep();
 }
 
 void showBootLog() {
@@ -863,7 +868,8 @@ void showBootLog() {
 		delay(2);
 	}
 	updateScreen(true, true);
-	M5.EPD.Sleep();
+	if(needToPutSleep)
+		M5.EPD.Sleep();
 }
 
 void initMainScreen(cal::Model* model) {
