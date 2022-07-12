@@ -355,6 +355,7 @@ void loadCurrentBooking() {
 	}
 
 	hideMainButtons(true);
+	btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsBlack.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
@@ -381,6 +382,7 @@ void loadCurrentFree() {
 	hideCurrentBookingLabels(true);
 	hideMainLabels(false);
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
+	btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsWhite.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
 }
 
@@ -555,7 +557,6 @@ void createButtons() {
 	EPDGUI_AddObject(btns[BUTTON_SETTINGS]);
 	btns[BUTTON_SETTINGS]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETTINGS]);
 	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, settingsButton);
-	btns[BUTTON_SETTINGS]->setPNGButton("/images/settings2.png");
 	
 	createButton(BUTTON_15MIN, "15", 80, 306, 77, 15, 0, 0, true, fifteenButton);
 	createButton(BUTTON_30MIN, "30", 223, 306, 77, 15, 0, 0, true, thirtyButton);
