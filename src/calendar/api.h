@@ -104,6 +104,8 @@ class API {
 	virtual Result<Event> rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
 	                                      time_t newEndTime)
 	    = 0;
+
+	virtual void closeHTTPClient() = 0;
 };
 
 }  // namespace cal

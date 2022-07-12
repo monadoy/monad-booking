@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #define DEST_FS_USES_LITTLEFS
 #include <ESP32-targz.h>
-#include <HTTPClient.h>
+#include <ESPHTTPClient.h>
 #include <HttpsOTAUpdate.h>
 #include <M5EPD.h>
 
@@ -48,20 +48,21 @@ String versionToString(std::array<int, 3> version) {
 }
 
 std::array<int, 3> getAvailableFirmwareVersion() {
-	HTTPClient http;
-	http.setReuse(false);
-	http.begin(String(UPDATE_STORAGE_URL) + "/current-version", UPDATE_SERVER_CERT);
+	ESPHTTPClient http;
+	String url = String(UPDATE_STORAGE_URL) + "/current-version";
+	http.open(HTTP_METHOD_GET, url.c_str(), UPDATE_SERVER_CERT);
 
-	const int httpCode = http.GET();
+	String responseBody;
+	utils::Result<int> httpCodeRes = http.run(responseBody);
 
-	if (httpCode != 200) {
-		log_e("http returned code %d", httpCode);
-		http.end();
+	if (httpCodeRes.isErr()) {
+		log_e("%s", httpCodeRes.err()->message.c_str());
 		return {0, 0, 0};
 	}
-
-	const String responseBody = http.getString();
-	http.end();
+	if (*httpCodeRes.ok() < 200 || *httpCodeRes.ok() >= 300) {
+		log_e("HTTP returned %d", *httpCodeRes.ok());
+		return {0, 0, 0};
+	}
 
 	log_i("Response body: %s", responseBody.c_str());
 
@@ -85,33 +86,28 @@ bool isVersionDifferent(std::array<int, 3> newVersion) {
 std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String& filename) {
 	auto startTime = millis();
 
-	HTTPClient http;
-	http.setReuse(false);
+	ESPHTTPClient http;
 
-	http.begin(url, UPDATE_SERVER_CERT);
-
-	const int httpCode = http.GET();
-
-	if (httpCode != 200) {
-		log_e("http returned code %d", httpCode);
-		http.end();
-		return utils::make_unique<utils::Error>("Firmware updater HTTP returned "
-		                                        + String(httpCode));
-	}
+	http.open(HTTP_METHOD_GET, url.c_str(), UPDATE_SERVER_CERT);
 
 	File file = LittleFS.open(filename, "w", true);
 
 	if (!file) {
-		http.end();
 		return utils::make_unique<utils::Error>("Firmware updater couldn't open file " + filename);
 	}
 
-	int bytes = http.writeToStream(&file);
-	http.end();
-	if (bytes < 0) {
+	utils::Result<int> httpCodeRes = http.run(file);
+
+	if (httpCodeRes.isErr()) {
 		file.close();
-		return utils::make_unique<utils::Error>("Firmware updater file write failed, code: "
-		                                        + String(bytes));
+		log_e("%s", httpCodeRes.err()->message.c_str());
+		return utils::make_unique<utils::Error>("Firmware updater: " + httpCodeRes.err()->message);
+	}
+	if (*httpCodeRes.ok() < 200 || *httpCodeRes.ok() >= 300) {
+		file.close();
+		log_e("HTTP returned %d", *httpCodeRes.ok());
+		return utils::make_unique<utils::Error>("Firmware updater: HTTP returned "
+		                                        + String(*httpCodeRes.ok()));
 	}
 
 	log_i("Download done in %u ms", millis() - startTime);

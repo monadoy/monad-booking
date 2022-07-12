@@ -109,7 +109,7 @@ Here are some solutions to common runtime errors.
 |--|--|
 |*HTTP: 404, not_found*| This likely means that the the calendar ID is wrong. [Change the configuration](#changing-the-configuration) as needed. |
 |*HTTP: 401, unauthorized*| This means that the booking user doesn't have the correct permissions. Make sure to give the user [that you logged in with](#token-generation) edit access to the calendar. |
-|*HTTP: -1, connection refused*| This happens when WIFI is unavailable. Likely requires no action as WIFI can be unreliable at times. |
+|*HTTP: connection refused*| This happens when WIFI is unavailable. Likely requires no action as WIFI can be unreliable at times. |
 
 <!--
 

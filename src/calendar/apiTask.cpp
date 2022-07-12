@@ -18,6 +18,15 @@ void task(void* arg) {
 		auto count = sleepManager.scopedTaskCount();
 		auto req = toSmartPtr<APITask::QueueElement>(reqTemp);
 
+		// If request doesn't require internet or authorization, just do it now
+		switch (req->type) {
+			case APITask::RequestType::CLOSE_HTTP: {
+				auto func = toSmartPtr<APITask::QueueFuncVoid>(req->func);
+				(*func)();
+				continue;
+			}
+		}
+
 		auto startTime = millis();
 
 		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
@@ -75,6 +84,10 @@ void APITask::rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
 	enqueue(RequestType::RESCHEDULE_EVENT, new QueueFuncEvent([=]() {
 		        return _api->rescheduleEvent(event, newStartTime, newEndTime);
 	        }));
+}
+
+void APITask::closeHTTPClient() {
+	enqueue(RequestType::CLOSE_HTTP, new QueueFuncVoid([=]() { return _api->closeHTTPClient(); }));
 }
 
 void APITask::enqueue(RequestType rt, void* func) {
