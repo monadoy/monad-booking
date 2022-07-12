@@ -477,6 +477,8 @@ void toSettingsScreen() {
 	hideCurrentBookingLabels(true);
 	hideFreeRoomButton(true);
 	hideSettings(false);
+	if(currentEvent)
+		btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsWhite.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
@@ -763,6 +765,9 @@ void initGui() {
 	    = new EPDGUI_Textbox(80, 180, 420, 360, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_SETTINGS_STARTUP]);
 
+	lbls[LABEL_BOOTLOG] = new EPDGUI_Textbox(80, 180, 880, 360, 0, 15, FONT_SIZE_NORMAL, false);
+	EPDGUI_AddObject(lbls[LABEL_BOOTLOG]);
+
 	lbls[LABEL_CURRENT_BOOKING]
 	    = new EPDGUI_Textbox(80, 164, 418, 77, 0, 15, FONT_SIZE_TITLE, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_BOOKING]);
@@ -854,18 +859,17 @@ void showBootLog() {
 		(*p)->SetHide(true);
 	}
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
-	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
+	lbls[LABEL_BOOTLOG]->SetHide(false);
 	btns[BUTTON_SETTINGS]->SetHide(false);
 	delay(2);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 500, 360);
-	lbls[LABEL_SETTINGS_STARTUP]->SetText("");
+	lbls[LABEL_BOOTLOG]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
 	std::vector<String> entries = utils::getBootLog();
 	for (int i = entries.size() - 1; i >= 0; --i) {
-		lbls[LABEL_SETTINGS_STARTUP]->AddText(entries[i] + "\n");
+		lbls[LABEL_BOOTLOG]->AddText(entries[i] + "\n");
 		delay(2);
 	}
 	updateScreen(true, true);
