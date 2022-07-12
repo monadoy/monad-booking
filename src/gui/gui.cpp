@@ -115,7 +115,6 @@ bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal:
 }
 
 void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
-	log_i("updatestatus called....");
 	bool leftEventsEqual = false;
 	bool updateRight = false;
 	if (statusCopy) {
@@ -417,13 +416,11 @@ void toFreeBooking() {
 }
 
 void makeBooking(const cal::Model::ReserveParams& params) {
-	log_i("Calling model to make booking...");
 	hideLoading(false);
 	_model->reserveEvent(params);
 }
 
 void deleteBooking() {
-	log_i("Calling model to end current booking");
 	hideLoading(false);
 	_model->endCurrentEvent();
 }
@@ -442,6 +439,7 @@ void hideSettings(bool isHide) {
 
 	btns[BUTTON_SETUP]->SetHide(isHide);
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
+	lbls[LABEL_BOOTLOG]->SetHide(true);
 }
 
 void toMainScreen(bool updateLeft, bool updateRight) {
@@ -694,7 +692,6 @@ void setLoadingText(String text) {
 
 void initLoading(bool isReverse) {
 	M5.EPD.Active();
-	log_i("Loading initialized...");
 	gotResponse = false;
 	_guiTask->loadNextFrame(isReverse);
 }
@@ -710,7 +707,6 @@ void checkLoadNextFrame(bool isReverse) {
 void endLoading() {
 	gotResponse = true;
 	_animation->resetAnimation();
-	log_i("Stopping animation");
 }
 
 void shutDown(String text, bool isBootError) {
@@ -817,15 +813,14 @@ void toSetupScreen(bool fromMain) {
 		btns[BUTTON_CANCELBOOKING]->SetHide(true);
 	}
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
-	lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 500, 360);
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(false);
 	lbls[LABEL_LOADING]->SetHide(true);
 	if (wifiManager.isAccessPoint() && fromMain) {
 		M5EPD_Canvas canvasQR(&M5.EPD);
-		canvasQR.createCanvas(960, 400);
+		canvasQR.createCanvas(960, 540);
 		WiFiInfo info = wifiManager.getAccessPointInfo();
 		const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
-		canvasQR.qrcode(qrString, 580, 20, 360, 7);
+		canvasQR.qrcode(qrString, 510, 90, 360, 7);
 		canvasQR.pushCanvas(0, 0, UPDATE_MODE_NONE);
 		M5.EPD.UpdateArea(600, 140, 360, 360, UPDATE_MODE_GC16);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
@@ -861,13 +856,14 @@ void showBootLog() {
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
 	lbls[LABEL_BOOTLOG]->SetHide(false);
 	btns[BUTTON_SETTINGS]->SetHide(false);
-	delay(2);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Bootlog");
 	lbls[LABEL_BOOTLOG]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
+	int startTime = millis();
 	std::vector<String> entries = utils::getBootLog();
+	log_d("Bootlog took %s", (millis()-startTime));
 	for (int i = entries.size() - 1; i >= 0; --i) {
 		lbls[LABEL_BOOTLOG]->AddText(entries[i] + "\n");
 		delay(2);
