@@ -46,6 +46,16 @@ bool addBootLogEntry(const String& entry) {
 	return true;
 }
 
+void merge(JsonVariant dst, JsonVariantConst src) {
+	if (src.is<JsonObjectConst>()) {
+		for (auto kvp : src.as<JsonObjectConst>()) {
+			merge(dst.getOrAddMember(kvp.key()), kvp.value());
+		}
+	} else if (!src.isNull()) {
+		dst.set(src);
+	}
+}
+
 String httpCodeToString(int code) {
 	switch (code) {
 		case HTTP_CODE_CONTINUE:

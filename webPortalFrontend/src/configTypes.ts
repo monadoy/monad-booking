@@ -3,7 +3,7 @@ export let defaultConfig: Config = {
 	timezone: "Europe/Helsinki",
 	gcalsettings: {
 		calendarid: "",
-		token: null,
+		token: undefined,
 	},
 	wifi: {
 		ssid: "",

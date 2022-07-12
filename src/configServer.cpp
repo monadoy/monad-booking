@@ -34,9 +34,11 @@ Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
 		    std::make_shared<ConfigError_t>(ConfigError_t{.errorMessage = errMsg}));
 	}
 
-	String configString = "";
-	serializeJson(newConfig, configString);
-	configFileHandle.print(configString);
+	DynamicJsonDocument copy = getConfigJsonCopy();
+
+	utils::merge(copy.as<JsonVariant>(), newConfig);
+
+	serializeJson(copy, configFileHandle);
 	configFileHandle.close();
 
 	return Result<bool>::makeOk(std::make_shared<bool>(true));
@@ -50,23 +52,24 @@ Result<bool> ConfigStore::remove() {
 	                new ConfigError_t{.errorMessage = "Could not remove config file from flash"});
 };
 
-Result<String> ConfigStore::getTokenString() {
-	String tokenString = "";
-	serializeJson(config_["gcalsettings"]["token"], tokenString);
-	if (tokenString.isEmpty()) {
-		return Result<String>::makeErr(
-		    std::make_shared<ConfigError_t>(ConfigError_t{.errorMessage = "Cannot get token"}));
-	}
-	return Result<String>::makeOk(std::make_shared<String>(tokenString));
-};
-
 bool ConfigServer::canHandle(AsyncWebServerRequest* request) {
 	return request->url() == "/config" and request->method() == WEBSERVER_HTTP_GET;
 };
 
 void ConfigServer::handleRequest(AsyncWebServerRequest* request) {
 	AsyncResponseStream* response = request->beginResponseStream("application/json");
-	auto config = configStore_->getConfigJson();
+	auto configDoc = configStore_->getConfigJsonCopy();
+	auto config = configDoc.as<JsonVariant>();
+
+	auto hideElement = [&](JsonVariant location, const char* key) {
+		if (location.containsKey(key))
+			location[key] = nullptr;
+	};
+
+	// Hide sensitive information
+	hideElement(config["gcalsettings"], "token");
+	hideElement(config["wifi"], "password");
+
 	serializeJson(config, *response);
 	request->send(response);
 };
@@ -81,9 +84,6 @@ void ConfigServer::start() {
 		    log_i("Writing new config to filesystem...");
 
 		    auto result = configStore_->saveConfig(configJson);
-
-		    // Load config to keep internal state updated
-		    configStore_->loadConfig();
 
 		    result.isOk() ? request->send(204)
 		                  : request->send(500, "application/json",

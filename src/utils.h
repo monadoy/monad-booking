@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <M5EPD.h>
 
 #include <memory>
@@ -74,6 +75,8 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 }
 
 String httpCodeToString(int code);
+
+void merge(JsonVariant dst, JsonVariantConst src);
 
 }  // namespace utils
 

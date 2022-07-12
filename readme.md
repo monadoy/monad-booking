@@ -86,6 +86,8 @@ Now configuration is done and the device is ready to use.
 
 If the device has successfully booted, you can change its configuration. Enter the options menu by pressing the button in the top left of the screen. Then press the *setup* button. Next you have to be connected to the same WIFI that the device is connected to, and navigate to the IP shown on the device in your browser. Change the configuration as needed and reboot the device when done.
 
+Some configuration options like tokens and passwords are hidden to keep them safe. If they already exist on the device, you don't need to fill them in, because the device merges new options with old ones.
+
 ## Troubleshooting
 
 ### Boot Errors

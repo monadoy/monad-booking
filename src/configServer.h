@@ -55,18 +55,20 @@ class ConfigStore {
 	 * Returns constant reference to the configuration object
 	 */
 	JsonObjectConst getConfigJson() { return config_.as<JsonObjectConst>(); };
+
+	/**
+	 * Returns a copy to the configuration object
+	 */
+	DynamicJsonDocument getConfigJsonCopy() { return config_; };
+
 	/**
 	 * Load configuration form flash and discard previously loaded config, if any
 	 */
 	void loadConfig();
 	/**
-	 * Save configuration to flash and discard previously loaded config, if any
+	 * Merge new config with old if it exists and save to disk.
 	 */
 	Result<bool> saveConfig(JsonVariantConst newConfig);
-	/**
-	 * Return contents of the token.json as string
-	 */
-	Result<String> getTokenString();
 	/**
 	 * Delete current configuration from memory and flash
 	 */

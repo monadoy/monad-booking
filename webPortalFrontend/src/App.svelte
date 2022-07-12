@@ -57,7 +57,7 @@
 			config.gcalsettings.token = JSON.parse(s.trim())
 			clearMessage("[Malformed token.json]")
 		} catch (err) {
-			config.gcalsettings.token = null
+			config.gcalsettings.token = undefined
 			console.log(err)
 			message = { isError: true, content: `[Malformed token.json] ${err.message}` }
 		}
@@ -78,10 +78,20 @@
 			.then(json => {
 				config = { ...defaultConfig, ...json }
 				try {
-					if (config.gcalsettings.token !== null)
-						tokenString = JSON.stringify(config.gcalsettings.token)
+					if (config.gcalsettings.token) tokenString = JSON.stringify(config.gcalsettings.token)
 				} catch (err) {}
-				configFetchStatus = "M5Paper config fetch success"
+
+				// Config server sets these to null when they are hidden
+				let hiddenElements = []
+				if (config.gcalsettings.token === null) hiddenElements.push("token.json")
+				if (config.wifi.password === null) hiddenElements.push("WIFI password")
+
+				let hiddenLabel = ""
+				if (hiddenElements.length > 0) {
+					hiddenLabel = `\n(Options hidden for security: ${hiddenElements.join(", ")})`
+				}
+
+				configFetchStatus = `M5Paper config fetch success ${hiddenLabel}`
 			})
 			.catch(err => {
 				config = defaultConfig
@@ -93,7 +103,7 @@
 
 <main>
 	<h1>M5Paper Configuration</h1>
-	<p>{configFetchStatus}</p>
+	<p class="status">{configFetchStatus}</p>
 	{#if config}
 		<form class="content" on:submit|preventDefault={submit}>
 			<label for="name">Name</label>
@@ -187,6 +197,11 @@
 		padding: 0;
 		margin: 0 auto;
 		max-width: 800px;
+	}
+
+	.status {
+		white-space: pre-line;
+		line-height: 1.5rem;
 	}
 
 	label,
