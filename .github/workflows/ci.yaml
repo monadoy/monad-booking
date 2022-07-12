@@ -125,3 +125,4 @@ jobs:
           destination: "no-booking-binaries"
           headers: |-
             content-type: text/plain
+            cache-control: no-cache
