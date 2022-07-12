@@ -44,6 +44,7 @@ uint32_t obj_id = 1;
 
 bool needToPutSleep = true;
 bool tillNext = false;
+bool requireConfirmation = false;
 std::shared_ptr<cal::Model::ReserveParams> reserveParamsPtr = nullptr;
 std::atomic_bool gotResponse = ATOMIC_VAR_INIT(false);
 
@@ -131,7 +132,7 @@ void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
 	if (currentScreen == SCREEN_MAIN) {
 		toMainScreen(!updateLeft, !updateRight);
 	} else
-	
+
 		M5.EPD.Sleep();
 }
 
@@ -393,13 +394,17 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 		reserveParamsPtr = res.ok();
 		timeToBeBooked = difftime(reserveParamsPtr->endTime, reserveParamsPtr->startTime);
 	}
-	currentScreen = SCREEN_BOOKING;
-	hideMainButtons(true);
-	hideMainLabels(true);
-	hideNextBooking(true);
-	hideBookingConfirmationButtons(false);
-	hideConfirmBooking(timeToBeBooked, false);
-	updateScreen(true, true, UPDATE_MODE_GLD16);
+	if (requireConfirmation) {
+		currentScreen = SCREEN_BOOKING;
+		hideMainButtons(true);
+		hideMainLabels(true);
+		hideNextBooking(true);
+		hideBookingConfirmationButtons(false);
+		hideConfirmBooking(timeToBeBooked, false);
+		updateScreen(true, true, UPDATE_MODE_GLD16);
+	} else {
+		makeBooking(*reserveParamsPtr);
+	}
 }
 
 void toFreeBooking() {
@@ -460,9 +465,9 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	M5.EPD.Active();
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
-	if(needToPutSleep) {
+	if (needToPutSleep) {
 		log_i("EPD Going to sleep...");
-		M5.EPD.Sleep();	
+		M5.EPD.Sleep();
 	}
 }
 
@@ -475,7 +480,7 @@ void toSettingsScreen() {
 	hideCurrentBookingLabels(true);
 	hideFreeRoomButton(true);
 	hideSettings(false);
-	if(currentEvent)
+	if (currentEvent)
 		btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsWhite.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
@@ -552,12 +557,11 @@ void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t h,
 }
 
 void createButtons() {
-	btns[BUTTON_SETTINGS]
-	    = new EPDGUI_Button("", 15, 15, 64, 56, 15, 0, 0, false);
+	btns[BUTTON_SETTINGS] = new EPDGUI_Button("", 15, 15, 64, 56, 15, 0, 0, false);
 	EPDGUI_AddObject(btns[BUTTON_SETTINGS]);
 	btns[BUTTON_SETTINGS]->AddArgs(EPDGUI_Button::EVENT_RELEASED, 0, btns[BUTTON_SETTINGS]);
 	btns[BUTTON_SETTINGS]->Bind(EPDGUI_Button::EVENT_RELEASED, settingsButton);
-	
+
 	createButton(BUTTON_15MIN, "15", 80, 306, 77, 15, 0, 0, true, fifteenButton);
 	createButton(BUTTON_30MIN, "30", 223, 306, 77, 15, 0, 0, true, thirtyButton);
 	createButton(BUTTON_60MIN, "60", 371, 306, 77, 15, 0, 0, true, sixtyButton);
@@ -668,13 +672,13 @@ void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
 	lbls[LABEL_ERROR]->SetText(err);
 	EPDGUI_Draw(lbls[LABEL_ERROR], UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(308 - 20, 0, 344 + 40, 120, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(308 - 40, 0, 344 + 20, 120, UPDATE_MODE_GC16);
 }
 
 void clearDebug() {
 	lbls[LABEL_ERROR]->SetText("");
 	lbls[LABEL_ERROR]->SetHide(true);
-	M5.EPD.UpdateArea(308 - 20, 0, 344 + 40, 120, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(308 - 40, 0, 344 + 20, 120, UPDATE_MODE_GC16);
 }
 
 void toSleep() {
@@ -699,7 +703,7 @@ void initLoading(bool isReverse) {
 void checkLoadNextFrame(bool isReverse) {
 	if (!gotResponse) {
 		_animation->showNextFrame(isReverse);
-		delay(10);
+		delay(1);
 		_guiTask->loadNextFrame(isReverse);
 	}
 }
@@ -842,7 +846,7 @@ void toSetupScreen(bool fromMain) {
 	lbls[LABEL_CURRENT_BOOKING]->SetText("Setup");
 	updateScreen(true, true);
 	sleepManager.incrementTaskCounter();
-	if(needToPutSleep)
+	if (needToPutSleep)
 		M5.EPD.Sleep();
 }
 
@@ -863,13 +867,13 @@ void showBootLog() {
 	canvasNextEvent.fillCanvas(0);
 	int startTime = millis();
 	std::vector<String> entries = utils::getBootLog();
-	log_d("Bootlog took %s", (millis()-startTime));
+	log_d("Bootlog took %s", (millis() - startTime));
 	for (int i = entries.size() - 1; i >= 0; --i) {
 		lbls[LABEL_BOOTLOG]->AddText(entries[i] + "\n");
 		delay(2);
 	}
 	updateScreen(true, true);
-	if(needToPutSleep)
+	if (needToPutSleep)
 		M5.EPD.Sleep();
 }
 
