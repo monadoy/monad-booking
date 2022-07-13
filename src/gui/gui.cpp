@@ -132,7 +132,6 @@ void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy) {
 	if (currentScreen == SCREEN_MAIN) {
 		toMainScreen(!updateLeft, !updateRight);
 	} else
-
 		M5.EPD.Sleep();
 }
 
@@ -212,10 +211,8 @@ void hideMainButtons(bool isHide) {
 		btns[BUTTON_SETTINGS]->SetHide(false);
 	}
 	if (nextEvent != nullptr && currentScreen == SCREEN_MAIN && currentEvent == nullptr) {
-		btns[BUTTON_TILLNEXT]->SetEnable(true);
 		btns[BUTTON_TILLNEXT]->SetHide(false);
 	} else {
-		btns[BUTTON_TILLNEXT]->SetEnable(false);
 		btns[BUTTON_TILLNEXT]->SetHide(true);
 	}
 }
@@ -353,7 +350,6 @@ void loadCurrentBooking() {
 	for (int i = LABEL_CURRENT_EVENT_CREATOR; i < LABEL_CONFIRM_BOOKING; i++) {
 		lbls[i]->SetHide(false);
 	}
-
 	hideMainButtons(true);
 	btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsBlack.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
@@ -373,7 +369,7 @@ void loadCurrentFree() {
 	lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::NOT_BOOKED));
 	lbls[LABEL_CLOCK_MID]->setColors(0, 15);
 	lbls[LABEL_CLOCK_MID]->SetText(safeMyTZ.dateTime("G:i"));
-	hideMainButtons(false);  //
+	hideMainButtons(false);
 	hideFreeRoomButton(true);
 	hideBookingConfirmationButtons(true);
 	hideFreeConfirmationButtons(true);
@@ -384,7 +380,7 @@ void loadCurrentFree() {
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
 	btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsWhite.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
-}
+} //
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
 	tillNext = isTillNext;  // TODO: remove this
@@ -432,7 +428,6 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetGeometry(80, 180, 420, 360);
 		lbls[LABEL_SETTINGS_STARTUP]->SetText(l10n.msg(L10nMessage::VERSION) + ": "
 		                                      + CURRENT_VERSION_STRING);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
@@ -466,7 +461,6 @@ void toMainScreen(bool updateLeft, bool updateRight) {
 	hideLoading(true);
 	updateScreen(updateLeft, updateRight);
 	if (needToPutSleep) {
-		log_i("EPD Going to sleep...");
 		M5.EPD.Sleep();
 	}
 }
@@ -485,7 +479,6 @@ void toSettingsScreen() {
 	btns[BUTTON_SETTINGS]->SetHide(false);
 	lbls[LABEL_CURRENT_BOOKING]->setColors(0, 15);
 	lbls[LABEL_CURRENT_BOOKING]->SetHide(false);
-
 	updateScreen(true, true);
 }
 
@@ -514,14 +507,12 @@ void tillNextButton(epdgui_args_vector_t& args) {
 
 void confirmBookingButton(epdgui_args_vector_t& args) {
 	makeBooking(*reserveParamsPtr);
-	// toMainScreen(true, true); // TODO: add loading screen call here
 }
 
 void cancelButton(epdgui_args_vector_t& args) { toMainScreen(true, true); }
 
 void confirmFreeButton(epdgui_args_vector_t& args) {
 	deleteBooking();
-	// toMainScreen(true, true); // TODO: add loading screen call here
 }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
@@ -548,7 +539,6 @@ void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t h,
                   uint16_t txt_color, uint16_t color_pressed, bool use_bold,
                   void (*func_cb)(epdgui_args_vector_t&)) {
 	int width = label.length() * PIXELS_PER_LETTER_AVG + 2 * TEXT_PADDING_X;
-
 	btns[ButtonEnum]
 	    = new EPDGUI_Button(label, x, y, width, h, color, txt_color, color_pressed, use_bold);
 	EPDGUI_AddObject(btns[ButtonEnum]);
@@ -582,39 +572,31 @@ void createButtons() {
 }
 
 void createRegularLabels() {
-	// upper right clock label
 	lbls[LABEL_CLOCK_UP] = new EPDGUI_Textbox(875, 16, 70, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[0]);
 
-	// battery status label
 	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(800, 16, 75, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_BATTERY]);
 
-	// middle clock label
 	lbls[LABEL_CLOCK_MID] = new EPDGUI_Textbox(80, 92, 77, 40, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CLOCK_MID]);
 
-	// resource label
 	lbls[LABEL_RESOURCE] = new EPDGUI_Textbox(80, 125, 418, 40, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_RESOURCE]);
 	lbls[LABEL_RESOURCE]->AddText(resourceName);
 
-	// next event creator label
 	lbls[LABEL_NEXT_EVENT_CREATOR]
 	    = new EPDGUI_Textbox(701, 246, 239, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_CREATOR]);
 
-	// next event desc label
 	lbls[LABEL_NEXT_EVENT_DESC]
 	    = new EPDGUI_Textbox(701, 279, 231, 87, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_DESC]);
 
-	// current event creator label
 	lbls[LABEL_CURRENT_EVENT_CREATOR]
 	    = new EPDGUI_Textbox(80, 252, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_CREATOR]);
 
-	// current event desc label
 	lbls[LABEL_CURRENT_EVENT_DESC]
 	    = new EPDGUI_Textbox(80, 289, 412, 40, 15, 0, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_DESC]);
@@ -624,17 +606,14 @@ void createRegularLabels() {
 	EPDGUI_AddObject(lbls[LABEL_ERROR]);
 	lbls[LABEL_ERROR]->SetHide(true);
 
-	// current event time label
 	lbls[LABEL_CONFIRM_TIME] = new EPDGUI_Textbox(144, 244, 456, 77, 0, 15, FONT_SIZE_CLOCK, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_TIME]);
 
-	// current event creator label
 	lbls[LABEL_CONFIRM_BOOKING]
 	    = new EPDGUI_Textbox(144, 164, 310, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_BOOKING]);
 	lbls[LABEL_CONFIRM_BOOKING]->AddText(l10n.msg(L10nMessage::BOOK_ROOM_QUESTION));
 
-	// current event desc label
 	lbls[LABEL_CONFIRM_FREE]
 	    = new EPDGUI_Textbox(144, 164, 450, 77, 0, 15, FONT_SIZE_HEADER, false);
 	EPDGUI_AddObject(lbls[LABEL_CONFIRM_FREE]);
@@ -642,21 +621,17 @@ void createRegularLabels() {
 }
 
 void createBoldLabels() {
-	// next event label
 	lbls[LABEL_NEXT_EVENT] = new EPDGUI_Textbox(701, 161, 231, 135, 3, 15, FONT_SIZE_HEADER, true);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT]);
 
-	// next event time label
 	lbls[LABEL_NEXT_EVENT_TIME]
 	    = new EPDGUI_Textbox(701, 370, 231, 106, 3, 15, FONT_SIZE_CLOCK, true);
 	EPDGUI_AddObject(lbls[LABEL_NEXT_EVENT_TIME]);
 
-	// book event label
 	lbls[LABEL_BOOK_EVENT] = new EPDGUI_Textbox(80, 249, 300, 60, 0, 15, FONT_SIZE_HEADER, true);
 	EPDGUI_AddObject(lbls[LABEL_BOOK_EVENT]);
 	lbls[LABEL_BOOK_EVENT]->AddText(l10n.msg(L10nMessage::BOOK_ROOM));
 
-	// current event time label
 	lbls[LABEL_CURRENT_EVENT_TIME]
 	    = new EPDGUI_Textbox(80, 330, 412, 53, 15, 0, FONT_SIZE_CLOCK, true);
 	EPDGUI_AddObject(lbls[LABEL_CURRENT_EVENT_TIME]);
@@ -664,10 +639,10 @@ void createBoldLabels() {
 
 void tryToPutSleep() {
 	if (needToPutSleep && (currentScreen != SCREEN_BOOKING && currentScreen != SCREEN_FREEING)) {
-		log_i("EPD Going to sleep...");
 		M5.EPD.Sleep();
 	}
 }
+
 void debug(String err) {
 	lbls[LABEL_ERROR]->SetHide(false);
 	lbls[LABEL_ERROR]->SetText(err);
@@ -915,59 +890,57 @@ void task(void* arg) {
 
 void GUITask::success(GuiRequest type, std::shared_ptr<cal::CalendarStatus> status) {
 	if (status) {
-		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, status); }));
+		enqueue(new QueueFunc([=]() { return updateGui(type, status); }));
 	} else {
-		enqueue(ActionType::SUCCESS, new QueueFunc([=]() { return updateGui(type, nullptr); }));
+		enqueue(new QueueFunc([=]() { return updateGui(type, nullptr); }));
 	}
 }
 
-// TODO: use type -parameter
 void GUITask::error(GuiRequest type, const cal::Error& error) {
-	enqueue(ActionType::ERROR, new QueueFunc([=]() { return displayError(type, error); }));
+	enqueue(new QueueFunc([=]() { return displayError(type, error); }));
 }
 
 void GUITask::touchDown(const tp_finger_t& tp) {
-	enqueue(ActionType::TOUCH_DOWN, new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));
+	enqueue(new QueueFunc([=]() { return EPDGUI_Process(tp.x, tp.y); }));
 }
 
 void GUITask::touchUp() {
-	enqueue(ActionType::TOUCH_UP, new QueueFunc([=]() { return EPDGUI_Process(); }));
+	enqueue(new QueueFunc([=]() { return EPDGUI_Process(); }));
 }
 
 void GUITask::sleep() {
-	enqueue(ActionType::SLEEP, new QueueFunc([=]() { return toSleep(); }));
+	enqueue(new QueueFunc([=]() { return toSleep(); }));
 }
 
-void GUITask::enqueue(ActionType at, void* func) {
-	GuiQueueElement* data = new GuiQueueElement{at, func};
+void GUITask::enqueue(void* func) {
+	GuiQueueElement* data = new GuiQueueElement{func};
 	xQueueSend(_guiQueueHandle, (void*)&data, 0);
 }
 
 void GUITask::initMain(cal::Model* model) { initMainScreen(model); }
 
 void GUITask::startLoading(bool isReverse) {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return initLoading(isReverse); }));
+	enqueue(new QueueFunc([=]() { return initLoading(isReverse); }));
 }
 
 void GUITask::loadNextFrame(bool isReverse) {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return checkLoadNextFrame(isReverse); }));
+	enqueue(new QueueFunc([=]() { return checkLoadNextFrame(isReverse); }));
 }
 
 void GUITask::showLoadingText(String data) {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return setLoadingText(data); }));
+	enqueue(new QueueFunc([=]() { return setLoadingText(data); }));
 }
 
 void GUITask::stopLoading() {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return endLoading(); }));
+	enqueue(new QueueFunc([=]() { return endLoading(); }));
 }
 
 void GUITask::showShutdown(String shutdownText, bool isBootError) {
-	enqueue(ActionType::LOADING,
-	        new QueueFunc([=]() { return shutDown(shutdownText, isBootError); }));
+	enqueue(new QueueFunc([=]() { return shutDown(shutdownText, isBootError); }));
 }
 
 void GUITask::goSetup(bool fromMain) {
-	enqueue(ActionType::LOADING, new QueueFunc([=]() { return toSetupScreen(fromMain); }));
+	enqueue(new QueueFunc([=]() { return toSetupScreen(fromMain); }));
 }
 
 GUITask::GUITask() {

@@ -144,8 +144,6 @@ namespace gui {
 class GUITask {
   public:
 	GUITask();
-	enum class ActionType { SUCCESS, ERROR, TOUCH_DOWN, TOUCH_UP, SLEEP, INIT, LOADING };
-
 	enum class GuiRequest { RESERVE, FREE, MODEL, UPDATE, OTHER, SIZE };
 
 	/* std::array<String, (size_t)GuiRequest::SIZE> guiRequestStrings{"RESERVE", "FREE", "OTHER",
@@ -153,8 +151,7 @@ class GUITask {
 
 	QueueHandle_t _guiQueueHandle;
 	struct GuiQueueElement {
-		GuiQueueElement(ActionType t, void* func) : type{t}, func{func} {}
-		ActionType type;
+		GuiQueueElement(void* func) : func{func} {}
 		void* func;
 	};
 
@@ -243,7 +240,7 @@ class GUITask {
 	void goSetup(bool fromMain = true);
   private:
 	TaskHandle_t _taskHandle;
-	void enqueue(ActionType at, void* func);
+	void enqueue(void* func);
 };
 void initGui();
 void createSetupButton();
