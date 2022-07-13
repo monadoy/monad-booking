@@ -380,7 +380,7 @@ void loadCurrentFree() {
 	lbls[LABEL_BOOK_EVENT]->SetHide(false);
 	btns[BUTTON_SETTINGS]->setPNGButton("/images/settingsWhite.png");
 	btns[BUTTON_SETTINGS]->SetHide(false);
-} //
+}  //
 
 void toConfirmBooking(uint16_t time, bool isTillNext) {
 	tillNext = isTillNext;  // TODO: remove this
@@ -438,6 +438,7 @@ void hideSettings(bool isHide) {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
 	btns[BUTTON_SETUP]->SetHide(isHide);
+	btns[BUTTON_UPDATE]->SetHide(isHide);
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 	lbls[LABEL_BOOTLOG]->SetHide(true);
 }
@@ -505,21 +506,21 @@ void tillNextButton(epdgui_args_vector_t& args) {
 	toConfirmBooking(deltaTime, true);
 }
 
-void confirmBookingButton(epdgui_args_vector_t& args) {
-	makeBooking(*reserveParamsPtr);
-}
+void confirmBookingButton(epdgui_args_vector_t& args) { makeBooking(*reserveParamsPtr); }
 
 void cancelButton(epdgui_args_vector_t& args) { toMainScreen(true, true); }
 
-void confirmFreeButton(epdgui_args_vector_t& args) {
-	deleteBooking();
-}
+void confirmFreeButton(epdgui_args_vector_t& args) { deleteBooking(); }
 
 void freeRoomButton(epdgui_args_vector_t& args) { toFreeBooking(); }
 
 void continueButton(epdgui_args_vector_t& args) {
 	_model->extendCurrentEvent(15 * SECS_PER_MIN);
 	_guiTask->startLoading(true);
+}
+
+void updateButton(epdgui_args_vector_t& args) {
+	
 }
 
 void setupButton(epdgui_args_vector_t& args) { _guiTask->goSetup(false); }
@@ -569,6 +570,8 @@ void createButtons() {
 	createButton(BUTTON_FREEROOM, l10n.msg(L10nMessage::FREE_ROOM), 80, 399, 77, 0, 15, 15, true,
 	             freeRoomButton);
 	createButton(BUTTON_CONTINUE, "+15", 410, 399, 77, 0, 15, 15, true, continueButton);
+	createButton(BUTTON_UPDATE, l10n.msg(L10nMessage::UPDATE), 634, 300, 77, 15, 0, 0, true,
+	             updateButton);
 }
 
 void createRegularLabels() {

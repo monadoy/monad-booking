@@ -59,5 +59,9 @@
 	"NEW_EVENT_SUMMARY": {
 		"FI": "M5Paper varaus",
 		"EN": "M5Paper booking"
+	},
+	"UPDATE": {
+		"FI": "PÄIVITÄ",
+		"EN": "UPDATE"
 	}
 }

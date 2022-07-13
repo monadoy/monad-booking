@@ -29,6 +29,7 @@ enum {
 	BUTTON_CANCELFREE,
 	BUTTON_CONTINUE,
 	BUTTON_SETUP,
+	BUTTON_UPDATE,
 	BUTTON_SIZE
 };
 
@@ -123,6 +124,7 @@ void cancelFreeButton(epdgui_args_vector_t& args);
 void freeRoomButton(epdgui_args_vector_t& args);
 void continueButton(epdgui_args_vector_t& args);
 void setupButton(epdgui_args_vector_t& args);
+void updateButton(epdgui_args_vector_t& args);
 void hideLoading(bool isHide);
 
 void createButton(int ButtonEnum, String label, int16_t x, int16_t y, int16_t h, uint16_t color,
@@ -145,9 +147,6 @@ class GUITask {
   public:
 	GUITask();
 	enum class GuiRequest { RESERVE, FREE, MODEL, UPDATE, OTHER, SIZE };
-
-	/* std::array<String, (size_t)GuiRequest::SIZE> guiRequestStrings{"RESERVE", "FREE", "OTHER",
-	 * "MODEL"}; */
 
 	QueueHandle_t _guiQueueHandle;
 	struct GuiQueueElement {

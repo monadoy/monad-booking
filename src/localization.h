@@ -22,6 +22,7 @@ enum class L10nMessage {
 	SETTINGS,
 	VERSION,
 	NEW_EVENT_SUMMARY,
+	UPDATE,
 	SIZE
 };
 
@@ -41,7 +42,8 @@ const L10nMessageArray messageNames{"BOOK",
                                     "RELEASE_QUESTION",
                                     "SETTINGS",
                                     "VERSION",
-                                    "NEW_EVENT_SUMMARY"};
+                                    "NEW_EVENT_SUMMARY",
+									"UPDATE"};
 
 class Localization {
   public:
