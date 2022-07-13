@@ -128,6 +128,7 @@ void normalBoot(JsonObjectConst config) {
 	latestVersion = getAvailableFirmwareVersion();
 	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY, false)
 	    && (config["autoupdate"] | false || preferences.getBool(UPDATE_ON_NEXT_BOOT_KEY, false))) {
+		preferences.putBool(UPDATE_ON_NEXT_BOOT_KEY, false);
 		autoUpdateFirmware();
 	}
 

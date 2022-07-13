@@ -521,7 +521,10 @@ void continueButton(epdgui_args_vector_t& args) {
 	_guiTask->startLoading(true);
 }
 
-void updateButton(epdgui_args_vector_t& args) {}
+void updateButton(epdgui_args_vector_t& args) {
+	preferences.putBool(UPDATE_ON_NEXT_BOOT_KEY, true);
+	restart();
+}
 
 void setupButton(epdgui_args_vector_t& args) { _guiTask->goSetup(false); }
 
