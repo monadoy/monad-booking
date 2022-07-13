@@ -15,7 +15,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 	File handle = LittleFS.open("/localization.json", FILE_READ);
 
 	if (!handle) {
-		return utils::make_unique<utils::Error>("Could not open localization.json");
+		return utils::make_unique<utils::Error>("Could not open localization.json.");
 	}
 
 	// Create filter to not waste memory on unused languages
@@ -28,7 +28,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 	auto err = deserializeJson(doc, handle, DeserializationOption::Filter(filter));
 	if (err) {
 		return utils::make_unique<utils::Error>(String("Error deserializing localization.json: ")
-		                                        + err.c_str());
+		                                        + err.c_str() + ".");
 	}
 
 	bool isSupported = false;
@@ -45,7 +45,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 		_messages[msg] = doc[messageNames[msg]][lang].as<String>();
 		if (_messages[msg] == "null") {
 			return utils::make_unique<utils::Error>(String("Localization '") + messageNames[msg]
-			                                        + "-" + lang + "' not found or empty");
+			                                        + "-" + lang + "' not found or empty.");
 		}
 	}
 
@@ -58,7 +58,7 @@ std::unique_ptr<utils::Error> Localization::_readMessages(const String& lang) {
 
 std::unique_ptr<utils::Error> Localization::setLanguage(const String& lang) {
 	if (lang == "null") {
-		return utils::make_unique<utils::Error>("'language' key not set in config.json");
+		return utils::make_unique<utils::Error>("'language' key not set in config.json.");
 	}
 
 	if (_currentLang == lang)
