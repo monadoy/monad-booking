@@ -16,5 +16,6 @@ extern Localization l10n;
 extern Preferences preferences;
 
 extern const String CURRENT_VERSION_STRING;
+extern std::array<int, 3> latestVersion;
 
 #endif

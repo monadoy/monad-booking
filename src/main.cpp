@@ -83,11 +83,10 @@ void onBeforeFormatFlash() {
 }
 
 void autoUpdateFirmware() {
-	std::array<int, 3> newVersion = getAvailableFirmwareVersion();
-	if (isVersionDifferent(newVersion)) {
-		guiTask->showLoadingText("Updating to firmware: v" + versionToString(newVersion)
+	if (isVersionDifferent(latestVersion)) {
+		guiTask->showLoadingText("Updating to firmware: v" + versionToString(latestVersion)
 		                         + ". This takes a while...");
-		auto err = updateFirmware(newVersion, onBeforeFormatFlash);
+		auto err = updateFirmware(latestVersion, onBeforeFormatFlash);
 		if (err) {
 			// Errors don't really matter here as they aren't fatal
 			// TODO: somehow show the error to user
@@ -126,6 +125,7 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
+	latestVersion = getAvailableFirmwareVersion();
 	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY, false)
 	    && (config["autoupdate"] | false || preferences.getBool(UPDATE_ON_NEXT_BOOT_KEY, false))) {
 		autoUpdateFirmware();
