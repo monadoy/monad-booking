@@ -37,10 +37,10 @@ class ScopedTaskCounter {
 };
 
 /**
- * Handles going to sleep and waking up to touch or reccurring timer.
- * Makes us sleep when there are no active tasks and there hasn't been a touch input in some time.
- * Members starting with underlines indicate pseudo private members because tasks can't access truly
- * private members.
+ * Handles going to sleep and waking up from touch or a reccurring timer.
+ * Makes the device sleep when there are no active tasks and there hasn't been a touch input in some
+ * time. Members starting with underlines indicate pseudo private members, don't use them. (FreeRTOS
+ * task API needs them public to work)
  */
 class SleepManager {
   public:

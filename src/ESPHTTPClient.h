@@ -10,11 +10,20 @@
 #define MAX_HTTP_RECV_BUFFER 2048  // 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
+/**
+ * A reusable wrapper for esp_http_client.
+ * open() should be called every time before a request is made.
+ * The connection closes when the class destructor is called.
+ * The connection should be closed manually before the device goes to sleep.
+ */
 class ESPHTTPClient {
   public:
 	~ESPHTTPClient();
 
-	/** Start a new request. Reuses old client if possible. */
+	/**
+	 * Opens a client.
+	 * Reuses old client if cert is the same and the client is not already closed.
+	 * */
 	void open(esp_http_client_method_t method, const char* url, const char* cert);
 
 	void setHeader(const char* key, const char* value);

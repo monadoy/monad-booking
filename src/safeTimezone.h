@@ -5,6 +5,10 @@
 
 #include <mutex>
 
+/**
+ * A thread safe version of ezTime Timezone class.
+ * Only implements functions that are used by us.
+ */
 class SafeTimezone {
   public:
 	SafeTimezone() : tz_(UTC) {}
