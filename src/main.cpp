@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <M5EPD.h>
+#include <Preferences.h>
 
 #include <memory>
 
@@ -125,7 +126,8 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
-	if (config["autoupdate"] | false) {
+	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY, false)
+	    && (config["autoupdate"] | false || preferences.getBool(UPDATE_ON_NEXT_BOOT_KEY, false))) {
 		autoUpdateFirmware();
 	}
 
@@ -145,6 +147,8 @@ void normalBoot(JsonObjectConst config) {
 
 	guiTask->showLoadingText("");
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
+
+	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);
 }
 
 void setupBoot() {
@@ -181,6 +185,14 @@ void setup() {
 
 	Serial.println("========== Monad Booking v" + CURRENT_VERSION_STRING + " ==========");
 	Serial.println("Booting up...");
+
+	if (!preferences.begin("main")) {
+		log_e("Preferences begin failed");
+	}
+	// Cycle boot success booleans
+	preferences.putBool(LAST_BOOT_SUCCESS_KEY, preferences.getBool(CURR_BOOT_SUCCESS_KEY, false));
+	preferences.putBool(CURR_BOOT_SUCCESS_KEY, false);
+	log_i("Last boot success: %d", preferences.getBool(LAST_BOOT_SUCCESS_KEY));
 
 	if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
 		log_e("LittleFS Mount Failed");

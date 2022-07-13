@@ -6,6 +6,7 @@ SafeTimezone safeUTC{UTC};
 SleepManager sleepManager;
 WiFiManager wifiManager;
 Localization l10n;
+Preferences preferences;
 
 const String CURRENT_VERSION_STRING
     = String(VERSION_MAJOR) + "." + String(VERSION_MINOR) + "." + String(VERSION_PATCH);
