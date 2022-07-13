@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "localization.h"
 #include "safeTimezone.h"
+#include "myUpdate.h"
 
 namespace {
 
@@ -438,7 +439,7 @@ void hideSettings(bool isHide) {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
 	btns[BUTTON_SETUP]->SetHide(isHide);
-	btns[BUTTON_UPDATE]->SetHide(isHide);
+	btns[BUTTON_UPDATE]->SetHide(isHide || !isVersionDifferent(latestVersion));
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 	lbls[LABEL_BOOTLOG]->SetHide(true);
 }
@@ -519,9 +520,7 @@ void continueButton(epdgui_args_vector_t& args) {
 	_guiTask->startLoading(true);
 }
 
-void updateButton(epdgui_args_vector_t& args) {
-	
-}
+void updateButton(epdgui_args_vector_t& args) {}
 
 void setupButton(epdgui_args_vector_t& args) { _guiTask->goSetup(false); }
 
