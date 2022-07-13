@@ -17,6 +17,10 @@
 
 ## Setup
 
+If you know git, pull this repository with it.
+
+If you don't know git, [download the project as zip](https://github.com/monadoy/m5paper/archive/refs/heads/master.zip) and unzip it. The resulting folder is the repository root folder.
+
 ### Environment
 Requirements:
 - [Python 3](https://www.python.org/downloads/)
@@ -32,7 +36,7 @@ python ./scripts/setup.py littlefs frontend
 ```
 
 ### Other
-- Google Cloud Platform
+- Google Cloud Platform ([detailed instructions](https://github.com/monadoy/m5paper/wiki/Google-Cloud-Platform-Setup))
   - Project needs to be created
   - Calendar API needs to be enabled in the project
   - OAuth client ID credentials need to be created (Choose *Desktop app*) and exported to file *credentials.json*
@@ -40,13 +44,13 @@ python ./scripts/setup.py littlefs frontend
   - Needs to create a user to handle the booking e.g. *booking@monad.fi*
 - Google Calendar
   - A room and an automatic calendar for the room needs to be created
-  - The room calendar needs to be shared with edit access with our user
+  - The room calendar needs to be shared with *edit access* with our user
   - Id of the room calendar is needed for code operation, it can be retrieved from the settings of the calendar
 
 ## Deployment
 
 ### Token Generation
-You need to place the *credentials.json* file in the root directory of this repository for the next script to work. The script automatically opens a web page where you can log in. Log in with your booking user that was mentioned above.
+You need to place the *credentials.json* file in the root directory of this repository for the next script to work. Run the command below to automatically open a web page where you can log in. Log in with your booking user that was mentioned above.
 
 ```sh
 python ./scripts/oauth2flow.py
