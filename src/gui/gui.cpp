@@ -6,8 +6,8 @@
 #include "configServer.h"
 #include "globals.h"
 #include "localization.h"
-#include "safeTimezone.h"
 #include "myUpdate.h"
+#include "safeTimezone.h"
 
 namespace {
 
@@ -429,8 +429,9 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetText(l10n.msg(L10nMessage::VERSION) + ": "
-		                                      + CURRENT_VERSION_STRING);
+		lbls[LABEL_SETTINGS_STARTUP]->SetText(
+		    l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION_STRING + "\n"
+		    + l10n.msg(L10nMessage::LATEST_VERSION) + ": " + versionToString(latestVersion));
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::SETTINGS));
 	} else {

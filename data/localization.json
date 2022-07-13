@@ -63,5 +63,9 @@
 	"UPDATE": {
 		"FI": "PÄIVITÄ",
 		"EN": "UPDATE"
+	},
+	"LATEST_VERSION": {
+		"FI": "Uusin versio",
+		"EN": "Latest version"
 	}
 }
