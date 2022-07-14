@@ -8,7 +8,5 @@ WiFiManager wifiManager;
 Localization l10n;
 Preferences preferences;
 
-const String CURRENT_VERSION_STRING
-    = String(VERSION_MAJOR) + "." + String(VERSION_MINOR) + "." + String(VERSION_PATCH);
-
-std::array<int, 3> latestVersion = {0, 0, 0};
+const Version CURRENT_VERSION{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
+std::unique_ptr<Version> latestVersion = nullptr;

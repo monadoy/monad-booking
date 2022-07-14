@@ -20,34 +20,31 @@
  * Even if the string doesn't contain three or more numbers,
  * zeros are added until there are three numbers.
  */
-std::vector<int> parseVersionParts(String version) {
+std::unique_ptr<Version> parseVersion(String version) {
 	version.trim();
 
 	std::vector<int> versionParts;
-	String current;
+	String current = "";
 	for (const char c : version) {
-		if (c == '.') {
+		if (c == '.' && !current.isEmpty()) {
 			versionParts.push_back(current.toInt());
 			current = "";
 		} else if (isdigit(c)) {
 			current += c;
 		}
 	}
-	versionParts.push_back(current.toInt());
+	if (!current.isEmpty())
+		versionParts.push_back(current.toInt());
 
-	// If no version numbers were found, just default to zeros
+	// If not enough numbers were found, fail
 	while (versionParts.size() < 3) {
-		versionParts.push_back(0);
+		return nullptr;
 	}
 
-	return versionParts;
+	return utils::make_unique<Version>(versionParts[0], versionParts[1], versionParts[2]);
 }
 
-String versionToString(std::array<int, 3> version) {
-	return String(version[0]) + "." + String(version[1]) + "." + String(version[2]);
-}
-
-std::array<int, 3> getAvailableFirmwareVersion() {
+std::unique_ptr<Version> getLatestFirmwareVersion() {
 	ESPHTTPClient http;
 	String url = String(UPDATE_STORAGE_URL) + "/current-version";
 	http.open(HTTP_METHOD_GET, url.c_str(), UPDATE_SERVER_CERT);
@@ -57,30 +54,20 @@ std::array<int, 3> getAvailableFirmwareVersion() {
 
 	if (httpCodeRes.isErr()) {
 		log_e("%s", httpCodeRes.err()->message.c_str());
-		return {0, 0, 0};
+		return nullptr;
 	}
 	if (*httpCodeRes.ok() < 200 || *httpCodeRes.ok() >= 300) {
 		log_e("HTTP returned %d", *httpCodeRes.ok());
-		return {0, 0, 0};
+		return nullptr;
 	}
 
 	log_i("Response body: %s", responseBody.c_str());
 
-	const std::vector<int> versionParts = parseVersionParts(responseBody);
+	std::unique_ptr<Version> version = parseVersion(responseBody);
 
-	log_i("Detected latest version: %d.%d.%d", versionParts[0], versionParts[1], versionParts[2]);
+	log_i("Detected latest version: %s", version ? version->toString().c_str() : "nullptr");
 
-	return {versionParts[0], versionParts[1], versionParts[2]};
-}
-
-bool isVersionDifferent(std::array<int, 3> newVersion) {
-	// All zeros means invalid version
-	if (newVersion[0] == 0 && newVersion[1] == 0 && newVersion[2] == 0) {
-		return false;
-	}
-
-	return VERSION_MAJOR != newVersion[0] || VERSION_MINOR != newVersion[1]
-	       || VERSION_PATCH != newVersion[2];
+	return version;
 }
 
 std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String& filename) {
@@ -178,7 +165,7 @@ void restart() {
 	shutdown->toUpperCase();
 }
 
-std::unique_ptr<utils::Error> updateFirmware(std::array<int, 3> newVersion,
+std::unique_ptr<utils::Error> updateFirmware(const Version& newVersion,
                                              std::function<void()> onBeforeFormat) {
 	auto count = sleepManager.scopedTaskCount();
 
@@ -186,13 +173,13 @@ std::unique_ptr<utils::Error> updateFirmware(std::array<int, 3> newVersion,
 
 	log_i("Downloading new filesystem...");
 	const String fileSystemUpdateUrl
-	    = String(UPDATE_STORAGE_URL) + "/v" + versionToString(newVersion) + "/file-system.tar.gz";
+	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion.toString() + "/file-system.tar.gz";
 	auto err = downloadUpdateFile(fileSystemUpdateUrl, "/tmp/file-system.tar.gz");
 	if (err)
 		return err;
 
 	const String firmwareUpdateUrl
-	    = String(UPDATE_STORAGE_URL) + "/v" + versionToString(newVersion) + "/firmware.bin";
+	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion.toString() + "/firmware.bin";
 
 	log_i("Downloading and updating firmware...");
 	HttpsOTA.onHttpEvent(HttpEvent);

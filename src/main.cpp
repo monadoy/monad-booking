@@ -77,21 +77,21 @@ void handleBootError(const String& message) {
 // Firmware update calls this before writing to flash.
 // Animation uses flash to load images, so stop it
 // to avoid writing and reading at the same time.
-void onBeforeFormatFlash() {
+void onBeforeFilesystemWrite() {
 	guiTask->stopLoading();
 	delay(500);  // Delay to make sure that the last frame has loaded.
 }
 
 void autoUpdateFirmware() {
-	if (isVersionDifferent(latestVersion)) {
-		guiTask->showLoadingText("Updating to firmware: v" + versionToString(latestVersion)
+	if (latestVersion && *latestVersion != CURRENT_VERSION) {
+		guiTask->showLoadingText("Updating to firmware: v" + latestVersion->toString()
 		                         + ". This takes a while...");
-		auto err = updateFirmware(latestVersion, onBeforeFormatFlash);
+		auto err = updateFirmware(*latestVersion, onBeforeFilesystemWrite);
 		if (err) {
 			// Errors don't really matter here as they aren't fatal
 			// TODO: somehow show the error to user
 		}
-		// onBeforeFormatFlash stops animation, continue it here
+		// Resume normal operation after failure (updateFirmware reboots on success)
 		guiTask->startLoading();
 	}
 }
@@ -125,10 +125,10 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
-	latestVersion = getAvailableFirmwareVersion();
+	latestVersion = getLatestFirmwareVersion();
 	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY, false)
-	    && (config["autoupdate"] | false || preferences.getBool(UPDATE_ON_NEXT_BOOT_KEY, false))) {
-		preferences.putBool(UPDATE_ON_NEXT_BOOT_KEY, false);
+	    && (config["autoupdate"] | false || preferences.getBool(FORCE_UPDATE_KEY, false))) {
+		preferences.putBool(FORCE_UPDATE_KEY, false);
 		autoUpdateFirmware();
 	}
 
@@ -184,7 +184,7 @@ void setup() {
 	M5.EPD.Clear(true);
 	M5.RTC.begin();
 
-	Serial.println("========== Monad Booking v" + CURRENT_VERSION_STRING + " ==========");
+	Serial.println("========== Monad Booking v" + CURRENT_VERSION.toString() + " ==========");
 	Serial.println("Booting up...");
 
 	if (!preferences.begin("main")) {

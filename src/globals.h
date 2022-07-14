@@ -4,6 +4,7 @@
 #include <Preferences.h>
 
 #include "localization.h"
+#include "myUpdate.h"
 #include "safeTimezone.h"
 #include "sleepManager.h"
 #include "wifiManager.h"
@@ -15,7 +16,7 @@ extern WiFiManager wifiManager;
 extern Localization l10n;
 extern Preferences preferences;
 
-extern const String CURRENT_VERSION_STRING;
-extern std::array<int, 3> latestVersion;
+extern const Version CURRENT_VERSION;
+extern std::unique_ptr<Version> latestVersion;
 
 #endif

@@ -429,9 +429,11 @@ void deleteBooking() {
 
 void hideSettings(bool isHide) {
 	if (!isHide) {
-		lbls[LABEL_SETTINGS_STARTUP]->SetText(
-		    l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION_STRING + "\n"
-		    + l10n.msg(L10nMessage::LATEST_VERSION) + ": " + versionToString(latestVersion));
+		String text = l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION.toString() + "\n";
+		if (latestVersion) {
+			text += l10n.msg(L10nMessage::LATEST_VERSION) + ": " + latestVersion->toString() + "\n";
+		}
+		lbls[LABEL_SETTINGS_STARTUP]->SetText(text);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
 		lbls[LABEL_CURRENT_BOOKING]->SetText(l10n.msg(L10nMessage::SETTINGS));
 	} else {
@@ -440,7 +442,7 @@ void hideSettings(bool isHide) {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
 	btns[BUTTON_SETUP]->SetHide(isHide);
-	btns[BUTTON_UPDATE]->SetHide(isHide || !isVersionDifferent(latestVersion));
+	btns[BUTTON_UPDATE]->SetHide(isHide || !(latestVersion && *latestVersion != CURRENT_VERSION));
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 	lbls[LABEL_BOOTLOG]->SetHide(true);
 }
@@ -522,7 +524,7 @@ void continueButton(epdgui_args_vector_t& args) {
 }
 
 void updateButton(epdgui_args_vector_t& args) {
-	preferences.putBool(UPDATE_ON_NEXT_BOOT_KEY, true);
+	preferences.putBool(FORCE_UPDATE_KEY, true);
 	restart();
 }
 
