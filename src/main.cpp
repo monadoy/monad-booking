@@ -27,6 +27,8 @@
 
 #define BOOT_WIFI_CONNECT_MAX_RETRIES 5
 
+#define NTP_TIMEOUT_MS 20 * 1000
+
 // Only used in setup mode
 std::unique_ptr<Config::ConfigServer> configServer = nullptr;
 
@@ -39,8 +41,17 @@ bool setupTime(const String& IANATimeZone) {
 	Serial.println("Setting up time");
 
 	ezt::setDebug(INFO);
-	if (!ezt::waitForSync(10)) {
-		return false;
+
+	auto start = millis();
+	while (true) {
+		ezt::updateNTP();
+		if (millis() - start > NTP_TIMEOUT_MS) {
+			return false;  // failure
+		}
+		if (UTC.year() > 2000) {
+			break;  // success
+		}
+		delay(2000);  // retry
 	}
 
 	if (!safeMyTZ.setCache(String("timezones"), IANATimeZone))
