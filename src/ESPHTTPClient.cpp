@@ -6,7 +6,7 @@
 const char* USER_AGENT = "ESPClient";
 const int BUFFER_SIZE = 1024;
 const int BUFFER_SIZE_TX = 1024;
-const int TIMEOUT_MS = 5000;
+const int TIMEOUT_MS = 10000;
 
 esp_err_t _http_event_handler(esp_http_client_event_t* evt) {
 	switch (evt->event_id) {
@@ -83,8 +83,10 @@ void ESPHTTPClient::open(esp_http_client_method_t method, const char* url, const
 ESPHTTPClient::~ESPHTTPClient() { close(); }
 
 void ESPHTTPClient::close() {
-	if (_client)
+	if (_client) {
+		log_i("Closing client");
 		esp_http_client_cleanup(_client);
+	}
 
 	_client = nullptr;
 }
@@ -113,6 +115,15 @@ utils::Result<int> ESPHTTPClient::run(String& output) {
 
 utils::Result<int> ESPHTTPClient::_runInternal() {
 	esp_err_t err = esp_http_client_perform(_client);
+
+	// mbedTLS fails sometimes for no apparent reason, do some retries when needed
+	int retries = 0;
+	while (err != ESP_OK && retries < _retries) {
+		delay(10);
+		retries++;
+		err = esp_http_client_perform(_client);
+	}
+
 	if (err != ESP_OK) {
 		close();
 

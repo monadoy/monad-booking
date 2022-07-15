@@ -7,8 +7,9 @@
 #include "esp_http_client.h"
 #include "utils.h"
 
-#define MAX_HTTP_RECV_BUFFER 2048  // 512
+#define MAX_HTTP_RECV_BUFFER 2048
 #define MAX_HTTP_OUTPUT_BUFFER 2048
+#define ESP_HTTP_CLIENT_DEFAULT_RETRIES 2
 
 /**
  * A reusable wrapper for esp_http_client.
@@ -18,6 +19,7 @@
  */
 class ESPHTTPClient {
   public:
+	ESPHTTPClient(int retries = ESP_HTTP_CLIENT_DEFAULT_RETRIES) : _retries(retries) {}
 	~ESPHTTPClient();
 
 	/**
@@ -48,6 +50,7 @@ class ESPHTTPClient {
 
 	esp_http_client* _client = nullptr;
 	const char* _cert = nullptr;
+	int _retries = 0;
 };
 
 #endif
