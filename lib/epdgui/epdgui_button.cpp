@@ -84,6 +84,7 @@ EPDGUI_Base(x, y, w, h)
         this->_CanvasNormal->drawString(_label,  _w / 2, _h / 2 + 3);
 		this->_CanvasPressed->drawString(_label, _w / 2, _h / 2 + 3);
 	}
+	this->SetHide(true);
 }
 
 EPDGUI_Button::~EPDGUI_Button()
