@@ -137,8 +137,8 @@ void normalBoot(JsonObjectConst config) {
 	                              []() { syncEzTimeFromRTC(); });
 
 	latestVersionResult = getLatestFirmwareVersion();
-	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY, false)
-	    && (config["autoupdate"] | false || preferences.getBool(FORCE_UPDATE_KEY, false))) {
+	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY)
+	    && (config["autoupdate"] | false || preferences.getBool(FORCE_UPDATE_KEY))) {
 		preferences.putBool(FORCE_UPDATE_KEY, false);
 		autoUpdateFirmware();
 	}
@@ -202,7 +202,7 @@ void setup() {
 		log_e("Preferences begin failed");
 	}
 	// Cycle boot success booleans
-	preferences.putBool(LAST_BOOT_SUCCESS_KEY, preferences.getBool(CURR_BOOT_SUCCESS_KEY, false));
+	preferences.putBool(LAST_BOOT_SUCCESS_KEY, preferences.getBool(CURR_BOOT_SUCCESS_KEY));
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, false);
 	log_i("Last boot success: %d", preferences.getBool(LAST_BOOT_SUCCESS_KEY));
 

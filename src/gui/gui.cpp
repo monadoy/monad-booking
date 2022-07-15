@@ -835,6 +835,8 @@ void toSetupScreen(bool fromMain) {
 		M5.EPD.Sleep();
 }
 
+String entries = "";
+
 void showBootLog() {
 	M5.EPD.Active();
 	currentScreen = SCREEN_BOOTLOG;
@@ -850,13 +852,17 @@ void showBootLog() {
 	lbls[LABEL_BOOTLOG]->SetText("");
 	canvasCurrentEvent.fillCanvas(0);
 	canvasNextEvent.fillCanvas(0);
+
 	int startTime = millis();
-	std::vector<String> entries = utils::getBootLog();
-	log_d("Bootlog took %s", (millis() - startTime));
-	for (int i = entries.size() - 1; i >= 0; --i) {
-		lbls[LABEL_BOOTLOG]->AddText(entries[i] + "\n");
-		delay(2);
+	if (entries.isEmpty()) {
+		std::vector<String> entriesVec = utils::getBootLog();
+		for (const String& entry : entriesVec) {
+			entries.concat(entry + "\n");
+		}
 	}
+	log_d("Bootlog took %u", millis() - startTime);
+
+	lbls[LABEL_BOOTLOG]->SetText(entries);
 	updateScreen(true, true);
 	if (needToPutSleep)
 		M5.EPD.Sleep();

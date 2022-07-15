@@ -264,10 +264,13 @@ void SleepManager::_shutdown() {
 
 	String turnOnTimeStr = safeMyTZ.dateTime(turnOnTime, UTC_TIME, RFC3339);
 
-	const String log
-	    = "[" + safeMyTZ.dateTime(now, RFC3339) + "] Shut down, try wake at " + turnOnTimeStr;
-	log_i("%s", log.c_str());
-	utils::addBootLogEntry(log);
+	const String logShut = "[" + safeMyTZ.dateTime(now, RFC3339) + "] Shut down";
+	const String logWake = "Try wake at " + turnOnTimeStr;
+
+	log_i("%s, %s", logShut.c_str(), logWake.c_str());
+
+	utils::addBootLogEntry(logWake);
+	utils::addBootLogEntry(logShut);
 
 	Serial.flush();
 
