@@ -17,9 +17,9 @@ class EPDGUI_Textbox : public EPDGUI_Base {
 	void Bind(int16_t event, void (*func_cb)(epdgui_args_vector_t&));
 	bool UpdateState(int16_t x, int16_t y);
 	void SetState(int16_t state);
-	void SetText(String text);
+	void SetText(const String& text);
 	String GetText(void) { return _data; }
-	void AddText(String text);
+	void AddText(const String& text);
 	void Remove(int16_t idx);
 	void SetTextSize(uint16_t size);
 	bool isSelected(void) { return _state; }

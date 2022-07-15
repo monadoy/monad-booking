@@ -165,7 +165,7 @@ void EPDGUI_Textbox::SetState(int16_t state) {
 	}
 }
 
-void EPDGUI_Textbox::SetText(String text) {
+void EPDGUI_Textbox::SetText(const String& text) {
 	if (text != _data) {
 		_data = text;
 		Draw(UPDATE_MODE_NONE);
@@ -191,27 +191,7 @@ void EPDGUI_Textbox::Remove(int16_t idx) {
 	}
 }
 
-void EPDGUI_Textbox::AddText(String text) {
-	if (text.length() == 0) {
-		return;
-	}
-
-	uint8_t* buf = (uint8_t*)text.c_str();
-	uint16_t len = strlen((char*)buf);
-	uint16_t n = 0, last_n = 0;
-
-	while (n < len) {
-		last_n = n;
-		uint16_t uniCode = _canvas->decodeUTF8(buf, &n, len - n);
-		if (uniCode == 0x0008) {
-			Remove(-1);
-		} else {
-			_data += text.substring(last_n, n);
-		}
-	}
-
-	Draw(UPDATE_MODE_NONE);
-}
+void EPDGUI_Textbox::AddText(const String& text) { _data += text; }
 
 void EPDGUI_Textbox::useBold(bool usebold) { _use_bold = usebold; }
 
