@@ -9,4 +9,5 @@ Localization l10n;
 Preferences preferences;
 
 const Version CURRENT_VERSION{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
-std::unique_ptr<Version> latestVersion = nullptr;
+utils::Result<Version> latestVersionResult
+    = utils::Result<Version>::makeErr(new utils::Error("Not initialized."));

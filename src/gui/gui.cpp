@@ -430,8 +430,9 @@ void deleteBooking() {
 void hideSettings(bool isHide) {
 	if (!isHide) {
 		String text = l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION.toString() + "\n";
-		if (latestVersion) {
-			text += l10n.msg(L10nMessage::LATEST_VERSION) + ": " + latestVersion->toString() + "\n";
+		if (latestVersionResult.isOk()) {
+			text += l10n.msg(L10nMessage::LATEST_VERSION) + ": "
+			        + latestVersionResult.ok()->toString() + "\n";
 		}
 		lbls[LABEL_SETTINGS_STARTUP]->SetText(text);
 		lbls[LABEL_CURRENT_BOOKING]->SetPos(80, 92);
@@ -442,7 +443,8 @@ void hideSettings(bool isHide) {
 	lbls[LABEL_SETTINGS_STARTUP]->SetHide(isHide);
 
 	btns[BUTTON_SETUP]->SetHide(isHide);
-	btns[BUTTON_UPDATE]->SetHide(isHide || !(latestVersion && *latestVersion != CURRENT_VERSION));
+	btns[BUTTON_UPDATE]->SetHide(
+	    isHide || !(latestVersionResult.isOk() && *latestVersionResult.ok() != CURRENT_VERSION));
 	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
 	lbls[LABEL_BOOTLOG]->SetHide(true);
 }

@@ -36,7 +36,7 @@ void restart();
  * Fetch information about the latest available firmware version from the internet.
  * Returns nullptr on failure.
  */
-std::unique_ptr<Version> getLatestFirmwareVersion();
+utils::Result<Version> getLatestFirmwareVersion();
 
 /**
  * Fetches new firmware and filesystem from the internet based on newVersion.

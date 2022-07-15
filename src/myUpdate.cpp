@@ -20,7 +20,7 @@
  * Even if the string doesn't contain three or more numbers,
  * zeros are added until there are three numbers.
  */
-std::unique_ptr<Version> parseVersion(String version) {
+utils::Result<Version> parseVersion(String version) {
 	version.trim();
 
 	std::vector<int> versionParts;
@@ -38,13 +38,15 @@ std::unique_ptr<Version> parseVersion(String version) {
 
 	// If not enough numbers were found, fail
 	while (versionParts.size() < 3) {
-		return nullptr;
+		return utils::Result<Version>::makeErr(
+		    new utils::Error("Parse failed: Invalid version string."));
 	}
 
-	return utils::make_unique<Version>(versionParts[0], versionParts[1], versionParts[2]);
+	return utils::Result<Version>::makeOk(
+	    new Version{versionParts[0], versionParts[1], versionParts[2]});
 }
 
-std::unique_ptr<Version> getLatestFirmwareVersion() {
+utils::Result<Version> getLatestFirmwareVersion() {
 	ESPHTTPClient http;
 	String url = String(UPDATE_STORAGE_URL) + "/current-version";
 	http.open(HTTP_METHOD_GET, url.c_str(), UPDATE_SERVER_CERT);
@@ -54,20 +56,22 @@ std::unique_ptr<Version> getLatestFirmwareVersion() {
 
 	if (httpCodeRes.isErr()) {
 		log_e("%s", httpCodeRes.err()->message.c_str());
-		return nullptr;
+		return utils::Result<Version>::makeErr(new utils::Error("HTTP connection failed."));
 	}
 	if (*httpCodeRes.ok() < 200 || *httpCodeRes.ok() >= 300) {
 		log_e("HTTP returned %d", *httpCodeRes.ok());
-		return nullptr;
+		return utils::Result<Version>::makeErr(
+		    new utils::Error("HTTP returned: " + String(*httpCodeRes.ok())));
 	}
 
 	log_i("Response body: %s", responseBody.c_str());
 
-	std::unique_ptr<Version> version = parseVersion(responseBody);
+	utils::Result<Version> versionRes = parseVersion(responseBody);
 
-	log_i("Detected latest version: %s", version ? version->toString().c_str() : "nullptr");
+	log_i("Detected latest version: %s", versionRes.isOk() ? versionRes.ok()->toString().c_str()
+	                                                       : versionRes.err()->message.c_str());
 
-	return version;
+	return versionRes;
 }
 
 std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String& filename) {

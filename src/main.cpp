@@ -94,10 +94,10 @@ void onBeforeFilesystemWrite() {
 }
 
 void autoUpdateFirmware() {
-	if (latestVersion && *latestVersion != CURRENT_VERSION) {
-		guiTask->showLoadingText("Updating to firmware: v" + latestVersion->toString()
+	if (latestVersionResult.isOk() && *latestVersionResult.ok() != CURRENT_VERSION) {
+		guiTask->showLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
 		                         + ". This takes a while...");
-		auto err = updateFirmware(*latestVersion, onBeforeFilesystemWrite);
+		auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
 		if (err) {
 			// Errors don't really matter here as they aren't fatal
 			// TODO: somehow show the error to user
@@ -136,7 +136,7 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
-	latestVersion = getLatestFirmwareVersion();
+	latestVersionResult = getLatestFirmwareVersion();
 	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY, false)
 	    && (config["autoupdate"] | false || preferences.getBool(FORCE_UPDATE_KEY, false))) {
 		preferences.putBool(FORCE_UPDATE_KEY, false);

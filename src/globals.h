@@ -17,6 +17,6 @@ extern Localization l10n;
 extern Preferences preferences;
 
 extern const Version CURRENT_VERSION;
-extern std::unique_ptr<Version> latestVersion;
+extern utils::Result<Version> latestVersionResult;
 
 #endif
