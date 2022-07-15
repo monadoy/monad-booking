@@ -2,11 +2,9 @@
 
 Monad Booking is a simple, open source software package for meeting room booking.
 
-![display outside a meeting room](./misc/MonadBookingRoom_1000px.jpg)
-
-
 Designed for the [M5Paper](https://shop.m5stack.com/products/m5paper-esp32-development-kit-960x540-4-7-eink-display-235-ppi?variant=37595977908396) electronic ink device. Attach one to each of your meeting rooms to show booking status and allow easy, single tap bookings.
 
+![display outside a meeting room](./misc/MonadBookingRoom_1000px.jpg)
 
 ## Features
 - Completely free, no recurring costs
