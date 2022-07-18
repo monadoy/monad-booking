@@ -400,6 +400,7 @@ void toConfirmBooking(uint16_t time, bool isTillNext) {
 		hideConfirmBooking(timeToBeBooked, false);
 		updateScreen(true, true, UPDATE_MODE_GLD16);
 	} else {
+		hideMainButtons(true);
 		makeBooking(*reserveParamsPtr);
 	}
 }
