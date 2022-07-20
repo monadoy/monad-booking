@@ -252,8 +252,7 @@ bool SleepManager::_shouldShutdown() {
 
 	return (!_onDays[tm.Wday - 1]
 	        || (tm.Hour < _onHours[0] || (tm.Hour == _onHours[0] && tm.Minute < _onMinutes[0]))
-	        || (tm.Hour > _onHours[1] || (tm.Hour == _onHours[1] && tm.Minute > _onMinutes[1]))
-	               && !utils::isCharging());
+	        || (tm.Hour > _onHours[1] || (tm.Hour == _onHours[1] && tm.Minute > _onMinutes[1])));
 }
 
 void SleepManager::_shutdown() {
@@ -266,13 +265,22 @@ void SleepManager::_shutdown() {
 
 	const String logShut = "[" + safeMyTZ.dateTime(now, RFC3339) + "] Shut down";
 	const String logWake = "Try wake at " + turnOnTimeStr;
-
 	log_i("%s, %s", logShut.c_str(), logWake.c_str());
-
 	utils::addBootLogEntry(logWake);
 	utils::addBootLogEntry(logShut);
 
 	Serial.flush();
 
 	M5.shutdown(turnOnTimeRTC.date, turnOnTimeRTC.time);
+
+	// We reach here if we couldn't shut down thanks to being plugged in.
+	while (_shouldShutdown()) {
+		log_i("Waiting until active time starts...");
+		delay(10000);
+		// Try restart in case we were unplugged.
+		M5.shutdown(1);
+	}
+
+	// Force restart when we should no longer be shut down
+	utils::forceRestart();
 }

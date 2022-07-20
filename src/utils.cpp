@@ -46,6 +46,17 @@ bool addBootLogEntry(const String& entry) {
 	return true;
 }
 
+void forceRestart() {
+	Serial.flush();
+
+	M5.shutdown(1);
+
+	// Normally m5paper won't allow restarts while USB is plugged in.
+	// We induce a crash to shut down for sure.
+	String* shutdown = nullptr;
+	shutdown->toUpperCase();
+}
+
 void merge(JsonVariant dst, JsonVariantConst src) {
 	if (src.is<JsonObjectConst>()) {
 		for (auto kvp : src.as<JsonObjectConst>()) {

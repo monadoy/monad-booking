@@ -158,17 +158,6 @@ void HttpEvent(HttpEvent_t* event) {
 	}
 }
 
-void restart() {
-	Serial.flush();
-
-	M5.shutdown(1);
-
-	// Normally m5paper won't allow restarts while USB is plugged in.
-	// We induce a crash to shut down for sure.
-	String* shutdown = nullptr;
-	shutdown->toUpperCase();
-}
-
 std::unique_ptr<utils::Error> updateFirmware(const Version& newVersion,
                                              std::function<void()> onBeforeFormat) {
 	auto count = sleepManager.scopedTaskCount();
@@ -222,7 +211,7 @@ std::unique_ptr<utils::Error> updateFirmware(const Version& newVersion,
 
 	log_i("Firmware and filesystem update success. Restarting...");
 
-	restart();
+	utils::forceRestart();
 
 	// This is just to silence compiler warnings.
 	return nullptr;

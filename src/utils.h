@@ -78,6 +78,8 @@ String httpCodeToString(int code);
 
 void merge(JsonVariant dst, JsonVariantConst src);
 
+void forceRestart();
+
 }  // namespace utils
 
 #endif
