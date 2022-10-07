@@ -4,7 +4,18 @@
 #include <LittleFS.h>
 
 namespace utils {
+const uint32_t BAT_LOW = 3300;
+const uint32_t BAT_HIGH = 4200;
+
 bool isCharging() { return M5.getBatteryVoltage() > 4275; }
+
+/**
+ * Returns battery level in 0.0-1.0 range
+ */
+float getBatteryLevel() {
+	auto clamped = std::min(std::max(M5.getBatteryVoltage(), BAT_LOW), BAT_HIGH);
+	return (float)(clamped - BAT_LOW) / (float)(BAT_HIGH - BAT_LOW);
+}
 
 std::vector<String> getBootLog() {
 	fs::File readHandle = LittleFS.open("/boot.log", FILE_READ);

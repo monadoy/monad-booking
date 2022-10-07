@@ -10,8 +10,8 @@
 #include "calendar/api.h"
 #include "calendar/model.h"
 #include "configServer.h"
-#include "safeTimezone.h"
 #include "gui/animManager.h"
+#include "safeTimezone.h"
 
 namespace {
 
@@ -83,7 +83,7 @@ void EPDGUI_Draw(m5epd_update_mode_t mode = UPDATE_MODE_NONE);
 void EPDGUI_Process(void);
 void EPDGUI_Process(int16_t x, int16_t y);
 
-String getBatteryPercent();
+String getBatteryDisplay();
 String getWifiStatus();
 void updateStatus(std::shared_ptr<cal::CalendarStatus> statusCopy);
 void updateScreen(bool pushLeft, bool pushRight, m5epd_update_mode_t updateMode = UPDATE_MODE_GC16);
@@ -214,29 +214,30 @@ class GUITask {
 
 	/**
 	 * @brief Shows text during loading
-	 * 
-	 * @param data text to be shown 
+	 *
+	 * @param data text to be shown
 	 */
 	void showLoadingText(String data);
 
 	/**
 	 * @brief Stops loading animation
-	 * 
+	 *
 	 */
 	void stopLoading();
 
 	/**
 	 * @brief Shows shutdownscreen with preferred text
-	 * 
+	 *
 	 * @param shutdownText text to be shown under the logo
 	 */
 	void showShutdown(String shutdownText, bool isBootError = true);
 
 	/**
 	 * @brief Puts GUI to setupscreen
-	 * 
+	 *
 	 */
 	void goSetup(bool fromMain = true);
+
   private:
 	TaskHandle_t _taskHandle;
 	void enqueue(void* func);

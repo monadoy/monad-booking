@@ -94,13 +94,11 @@ void EPDGUI_Process(int16_t x, int16_t y) {
 	}
 }
 
-String getBatteryPercent() {
+String getBatteryDisplay() {
 	if (utils::isCharging()) {
 		return "USB";
 	}
-	auto clamped = std::min(std::max(M5.getBatteryVoltage(), BAT_LOW), BAT_HIGH);
-	int perc = (float)(clamped - BAT_LOW) / (float)(BAT_HIGH - BAT_LOW) * 100.0f;
-	return String(perc) + "%";
+	return String((int)(utils::getBatteryLevel() * 100)) + "%";
 }
 
 bool checkEventEquality(std::shared_ptr<cal::Event> event1, std::shared_ptr<cal::Event> event2) {
@@ -279,7 +277,7 @@ void loadNextBooking() {
 		lbls[i]->setColors(3, 15);
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(safeMyTZ.dateTime("G:i"));
-	lbls[LABEL_BATTERY]->SetText(getBatteryPercent());
+	lbls[LABEL_BATTERY]->SetText(getBatteryDisplay());
 
 	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
 		lbls[i]->setColors(3, 15);
@@ -308,7 +306,7 @@ void loadNextFree() {
 		lbls[i]->SetHide(false);
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(safeMyTZ.dateTime("G:i"));
-	lbls[LABEL_BATTERY]->SetText(getBatteryPercent());
+	lbls[LABEL_BATTERY]->SetText(getBatteryDisplay());
 
 	// hide the next event labels
 	for (int i = LABEL_NEXT_EVENT_CREATOR; i < LABEL_CURRENT_EVENT_CREATOR; i++) {

@@ -97,6 +97,11 @@ void autoUpdateFirmware() {
 	if (latestVersionResult.isErr() || *latestVersionResult.ok() == CURRENT_VERSION)
 		return;
 
+	if (utils::getBatteryLevel() < 0.4) {
+		log_i("Battery level too low to update firmware");
+		return;
+	}
+
 	guiTask->showLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
 	                         + ". This takes a while...");
 	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
