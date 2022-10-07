@@ -527,7 +527,7 @@ void continueButton(epdgui_args_vector_t& args) {
 }
 
 void updateButton(epdgui_args_vector_t& args) {
-	preferences.putBool(FORCE_UPDATE_KEY, true);
+	preferences.putBool(MANUAL_UPDATE_KEY, true);
 	utils::forceRestart();
 }
 

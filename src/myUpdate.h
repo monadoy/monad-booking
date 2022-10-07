@@ -9,7 +9,7 @@
 
 const char* const CURR_BOOT_SUCCESS_KEY = "curr-b-ok";
 const char* const LAST_BOOT_SUCCESS_KEY = "last-b-ok";
-const char* const FORCE_UPDATE_KEY = "up-force";
+const char* const MANUAL_UPDATE_KEY = "up-force";
 
 struct Version {
   public:

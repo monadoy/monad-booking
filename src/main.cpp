@@ -94,17 +94,18 @@ void onBeforeFilesystemWrite() {
 }
 
 void autoUpdateFirmware() {
-	if (latestVersionResult.isOk() && *latestVersionResult.ok() != CURRENT_VERSION) {
-		guiTask->showLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
-		                         + ". This takes a while...");
-		auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
-		if (err) {
-			// Errors don't really matter here as they aren't fatal
-			// TODO: somehow show the error to user
-		}
-		// Resume normal operation after failure (updateFirmware reboots on success)
-		guiTask->startLoading();
+	if (latestVersionResult.isErr() || *latestVersionResult.ok() == CURRENT_VERSION)
+		return;
+
+	guiTask->showLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
+	                         + ". This takes a while...");
+	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
+	if (err) {
+		// Errors don't really matter here as they aren't fatal
+		// TODO: somehow show the error to user
 	}
+	// Resume normal operation after failure (updateFirmware reboots on success)
+	guiTask->startLoading();
 }
 
 void normalBoot(JsonObjectConst config) {
@@ -138,8 +139,8 @@ void normalBoot(JsonObjectConst config) {
 
 	latestVersionResult = getLatestFirmwareVersion();
 	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY)
-	    && (config["autoupdate"] | false || preferences.getBool(FORCE_UPDATE_KEY))) {
-		preferences.putBool(FORCE_UPDATE_KEY, false);
+	    && (config["autoupdate"] | false || preferences.getBool(MANUAL_UPDATE_KEY))) {
+		preferences.putBool(MANUAL_UPDATE_KEY, false);
 		autoUpdateFirmware();
 	}
 
