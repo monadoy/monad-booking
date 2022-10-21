@@ -5,7 +5,7 @@ import os.path
 
 TOKEN_FILE = "token.json"
 CREDENTIALS_FILE = "credentials.json"
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
+SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 def main():
