@@ -22,6 +22,7 @@ void handleBeforeAction(SM* manager, SM::Action action) {
 			manager->_dispatchCallbacks(SM::Callback::BEFORE_SLEEP);
 			break;
 		case SM::Action::SHUTDOWN:
+		case SM::Action::ERROR_REBOOT:
 			manager->_dispatchCallbacks(SM::Callback::BEFORE_SHUTDOWN);
 			break;
 		default:
@@ -42,7 +43,10 @@ void handleAction(SM* manager, SM::Action action) {
 			break;
 		}
 		case SM::Action::SHUTDOWN:
-			manager->_shutdown();
+			manager->_shutdown(-1);
+			break;
+		case SM::Action::ERROR_REBOOT:
+			manager->_shutdown(ERROR_REBOOT_DELAY_S);
 			break;
 		default:
 			log_e("unhandled action %d", SM::callbackNames[(size_t)action]);
@@ -197,7 +201,7 @@ SleepManager::WakeReason SleepManager::_sleep() {
 	return WakeReason::UNKNOWN;
 }
 
-void SleepManager::requestShutdown() { _enqueue(Action::SHUTDOWN); }
+void SleepManager::requestErrorReboot() { _enqueue(Action::ERROR_REBOOT); }
 
 void SleepManager::setOnTimes(JsonObjectConst config) {
 	std::lock_guard<std::mutex> lock(_onTimesMutex);
@@ -255,14 +259,19 @@ bool SleepManager::_shouldShutdown() {
 	        || (tm.Hour > _onHours[1] || (tm.Hour == _onHours[1] && tm.Minute > _onMinutes[1])));
 }
 
-void SleepManager::_shutdown() {
+void SleepManager::_shutdown(time_t wakeAfter) {
 	time_t now = safeMyTZ.now();
 
 	time_t randPostpone = time_t(esp_random() % (STATUS_UPDATE_INTERVAL_S));
 
-	time_t turnOnTime = calculateTurnOnTimeUTC(now)  // Get base time
-	                    + WAKEUP_SAFETY_BUFFER_S     // Add some buffer in case timer drifts
-	                    + randPostpone;              // Add randomness to reduce wifi load
+	time_t turnOnTime = 0;
+	if (wakeAfter == -1) {
+		turnOnTime = calculateTurnOnTimeUTC(now)  // Get base time
+		             + WAKEUP_SAFETY_BUFFER_S     // Add some buffer in case timer drifts
+		             + randPostpone;              // Add randomness to reduce wifi load
+	} else {
+		turnOnTime = now + wakeAfter;
+	}
 
 	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTime);
 
@@ -279,11 +288,14 @@ void SleepManager::_shutdown() {
 	M5.shutdown(turnOnTimeRTC.date, turnOnTimeRTC.time);
 
 	// We reach here if we couldn't shut down thanks to being plugged in.
-	while (_shouldShutdown()) {
-		log_i("Waiting until active time starts...");
-		delay(10000);
-		// Try restart in case we were unplugged.
-		M5.shutdown(1);
+
+	if (wakeAfter == -1) {
+		while (_shouldShutdown()) {
+			log_i("Waiting until active time starts...");
+			delay(10000);
+			// Try restart in case we were unplugged.
+			M5.shutdown(1);
+		}
 	}
 
 	// Force restart when we should no longer be shut down

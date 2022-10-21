@@ -10,24 +10,26 @@
 
 #define SLEEP_MANAGER_MAX_TASK_COUNT 20
 
-#define SLEEP_MANAGER_TASK_STACK_SIZE 1024 * 3
+#define SLEEP_MANAGER_TASK_STACK_SIZE (1024 * 3)
 #define SLEEP_MANAGER_TASK_PRIORITY 10
 #define SLEEP_MANAGER_TASK_QUEUE_SIZE 5
 
 // How long to keep awake after touch event
-#define TOUCH_WAKE_TIMEOUT_MS 10 * 1000
+#define TOUCH_WAKE_TIMEOUT_MS (10 * 1000)
 
 // How long the keep awake after tasks are complete.
 // This works as a safety buffer when there is some processing time between
 // two sequential tasks that should keep us awake.
-#define TASK_WAKE_TIMEOUT_MS 200
+#define TASK_WAKE_TIMEOUT_MS 1000
 
 // Minimum time to put into timer when sleeping
 #define MIN_TIMED_SLEEP_S 3
 
-#define STATUS_UPDATE_INTERVAL_S 2 * SECS_PER_MIN
+#define STATUS_UPDATE_INTERVAL_S (2 * SECS_PER_MIN)
 
 #define WAKEUP_SAFETY_BUFFER_S 10
+
+#define ERROR_REBOOT_DELAY_S (20 * SECS_PER_MIN)
 
 class SleepManager;
 
@@ -50,7 +52,12 @@ class SleepManager {
   public:
 	SleepManager();
 
-	enum class Action : size_t { SLEEP, SHUTDOWN, SIZE };
+	enum class Action : size_t {
+		SLEEP,         // Go to sleep until `nextWakeTime`
+		SHUTDOWN,      // Shut down and wake tomorrow based on `_onHours and _onMinutes`
+		ERROR_REBOOT,  // Shut down and reboot in ERROR_REBOOT_DELAY_S
+		SIZE
+	};
 
 	/**
 	 * Convenient RAII task count.
@@ -72,9 +79,9 @@ class SleepManager {
 
 	/**
 	 * Asks sleepmanager to shut down as soon as tasks have completed.
-	 * Mostly used by error states.
+	 * Wake up after ERROR_REBOOT_DELAY_S to retry.
 	 */
-	void requestShutdown();
+	void requestErrorReboot();
 
 	enum class Callback : size_t {
 		/*
@@ -108,7 +115,13 @@ class SleepManager {
 
 	time_t calculateTurnOnTimeUTC(time_t localNow);
 	bool _shouldShutdown();
-	void _shutdown();
+
+	/**
+	 * Set wakeAfter to -1 to wake up tomorrow based on _onHours and _onMinutes.
+	 */
+	void _shutdown(time_t wakeAfter);
+
+	void _error_reboot();
 
 	enum class WakeReason { TOUCH, TIMER, UNKNOWN };
 	WakeReason _sleep();

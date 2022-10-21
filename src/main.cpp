@@ -80,10 +80,11 @@ void handleBootError(const String& message) {
 	syncEzTimeFromRTC();
 	log_e("%s", message.c_str());
 	if (guiTask) {
-		guiTask->showLoadingText(message + " Reboot to retry.");
+		guiTask->showLoadingText(message + " Retrying in " + String(ERROR_REBOOT_DELAY_S / 60)
+		                         + " min...");
 		guiTask->stopLoading();
 	}
-	sleepManager.requestShutdown();
+	sleepManager.requestErrorReboot();
 };
 
 // Firmware update calls this before writing to flash.
