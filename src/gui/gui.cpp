@@ -491,8 +491,6 @@ void toSettingsScreen() {
 void settingsButton(epdgui_args_vector_t& args) {
 	if (currentScreen == SCREEN_MAIN) {
 		toSettingsScreen();
-	} else if (currentScreen == SCREEN_SETTINGS) {
-		gui::showBootLog();
 	} else {
 		toMainScreen(true, true);
 	}
