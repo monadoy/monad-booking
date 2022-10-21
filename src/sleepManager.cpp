@@ -237,7 +237,7 @@ time_t SleepManager::calculateTurnOnTimeUTC(time_t localNow) {
 		tm.Day += 1;
 	}
 	tm.Hour = _onHours[0];
-	tm.Minute = _onMinutes[0] + 1;  // Add one minute buffer in case timer drifts
+	tm.Minute = _onMinutes[0];
 	tm.Second = 0;
 
 	return safeMyTZ.tzTime(ezt::makeTime(tm));
@@ -257,7 +257,12 @@ bool SleepManager::_shouldShutdown() {
 
 void SleepManager::_shutdown() {
 	time_t now = safeMyTZ.now();
-	time_t turnOnTime = calculateTurnOnTimeUTC(now);
+
+	time_t randPostpone = time_t(esp_random() % (STATUS_UPDATE_INTERVAL_S));
+
+	time_t turnOnTime = calculateTurnOnTimeUTC(now)  // Get base time
+	                    + WAKEUP_SAFETY_BUFFER_S     // Add some buffer in case timer drifts
+	                    + randPostpone;              // Add randomness to reduce wifi load
 
 	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTime);
 

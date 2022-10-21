@@ -11,8 +11,6 @@ class GUITask;
 
 namespace cal {
 
-#define STATUS_UPDATE_INTERVAL_S 2 * SECS_PER_MIN
-
 /**
  * Models the state of the calendar. Works as glue between the APITask and GUI.
  */

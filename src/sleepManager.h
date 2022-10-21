@@ -25,6 +25,10 @@
 // Minimum time to put into timer when sleeping
 #define MIN_TIMED_SLEEP_S 3
 
+#define STATUS_UPDATE_INTERVAL_S 2 * SECS_PER_MIN
+
+#define WAKEUP_SAFETY_BUFFER_S 10
+
 class SleepManager;
 
 class ScopedTaskCounter {
