@@ -230,7 +230,7 @@ class GUITask {
 	 *
 	 * @param shutdownText text to be shown under the logo
 	 */
-	void showShutdown(String shutdownText, bool isBootError = true);
+	void showShutdown(String shutdownText);
 
 	/**
 	 * @brief Puts GUI to setupscreen

@@ -697,7 +697,7 @@ void endLoading() {
 	_animation->resetAnimation();
 }
 
-void shutDown(String text, bool isBootError) {
+void shutDown(String text) {
 	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
 		(*p)->SetHide(true);
@@ -950,8 +950,8 @@ void GUITask::stopLoading() {
 	enqueue(new QueueFunc([=]() { return endLoading(); }));
 }
 
-void GUITask::showShutdown(String shutdownText, bool isBootError) {
-	enqueue(new QueueFunc([=]() { return shutDown(shutdownText, isBootError); }));
+void GUITask::showShutdown(String shutdownText) {
+	enqueue(new QueueFunc([=]() { return shutDown(shutdownText); }));
 }
 
 void GUITask::goSetup(bool fromMain) {
@@ -973,8 +973,7 @@ GUITask::GUITask() {
 		// This shouldShutdown call is ignored if an error is already displayed
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
 		showShutdown("Shut down. Waking up at "
-		                 + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".",
-		             false);
+		             + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
 	});
 }
 }  // namespace gui
