@@ -444,7 +444,7 @@ void hideSettings(bool isHide) {
 	btns[BUTTON_SETUP]->SetHide(isHide);
 	btns[BUTTON_UPDATE]->SetHide(
 	    isHide || !(latestVersionResult.isOk() && *latestVersionResult.ok() != CURRENT_VERSION));
-	btns[BUTTON_CANCELBOOKING]->SetHide(isHide);
+	btns[BUTTON_CANCELBOOKING]->SetHide(true);
 	lbls[LABEL_BOOTLOG]->SetHide(true);
 }
 
