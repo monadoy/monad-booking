@@ -56,9 +56,16 @@ void onSTAEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
 	}
 }
 
-String WiFiManager::getDisconnectReason() {
+String WiFiManager::getDisconnectReasonString() {
 	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
 	String reason = wifiManager._disconnectReasonStr;
+	xSemaphoreGive(_connectSemaphore);
+	return reason;
+}
+
+wifi_err_reason_t WiFiManager::getDisconnectReason() {
+	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
+	wifi_err_reason_t reason = wifiManager._disconnectReason;
 	xSemaphoreGive(_connectSemaphore);
 	return reason;
 }

@@ -3,6 +3,7 @@
 #include <LittleFS.h>
 #include <M5EPD.h>
 #include <Preferences.h>
+#include <esp_wifi.h>
 
 #include <memory>
 
@@ -128,7 +129,12 @@ void normalBoot(JsonObjectConst config) {
 
 	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {
-		handleBootError("WIFI Error: " + wifiManager.getDisconnectReason() + ".");
+		// Try de-authenticating to fix https://github.com/monadoy/monad-booking/issues/1
+		// (not sure if it works)
+		if (wifiManager.getDisconnectReason() == WIFI_REASON_AUTH_EXPIRE) {
+			esp_wifi_deauth_sta(0);
+		}
+		handleBootError("WIFI Error: " + wifiManager.getDisconnectReasonString() + ".");
 		return;
 	}
 

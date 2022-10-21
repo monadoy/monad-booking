@@ -66,7 +66,7 @@ class WiFiManager {
 	 */
 	SemaphoreHandle_t _connectSemaphore = xSemaphoreCreateBinary();
 	unsigned long _connectTimer = 0;
-	wifi_err_reason_t _disconnectReason;
+	wifi_err_reason_t _disconnectReason = WIFI_REASON_UNSPECIFIED;
 	String _disconnectReasonStr;
 
 	/**
@@ -74,7 +74,8 @@ class WiFiManager {
 	 * If we are currently connected, will return the reason for last disconnect.
 	 * Returns an empty string if we have yet to disconnect.
 	 */
-	String getDisconnectReason();
+	String getDisconnectReasonString();
+	wifi_err_reason_t getDisconnectReason();
 
 	/**
 	 * These callbacks are called every time a disconnect happens.
