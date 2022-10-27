@@ -24,9 +24,12 @@ std::shared_ptr<cal::Event> currentEvent = nullptr;
 std::shared_ptr<cal::Event> nextEvent = nullptr;
 cal::Model* _model = nullptr;
 gui::GUITask* _guiTask = nullptr;
-std::unique_ptr<gui::Animation> _animation = nullptr;
+std::unique_ptr<gui::Animation> _logoAnim = nullptr;
 std::unique_ptr<Config::ConfigServer> configServer = nullptr;
 std::unique_ptr<Config::ConfigStore> _configStore = nullptr;
+
+std::unique_ptr<gui::Animation> _batteryImages{};
+uint8_t _currBatteryImage = 0;
 
 cal::Token token;
 String calendarId = "";
@@ -143,6 +146,11 @@ void updateScreen(bool pushLeft, bool pushRight, m5epd_update_mode_t updateMode)
 		canvasNextEvent.pushCanvas(652, 0, UPDATE_MODE_NONE);
 	}
 	EPDGUI_Draw(UPDATE_MODE_NONE);
+
+	// Draw battery image top of everyting else. Complete spaghetti, needs rewrite.
+	if (currentScreen == SCREEN_MAIN)
+		_batteryImages->drawFrame(_currBatteryImage + 1, UPDATE_MODE_NONE);
+
 	M5.EPD.UpdateFull(updateMode);
 }
 
@@ -272,13 +280,17 @@ void hideFreeBooking(bool isHide) {
 	}
 }
 
+void updateBatteryLevel() {
+	_currBatteryImage = utils::isCharging() ? 5 : uint8_t(utils::getBatteryLevel() * 4.9999);
+}
+
 void loadNextBooking() {
 	canvasNextEvent.fillCanvas(3);
 	for (int i = LABEL_CLOCK_UP; i < LABEL_CLOCK_MID; i++) {
 		lbls[i]->setColors(3, 15);
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(safeMyTZ.dateTime("G:i"));
-	lbls[LABEL_BATTERY]->SetText(getBatteryDisplay());
+	updateBatteryLevel();
 
 	for (int i = LABEL_NEXT_EVENT; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
 		lbls[i]->setColors(3, 15);
@@ -307,7 +319,7 @@ void loadNextFree() {
 		lbls[i]->SetHide(false);
 	}
 	lbls[LABEL_CLOCK_UP]->SetText(safeMyTZ.dateTime("G:i"));
-	lbls[LABEL_BATTERY]->SetText(getBatteryDisplay());
+	updateBatteryLevel();
 
 	// hide the next event labels
 	for (int i = LABEL_NEXT_EVENT_CREATOR; i < LABEL_CURRENT_EVENT_CREATOR; i++) {
@@ -583,9 +595,6 @@ void createRegularLabels() {
 	lbls[LABEL_CLOCK_UP] = new EPDGUI_Textbox(875, 16, 70, 40, 3, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[0]);
 
-	lbls[LABEL_BATTERY] = new EPDGUI_Textbox(800, 16, 75, 40, 3, 15, FONT_SIZE_NORMAL, false);
-	EPDGUI_AddObject(lbls[LABEL_BATTERY]);
-
 	lbls[LABEL_CLOCK_MID] = new EPDGUI_Textbox(80, 92, 77, 40, 0, 15, FONT_SIZE_NORMAL, false);
 	EPDGUI_AddObject(lbls[LABEL_CLOCK_MID]);
 
@@ -685,7 +694,7 @@ void initLoading(bool isReverse) {
 
 void checkLoadNextFrame(bool isReverse) {
 	if (!gotResponse) {
-		_animation->drawNext(UPDATE_MODE_DU4);
+		_logoAnim->drawNext(UPDATE_MODE_DU4);
 		delay(1);
 		_guiTask->loadNextFrame(isReverse);
 	}
@@ -693,7 +702,7 @@ void checkLoadNextFrame(bool isReverse) {
 
 void endLoading() {
 	gotResponse = true;
-	_animation->reset();
+	_logoAnim->reset();
 }
 
 void shutDown(String text) {
@@ -707,7 +716,7 @@ void shutDown(String text) {
 	canvasNextEvent.fillCanvas(0);
 	updateScreen(true, true);
 	M5.EPD.Active();
-	_animation->drawFrame(1, UPDATE_MODE_GC16);
+	_logoAnim->drawFrame(1, UPDATE_MODE_GC16);
 
 	// Don't overwrite old text, because it probably contains error information
 	if (lbls[LABEL_LOADING]->GetText() == "")
@@ -723,7 +732,7 @@ void createSetupButton() {
 void registerModel(cal::Model* model) { _model = model; }
 
 void initGui() {
-	_animation = utils::make_unique<gui::Animation>("/images/frame", 15, 292, 107);
+	_logoAnim = utils::make_unique<gui::Animation>("/images/frame", 15, 292, 107);
 
 	M5EPD_Canvas font(&M5.EPD);
 	font.setTextFont(1);
@@ -875,6 +884,9 @@ void initMainScreen(cal::Model* model) {
 	createButtons();
 	canvasCurrentEvent.setTextFont(2);
 	createRegularLabels();
+
+	_batteryImages = utils::make_unique<Animation>("/images/battery", 6, 800, 21);
+
 	registerModel(model);
 }
 
