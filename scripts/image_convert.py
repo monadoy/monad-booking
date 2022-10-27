@@ -19,9 +19,10 @@ def quantize(im, levels):
 @click.option("--uniform/--no-uniform", default=True)
 def main(image_path_or_folder, four_colours, uniform):
     if os.path.isdir(image_path_or_folder):
-        for file in os.listdir(image_path_or_folder):
-            if file.endswith(".png") and not file.endswith("_4bpp.png"):
-                convert(file, four_colours, uniform)
+        for root, _dirs, files in os.walk(image_path_or_folder):
+            for file in files:
+                if file.endswith(".png") and not file.endswith("_4bpp.png"):
+                    convert(root + "/" + file, four_colours, uniform)
     else:
         convert(image_path_or_folder, four_colours, uniform)
 
