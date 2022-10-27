@@ -12,7 +12,6 @@
 #include "calendar/model.h"
 #include "configServer.h"
 #include "globals.h"
-#include "gui/animManager.h"
 #include "gui/gui.h"
 #include "localization.h"
 #include "myUpdate.h"
@@ -223,6 +222,10 @@ void setup() {
 		log_e("LittleFS Mount Failed");
 		return;
 	}
+
+	// Default png buffer uses internal ram, this way we can use our psram
+	uint8_t* imageBuffer = new uint8_t[PNG_BUFFER_SIZE];
+	png.setBuffer(imageBuffer);
 
 	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();

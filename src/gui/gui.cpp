@@ -2,9 +2,10 @@
 
 #include <WiFi.h>
 
-#include "animManager.h"
+#include "animation.h"
 #include "configServer.h"
 #include "globals.h"
+#include "image.h"
 #include "localization.h"
 #include "myUpdate.h"
 #include "safeTimezone.h"
@@ -23,7 +24,7 @@ std::shared_ptr<cal::Event> currentEvent = nullptr;
 std::shared_ptr<cal::Event> nextEvent = nullptr;
 cal::Model* _model = nullptr;
 gui::GUITask* _guiTask = nullptr;
-std::unique_ptr<anim::Animation> _animation = nullptr;
+std::unique_ptr<gui::Animation> _animation = nullptr;
 std::unique_ptr<Config::ConfigServer> configServer = nullptr;
 std::unique_ptr<Config::ConfigStore> _configStore = nullptr;
 
@@ -684,7 +685,7 @@ void initLoading(bool isReverse) {
 
 void checkLoadNextFrame(bool isReverse) {
 	if (!gotResponse) {
-		_animation->showNextFrame(isReverse);
+		_animation->drawNext(UPDATE_MODE_DU4);
 		delay(1);
 		_guiTask->loadNextFrame(isReverse);
 	}
@@ -692,7 +693,7 @@ void checkLoadNextFrame(bool isReverse) {
 
 void endLoading() {
 	gotResponse = true;
-	_animation->resetAnimation();
+	_animation->reset();
 }
 
 void shutDown(String text) {
@@ -706,7 +707,7 @@ void shutDown(String text) {
 	canvasNextEvent.fillCanvas(0);
 	updateScreen(true, true);
 	M5.EPD.Active();
-	_animation->showLogo();
+	_animation->drawFrame(1, UPDATE_MODE_GC16);
 
 	// Don't overwrite old text, because it probably contains error information
 	if (lbls[LABEL_LOADING]->GetText() == "")
@@ -722,7 +723,7 @@ void createSetupButton() {
 void registerModel(cal::Model* model) { _model = model; }
 
 void initGui() {
-	_animation = utils::make_unique<anim::Animation>();
+	_animation = utils::make_unique<gui::Animation>("/images/frame", 15, 292, 107);
 
 	M5EPD_Canvas font(&M5.EPD);
 	font.setTextFont(1);

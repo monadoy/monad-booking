@@ -10,7 +10,6 @@
 #include "calendar/api.h"
 #include "calendar/model.h"
 #include "configServer.h"
-#include "gui/animManager.h"
 #include "safeTimezone.h"
 
 namespace {
@@ -248,7 +247,7 @@ void initMainScreen(cal::Model* model);
 void toSetupScreen(bool fromMain = false);
 void showBootLog();
 void registerModel(cal::Model* model);
-void registerAnimation(anim::Animation* loadingAnimation);
+// void registerAnimation(anim::Animation* loadingAnimation);
 void task(void* arg);
 void updateGui(gui::GUITask::GuiRequest type, std::shared_ptr<cal::CalendarStatus> status);
 void displayError(gui::GUITask::GuiRequest type, const cal::Error& error);

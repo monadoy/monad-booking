@@ -7,6 +7,7 @@ SleepManager sleepManager;
 WiFiManager wifiManager;
 Localization l10n;
 Preferences preferences;
+PNG png;
 
 const Version CURRENT_VERSION{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
 utils::Result<Version> latestVersionResult
