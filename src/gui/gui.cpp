@@ -281,7 +281,7 @@ void hideFreeBooking(bool isHide) {
 }
 
 void updateBatteryLevel() {
-	_currBatteryImage = utils::isCharging() ? 5 : uint8_t(utils::getBatteryLevel() * 4.9999);
+	_currBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
 }
 
 void loadNextBooking() {
@@ -885,7 +885,7 @@ void initMainScreen(cal::Model* model) {
 	canvasCurrentEvent.setTextFont(2);
 	createRegularLabels();
 
-	_batteryImages = utils::make_unique<Animation>("/images/battery", 6, 800, 21);
+	_batteryImages = utils::make_unique<Animation>("/images/battery", 6, 810, 18);
 
 	registerModel(model);
 }
