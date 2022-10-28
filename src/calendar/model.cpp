@@ -3,18 +3,18 @@
 #include <esp_log.h>
 
 #include "globals.h"
-#include "gui/gui.h"
+#include "gui/guiTask.h"
 
 namespace cal {
 
-typedef gui::GUITask::GuiRequest GuiReq;
+typedef gui::GUITask::Request GuiReq;
 
 void Model::_handleError(size_t reqType, std::shared_ptr<Error> error) {
 	// Logical errors are most likely caused by out of date information, so we need to update it
 	if (reqType != (size_t)GuiReq::UPDATE && error->type == Error::Type::LOGICAL)
 		updateStatus();
 	log_e("%s", error->message.c_str());
-	_guiTask->error((GuiReq)reqType, *error);
+	_guiTask->enqueueError((GuiReq)reqType, *error);
 }
 
 template <typename T>
@@ -105,7 +105,7 @@ void Model::_onInsertEvent(const Result<Event>& result) {
 
 	_status->currentEvent = result.ok();
 
-	_guiTask->success(GuiReq::RESERVE, _status);
+	_guiTask->enqueueSuccess(GuiReq::RESERVE, _status);
 }
 
 void Model::endCurrentEvent() {
@@ -155,7 +155,7 @@ void Model::_onEndEvent(const Result<Event>& result) {
 
 	_status->currentEvent = nullptr;
 
-	_guiTask->success(GuiReq::FREE, _status);
+	_guiTask->enqueueSuccess(GuiReq::FREE, _status);
 }
 
 void Model::_onExtendEvent(const Result<Event>& result) {
@@ -168,7 +168,7 @@ void Model::_onExtendEvent(const Result<Event>& result) {
 
 	_status->currentEvent = result.ok();
 
-	_guiTask->success(GuiReq::OTHER, _status);
+	_guiTask->enqueueSuccess(GuiReq::OTHER, _status);
 }
 
 void Model::updateStatus() {
@@ -194,13 +194,13 @@ void Model::_onCalendarStatus(const Result<CalendarStatus>& result) {
 
 	// Don't send an update to GUI if nothing changed
 	if (!changed) {
-		_guiTask->success(GuiReq::UPDATE, nullptr);
+		_guiTask->enqueueSuccess(GuiReq::UPDATE, nullptr);
 		return;
 	}
 
 	_status = newStatus;
 
-	_guiTask->success(GuiReq::UPDATE, _status);
+	_guiTask->enqueueSuccess(GuiReq::UPDATE, _status);
 }
 
 bool Model::_areEqual(std::shared_ptr<Event> event1, std::shared_ptr<Event> event2) const {

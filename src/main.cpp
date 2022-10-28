@@ -12,7 +12,7 @@
 #include "calendar/model.h"
 #include "configServer.h"
 #include "globals.h"
-#include "gui/gui.h"
+#include "gui/guiTask.h"
 #include "localization.h"
 #include "myUpdate.h"
 #include "safeTimezone.h"
@@ -79,9 +79,9 @@ void handleBootError(const String& message) {
 	syncEzTimeFromRTC();
 	log_e("%s", message.c_str());
 	if (guiTask) {
-		guiTask->showLoadingText(message + " Retrying in " + String(ERROR_REBOOT_DELAY_S / 60)
-		                         + " min...");
-		guiTask->stopLoading();
+		guiTask->enqueueLoadingText(message + " Retrying in " + String(ERROR_REBOOT_DELAY_S / 60)
+		                            + " min...");
+		guiTask->enqueueStopLoading();
 	}
 	sleepManager.requestErrorReboot();
 };
@@ -90,7 +90,7 @@ void handleBootError(const String& message) {
 // Animation uses flash to load images, so stop it
 // to avoid writing and reading at the same time.
 void onBeforeFilesystemWrite() {
-	guiTask->stopLoading();
+	guiTask->enqueueStopLoading();
 	delay(500);  // Delay to make sure that the last frame has loaded.
 }
 
@@ -103,21 +103,21 @@ void autoUpdateFirmware() {
 		return;
 	}
 
-	guiTask->showLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
-	                         + ". This takes a while...");
+	guiTask->enqueueLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
+	                            + ". This takes a while...");
 	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
 	if (err) {
 		// Errors don't really matter here as they aren't fatal
 		// TODO: somehow show the error to user
 	}
 	// Resume normal operation after failure (updateFirmware reboots on success)
-	guiTask->startLoading();
+	guiTask->enqueueLoading();
 }
 
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
-	guiTask->startLoading();
-	guiTask->showLoadingText("Booting...");
+	guiTask->enqueueLoading();
+	guiTask->enqueueLoadingText("Booting...");
 
 	auto error = l10n.setLanguage(config["language"]);
 	if (error) {
@@ -169,7 +169,7 @@ void normalBoot(JsonObjectConst config) {
 	guiTask->initMain(calendarModel.get());
 	calendarModel->updateStatus();
 
-	guiTask->showLoadingText("");
+	guiTask->enqueueLoadingText("");
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);
@@ -188,7 +188,7 @@ void setupBoot() {
 
 	configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
 	configServer->start();
-	guiTask->goSetup(true);
+	guiTask->enqueueSetupScreen();
 
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
 	                       + "] setup boot (timestamp unreliable)");
