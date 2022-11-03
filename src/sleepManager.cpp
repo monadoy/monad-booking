@@ -260,42 +260,34 @@ bool SleepManager::_shouldShutdown() {
 }
 
 void SleepManager::_shutdown(time_t wakeAfter) {
-	time_t now = safeMyTZ.now();
-
-	time_t randPostpone = time_t(esp_random() % (STATUS_UPDATE_INTERVAL_S));
-
-	time_t turnOnTime = 0;
+	time_t turnOnTimeUTC = 0;
 	if (wakeAfter == -1) {
-		turnOnTime = calculateTurnOnTimeUTC(now)  // Get base time
-		             + WAKEUP_SAFETY_BUFFER_S     // Add some buffer in case timer drifts
-		             + randPostpone;              // Add randomness to reduce wifi load
+		time_t randPostpone = time_t(esp_random() % (STATUS_UPDATE_INTERVAL_S));
+		turnOnTimeUTC = calculateTurnOnTimeUTC(safeMyTZ.now())  // Get base time
+		                + WAKEUP_SAFETY_BUFFER_S  // Add some buffer in case timer drifts
+		                + randPostpone;           // Add randomness to reduce wifi load
 	} else {
 		turnOnTimeUTC = safeUTC.now() + wakeAfter;
 	}
 
-	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTime);
-
-	String turnOnTimeStr = safeMyTZ.dateTime(turnOnTime, UTC_TIME, RFC3339);
-
-	const String logShut = "[" + safeMyTZ.dateTime(now, RFC3339) + "] Shut down";
-	const String logWake = "Try wake at " + turnOnTimeStr;
+	const String logShut = "[" + safeMyTZ.dateTime(RFC3339) + "] Shut down";
+	const String logWake = "Try wake at " + safeMyTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
 	log_i("%s, %s", logShut.c_str(), logWake.c_str());
 	utils::addBootLogEntry(logWake);
 	utils::addBootLogEntry(logShut);
 
 	Serial.flush();
 
+	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTimeUTC);
 	M5.shutdown(turnOnTimeRTC.date, turnOnTimeRTC.time);
 
 	// We reach here if we couldn't shut down thanks to being plugged in.
 
-	if (wakeAfter == -1) {
-		while (_shouldShutdown()) {
-			log_i("Waiting until active time starts...");
-			delay(10000);
-			// Try restart in case we were unplugged.
-			M5.shutdown(1);
-		}
+	while (safeUTC.now() < turnOnTimeUTC) {
+		log_i("Waiting until active time starts...");
+		delay(10000);
+		// Try restart in case we were unplugged.
+		M5.shutdown(1);
 	}
 
 	// Force restart when we should no longer be shut down
