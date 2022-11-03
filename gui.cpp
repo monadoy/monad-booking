@@ -29,7 +29,7 @@ std::unique_ptr<Config::ConfigServer> configServer = nullptr;
 std::unique_ptr<Config::ConfigStore> _configStore = nullptr;
 
 std::unique_ptr<gui::Animation> _batteryImages{};
-uint8_t _currBatteryImage = 0;
+uint8_t _curBatteryImage = 0;
 
 cal::Token token;
 String calendarId = "";
@@ -281,7 +281,7 @@ void hideFreeBooking(bool isHide) {
 }
 
 void updateBatteryLevel() {
-	_currBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
+	_curBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
 }
 
 void loadNextBooking() {

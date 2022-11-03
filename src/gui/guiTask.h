@@ -3,11 +3,11 @@
 
 #include <Arduino.h>
 
-#include "animation.h"
-#include "button.h"
 #include "calendar/model.h"
+#include "elements/animation.h"
+#include "elements/button.h"
+#include "elements/text.h"
 #include "gui/gui.h"
-#include "text.h"
 
 namespace gui {
 

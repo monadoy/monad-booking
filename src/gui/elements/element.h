@@ -30,7 +30,7 @@ class Element {
 
 	virtual void draw(m5epd_update_mode_t mode) = 0;
 
-	void show() { _hidden = false; }
+	void show(bool show = true) { _hidden = !show; }
 	void hide() { _hidden = true; }
 
 	Pos _pos;
