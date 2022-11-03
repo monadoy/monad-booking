@@ -270,7 +270,7 @@ void SleepManager::_shutdown(time_t wakeAfter) {
 		             + WAKEUP_SAFETY_BUFFER_S     // Add some buffer in case timer drifts
 		             + randPostpone;              // Add randomness to reduce wifi load
 	} else {
-		turnOnTime = now + wakeAfter;
+		turnOnTimeUTC = safeUTC.now() + wakeAfter;
 	}
 
 	timeutils::RTCDateTime turnOnTimeRTC = timeutils::toRTCTime(turnOnTime);
