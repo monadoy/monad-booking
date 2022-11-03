@@ -148,7 +148,7 @@ void updateScreen(bool pushLeft, bool pushRight, m5epd_update_mode_t updateMode)
 	EPDGUI_Draw(UPDATE_MODE_NONE);
 
 	// Draw battery image top of everyting else. Complete spaghetti, needs rewrite.
-	if (currentScreen == SCREEN_MAIN)
+	if (currentScreen == SCREEN_MAIN && _batteryImages)
 		_batteryImages->drawFrame(_currBatteryImage + 1, UPDATE_MODE_NONE);
 
 	M5.EPD.UpdateFull(updateMode);
@@ -708,7 +708,8 @@ void endLoading() {
 void shutDown(String text) {
 	for (std::vector<EPDGUI_Base*>::iterator p = epdgui_object_list.begin();
 	     p != epdgui_object_list.end(); p++) {
-		(*p)->SetHide(true);
+		if ((*p) != nullptr)
+			(*p)->SetHide(true);
 	}
 
 	M5.EPD.Active();
@@ -982,6 +983,8 @@ GUITask::GUITask() {
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() { sleep(); });
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SHUTDOWN, [this]() {
 		// This shouldShutdown call is ignored if an error is already displayed
+		return;
+		log_i("before shutdown");
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
 		showShutdown("Shut down. Waking up at "
 		             + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
