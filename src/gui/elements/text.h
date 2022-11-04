@@ -15,6 +15,8 @@ class Text : public Element {
 
 	void setText(const String& text) { _text = text; }
 
+	void setBGColor(uint8_t color) { _bgColor = color; }
+
 	void setColors(uint8_t textColor, uint8_t bgColor) {
 		_textColor = textColor;
 		_bgColor = bgColor;

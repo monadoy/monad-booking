@@ -79,9 +79,9 @@ void handleBootError(const String& message) {
 	syncEzTimeFromRTC();
 	log_e("%s", message.c_str());
 	if (guiTask) {
-		guiTask->enqueueLoadingText(message + " Retrying in " + String(ERROR_REBOOT_DELAY_S / 60)
-		                            + " min...");
-		guiTask->enqueueStopLoading();
+		guiTask->enqueueSetLoadingScreenText(message + "\nRetrying in "
+		                                     + String(ERROR_REBOOT_DELAY_S / 60) + " min...");
+		guiTask->enqueueStopLoadingAnim();
 	}
 	sleepManager.requestErrorReboot();
 };
@@ -90,7 +90,7 @@ void handleBootError(const String& message) {
 // Animation uses flash to load images, so stop it
 // to avoid writing and reading at the same time.
 void onBeforeFilesystemWrite() {
-	guiTask->enqueueStopLoading();
+	guiTask->enqueueStopLoadingAnim();
 	delay(500);  // Delay to make sure that the last frame has loaded.
 }
 
@@ -103,21 +103,22 @@ void autoUpdateFirmware() {
 		return;
 	}
 
-	guiTask->enqueueLoadingText("Updating to firmware: v" + latestVersionResult.ok()->toString()
-	                            + ". This takes a while...");
+	guiTask->enqueueSetLoadingScreenText("Updating to firmware: v"
+	                                     + latestVersionResult.ok()->toString()
+	                                     + ".\nThis takes a while...");
 	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
 	if (err) {
 		// Errors don't really matter here as they aren't fatal
 		// TODO: somehow show the error to user
 	}
 	// Resume normal operation after failure (updateFirmware reboots on success)
-	guiTask->enqueueLoading();
+	guiTask->enqueueStartLoadingAnim();
 }
 
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
-	guiTask->enqueueLoading();
-	guiTask->enqueueLoadingText("Booting...");
+	guiTask->enqueueStartLoadingAnim();
+	guiTask->enqueueSetLoadingScreenText("Booting...");
 
 	auto error = l10n.setLanguage(config["language"]);
 	if (error) {
@@ -169,7 +170,7 @@ void normalBoot(JsonObjectConst config) {
 	guiTask->initMain(calendarModel.get());
 	calendarModel->updateStatus();
 
-	guiTask->enqueueLoadingText("");
+	guiTask->enqueueSetLoadingScreenText("");
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);

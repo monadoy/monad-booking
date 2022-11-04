@@ -1,5 +1,3 @@
-#ifndef GUI_H
-#define GUI_H
 
 #include <M5EPD_Driver.h>
 #include <epdgui_base.h>
@@ -254,4 +252,3 @@ void displayError(gui::GUITask::GuiRequest type, const cal::Error& error);
 String enumToString(gui::GUITask::GuiRequest type);
 
 }  // namespace gui
-#endif

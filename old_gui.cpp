@@ -1,10 +1,9 @@
-#include "gui/gui.h"
-
 #include <WiFi.h>
 
 #include "animation.h"
 #include "configServer.h"
 #include "globals.h"
+#include "gui/gui.h"
 #include "image.h"
 #include "localization.h"
 #include "myUpdate.h"

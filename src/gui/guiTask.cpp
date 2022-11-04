@@ -28,7 +28,7 @@ void task(void* arg) {
 	vTaskDelete(NULL);
 }
 
-GUITask::GUITask() : _gui() {
+GUITask::GUITask() : _gui(this) {
 	using namespace std::placeholders;
 	M5.TP.onTouch(std::bind(&GUITask::enqueueTouchDown, this, _1),
 	              std::bind(&GUITask::enqueueTouchUp, this));
@@ -69,9 +69,19 @@ void GUITask::enqueueSleep() {
 	_enqueue(new QueueFunc([=]() { _gui.sleep(); }));
 }
 
-void GUITask::enqueueLoading() {}
-void GUITask::enqueueLoadingText(String data) {}
-void GUITask::enqueueStopLoading() {}
+void GUITask::enqueueStartLoadingAnim() {
+	_enqueue(new QueueFunc([=]() { _gui.startLoadingAnim(); }));
+}
+void GUITask::enqueueStopLoadingAnim() {
+	_enqueue(new QueueFunc([=]() { _gui.stopLoadingAnim(); }));
+}
+void GUITask::enqueueLoadingAnimNextFrame() {
+	_enqueue(new QueueFunc([=]() { _gui.showLoadingAnimNextFrame(); }));
+}
+
+void GUITask::enqueueSetLoadingScreenText(String data) {
+	_enqueue(new QueueFunc([=]() { _gui.setLoadingScreenText(data); }));
+}
 
 void GUITask::enqueueShutdownScreen(String shutdownText) {}
 
@@ -80,4 +90,4 @@ void GUITask::_enqueue(void* func) {
 	xQueueSend(_queueHandle, (void*)&data, 0);
 }
 
-}
+}  // namespace gui

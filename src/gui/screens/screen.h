@@ -1,6 +1,17 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 namespace gui {
+
+#define ADD_PNL(id, p) _panels[id] = std::unique_ptr<Panel>(new p)
+#define ADD_TXT(id, t) _texts[id] = std::unique_ptr<Text>(new t)
+#define ADD_BTN(id, b) _buttons[id] = std::unique_ptr<Button>(new b)
+
+// Assert that there are no null elements
+#define ASSERT_ALL_ELEMENTS()          \
+	for (auto& p : _panels) assert(p); \
+	for (auto& t : _texts) assert(t);  \
+	for (auto& b : _buttons) assert(b)
+
 // FONT SIZES
 const uint8_t FS_BOOTLOG = 16;
 const uint8_t FS_NORMAL = 24;
@@ -26,6 +37,8 @@ class Screen {
 	virtual void hide() { show(false); }
 
 	virtual void draw(m5epd_update_mode_t mode) = 0;
+
+	virtual void handleTouch(int16_t x = -1, int16_t y = -1) = 0;
 
   private:
 	bool _hidden = true;
