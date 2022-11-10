@@ -14,7 +14,7 @@ Text::Text(Pos pos, Size size, const String& text, uint8_t fontSize, uint8_t tex
       _bold{bold},
       _centered{centered},
       _canvas{&M5.EPD} {
-	log_i("Creating text element %s", _text.c_str());
+	// log_i("Creating text element %s", _text.c_str());
 	_canvas.createCanvas(_size.w, _size.h);
 }
 
@@ -22,7 +22,7 @@ void Text::draw(m5epd_update_mode_t mode) {
 	if (_hidden) {
 		return;
 	}
-	log_i("Drawing text: %s", _text.c_str());
+	// log_i("Drawing text: %s", _text.c_str());
 
 	if (_bold) {
 		_canvas.setTextFont(1);

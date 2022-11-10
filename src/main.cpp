@@ -81,7 +81,7 @@ void handleBootError(const String& message) {
 	if (guiTask) {
 		guiTask->enqueueSetLoadingScreenText(message + "\nRetrying in "
 		                                     + String(ERROR_REBOOT_DELAY_S / 60) + " min...");
-		guiTask->enqueueStopLoadingAnim();
+		guiTask->enqueueStopLoading();
 	}
 	sleepManager.requestErrorReboot();
 };
@@ -90,7 +90,7 @@ void handleBootError(const String& message) {
 // Animation uses flash to load images, so stop it
 // to avoid writing and reading at the same time.
 void onBeforeFilesystemWrite() {
-	guiTask->enqueueStopLoadingAnim();
+	guiTask->enqueueStopLoading();
 	delay(500);  // Delay to make sure that the last frame has loaded.
 }
 
@@ -112,12 +112,12 @@ void autoUpdateFirmware() {
 		// TODO: somehow show the error to user
 	}
 	// Resume normal operation after failure (updateFirmware reboots on success)
-	guiTask->enqueueStartLoadingAnim();
+	guiTask->enqueueStartLoading();
 }
 
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
-	guiTask->enqueueStartLoadingAnim();
+	guiTask->enqueueStartLoading();
 	guiTask->enqueueSetLoadingScreenText("Booting...");
 
 	auto error = l10n.setLanguage(config["language"]);

@@ -35,19 +35,38 @@ class MainScreen : public Screen {
 		TXT_SIZE
 	};
 
-	enum ButtonIdx { /*BTN_BOOK, BTN_FREE,*/ BTN_SIZE };
+	enum ButtonIdx {
+		BTN_SETTINGS,
+		BTN_15,
+		BTN_30,
+		BTN_60,
+		BTN_90,
+		BTN_UNTIL_NEXT,
+		BTN_FREE_ROOM,
+		BTN_EXTEND_15,
+		BTN_SIZE
+	};
+
+	enum BatteryStyle { BATTERY_LIGHT, BATTERY_DARKER };
+
+	// How buttons are placed on the main screen.
+	// First index is column, second is row.
+	const std::array<Pos, 6> BTN_GRID_POSITIONS{Pos{80, 306}, Pos{232, 306}, Pos{384, 306},
+	                                            Pos{80, 396}, Pos{232, 396}, Pos{384, 396}};
 
 	void update(std::shared_ptr<cal::CalendarStatus> status, bool draw = true);
 
-	void show(bool show = true) override;
+	void show(bool doShow = true) override;
 
 	void draw(m5epd_update_mode_t mode) override;
 
 	void handleTouch(int16_t x = -1, int16_t y = -1) override;
 
-	std::function<void()> startLoadingAnim = nullptr;
-	std::function<void()> stopLoadingAnim = nullptr;
-	std::function<void()> book = nullptr;
+	// Callbacks the GUI class can register to (they fire on button presses)
+	std::function<void(int minutes)> onBook = nullptr;
+	std::function<void()> onBookUntilNext = nullptr;
+	std::function<void()> onFree = nullptr;
+	std::function<void()> onExtend = nullptr;
 
   private:
 	std::shared_ptr<cal::CalendarStatus> _status = nullptr;
@@ -56,7 +75,9 @@ class MainScreen : public Screen {
 	std::array<std::unique_ptr<Text>, TXT_SIZE> _texts;
 	std::array<std::unique_ptr<Button>, BTN_SIZE> _buttons;
 
-	Animation _batteryAnim = Animation("/images/battery", 6, 810, 18);
+	std::array<Animation, 2> _batteryAnim{Animation("/images/battery", 6, Pos{812, 18}),
+	                                      Animation("/images/batteryDarker", 6, Pos{812, 18})};
+	BatteryStyle _curBatteryStyle = BATTERY_LIGHT;
 	uint8_t _curBatteryImage = 0;
 };
 }  // namespace gui

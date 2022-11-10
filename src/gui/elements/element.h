@@ -33,6 +33,9 @@ class Element {
 	void show(bool show = true) { _hidden = !show; }
 	void hide() { _hidden = true; }
 
+	void setPos(Pos pos) { _pos = pos; }
+
+  protected:
 	Pos _pos;
 	Size _size;
 	bool _hidden;

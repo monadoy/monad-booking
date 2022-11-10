@@ -22,7 +22,7 @@ void task(void* arg) {
 		(*func)();
 
 		// Fix "watchdog triggered" crash by giving some processing time to idle tasks
-		delay(1);
+		delay(2);
 	}
 
 	vTaskDelete(NULL);
@@ -69,11 +69,11 @@ void GUITask::enqueueSleep() {
 	_enqueue(new QueueFunc([=]() { _gui.sleep(); }));
 }
 
-void GUITask::enqueueStartLoadingAnim() {
-	_enqueue(new QueueFunc([=]() { _gui.startLoadingAnim(); }));
+void GUITask::enqueueStartLoading() {
+	_enqueue(new QueueFunc([=]() { _gui.startLoading(); }));
 }
-void GUITask::enqueueStopLoadingAnim() {
-	_enqueue(new QueueFunc([=]() { _gui.stopLoadingAnim(); }));
+void GUITask::enqueueStopLoading() {
+	_enqueue(new QueueFunc([=]() { _gui.stopLoading(); }));
 }
 void GUITask::enqueueLoadingAnimNextFrame() {
 	_enqueue(new QueueFunc([=]() { _gui.showLoadingAnimNextFrame(); }));

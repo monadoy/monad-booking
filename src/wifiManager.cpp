@@ -113,8 +113,12 @@ bool WiFiManager::waitWiFi(int maxRetries) {
 		xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
 		xSemaphoreGive(_connectSemaphore);
 
-		if (WiFi.isConnected())
+		if (WiFi.isConnected()) {
 			return true;
+		} else {
+			// Wait a little before retrying
+			delay(100);
+		}
 	}
 	log_w("Couldn't connect to WiFi even after %d tries.", maxRetries + 1);
 	return false;

@@ -33,8 +33,8 @@ class GUI {
 	void wake();
 	void sleep();
 
-	void startLoadingAnim();
-	void stopLoadingAnim();
+	void startLoading();
+	void stopLoading();
 	void showLoadingAnimNextFrame();
 
 	void setLoadingScreenText(String text);
@@ -52,8 +52,8 @@ class GUI {
 	// Loading animation is overlayed on top of the current screen when needed.
 	// When animating, it only updates the area it occupies and uses a faster
 	// update mode to avoid lag.
-	Animation _loadingAnim = Animation("/images/frame", 15, 292, 107);
-	bool _loadingAnimActive = false;
+	Animation _loadingAnim = Animation("/images/frame", 15, Pos{292, 107});
+	bool _loading = false;
 
 	M5EPD_Canvas _canvas;
 };

@@ -2,11 +2,11 @@
 
 namespace gui {
 
-Animation::Animation(String basePath, int16_t frames, uint16_t x, uint16_t y, bool reverseColor)
+Animation::Animation(String basePath, int16_t frames, Pos pos, bool reverseColor)
     : _basePath(basePath), _frames(frames) {
 	for (int16_t i = 0; i < _frames; i++) {
 		String path = _basePath + String(i + 1) + ".png";
-		_images.emplace_back(path, x, y, reverseColor);
+		_images.emplace_back(path, pos, reverseColor);
 	}
 }
 

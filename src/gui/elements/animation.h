@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <M5EPD.h>
 
+#include "element.h"
 #include "image.h"
 
 namespace gui {
@@ -14,7 +15,7 @@ namespace gui {
  */
 class Animation {
   public:
-	Animation(String basePath, int16_t frames, uint16_t x, uint16_t y, bool reverseColor = false);
+	Animation(String basePath, int16_t frames, Pos pos, bool reverseColor = false);
 
 	/**
 	 * Draw a specific frame of the animation.

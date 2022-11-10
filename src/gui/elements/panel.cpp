@@ -13,7 +13,7 @@ void Panel::draw(m5epd_update_mode_t mode) {
 	if (_hidden) {
 		return;
 	}
-	log_i("Drawing panel");
+	// log_i("Drawing panel");
 
 	_canvas.fillCanvas(_color);
 	_canvas.pushCanvas(_pos.x, _pos.y, mode);

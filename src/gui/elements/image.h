@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <M5EPD.h>
 
+#include "element.h"
+
 namespace gui {
 
 /**
@@ -11,16 +13,18 @@ namespace gui {
  */
 class Image {
   public:
-	Image(String path, uint16_t x, uint16_t y, bool reverseColor = false);
+	Image(String path, Pos pos, bool reverseColor = false);
 
 	void draw(m5epd_update_mode_t updateMode);
 
-	uint16_t x = 0;
-	uint16_t y = 0;
+	Pos pos;
+
+	void setPath(String path) { _path = path; }
+	void setReverseColor(bool reverseColor) { _reverseColor = reverseColor; }
 
   private:
-	const String _path;
-	const bool _reverseColor = false;
+	String _path;
+	bool _reverseColor = false;
 };
 }  // namespace gui
 

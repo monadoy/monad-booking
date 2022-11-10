@@ -69,9 +69,9 @@ class GUITask {
 	 */
 	void enqueueSleep();
 
-	void enqueueStartLoadingAnim();
+	void enqueueStartLoading();
 	void enqueueSetLoadingScreenText(String data);
-	void enqueueStopLoadingAnim();
+	void enqueueStopLoading();
 	void enqueueLoadingAnimNextFrame();
 
 	void enqueueShutdownScreen(String shutdownText);

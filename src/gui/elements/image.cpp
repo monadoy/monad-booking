@@ -35,13 +35,12 @@ int32_t seekFunc(PNGFILE* handle, int32_t pos) {
 
 void PNGDraw(PNGDRAW* pDraw) {
 	Image* image = static_cast<Image*>(pDraw->pUser);
-	M5.EPD.WritePartGram4bpp(image->x, image->y + pDraw->y, pDraw->iWidth, 1, pDraw->pPixels);
+	M5.EPD.WritePartGram4bpp(image->pos.x, image->pos.y + pDraw->y, pDraw->iWidth, 1,
+	                         pDraw->pPixels);
 }
 
-Image::Image(String path, uint16_t x, uint16_t y, bool reverseColor)
-    : x(x), y(y), _path(path), _reverseColor(reverseColor) {
-	assert(x * y <= MAX_PNG_SIZE);
-}
+Image::Image(String path, Pos pos, bool reverseColor)
+    : pos{pos}, _path(path), _reverseColor(reverseColor) {}
 
 void Image::draw(m5epd_update_mode_t updateMode) {
 	int beginTime = millis();
@@ -55,7 +54,7 @@ void Image::draw(m5epd_update_mode_t updateMode) {
 	if (res1 == PNG_SUCCESS) {
 		int res2 = png.decode(this, 0);
 		if (res2 == PNG_SUCCESS) {
-			M5.EPD.UpdateArea(x, y, png.getWidth(), png.getHeight(), updateMode);
+			M5.EPD.UpdateArea(pos.x, pos.y, png.getWidth(), png.getHeight(), updateMode);
 		}
 	}
 	if (!_reverseColor)

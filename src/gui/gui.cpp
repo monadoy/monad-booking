@@ -16,12 +16,12 @@ GUI::GUI(GUITask* guiTask) : _guiTask(guiTask) {
 	font.createRender(FS_BUTTON, 64);
 	font.createRender(FS_TITLE, 128);
 	font.createRender(FS_HEADER, 64);
+	font.createRender(FS_TIMESPAN, 128);
 
 	font.setTextFont(2);
 	font.loadFont(FONT_REGULAR, LittleFS);
 	font.createRender(FS_NORMAL, 64);
 	font.createRender(FS_HEADER, 64);
-	font.createRender(FS_TIMESPAN, 128);
 	font.createRender(FS_BOOTLOG, 64);
 
 	// Initialize screens (only loading screen for now)
@@ -37,11 +37,49 @@ void GUI::initMain(cal::Model* model) {
 	// Initialize the rest of the screens
 	_mainScreen = utils::make_unique<MainScreen>();
 	_screens[SCR_MAIN] = _mainScreen.get();
+	_mainScreen->onBook = [this](int minutes) {
+		if (_loading)
+			return;
+		auto res = _model->calculateReserveParams(minutes * 60);
+		if (res.isErr()) {
+			// TODO: show error
+			log_i("Error calculating reserve params: %s", res.err()->message.c_str());
+			return;
+		}
+		_model->reserveEvent(*res.ok());
+		startLoading();
+	};
+	_mainScreen->onBookUntilNext = [this]() {
+		if (_loading)
+			return;
+		auto res = _model->calculateReserveUntilNextParams();
+		if (res.isErr()) {
+			// TODO: show error
+			return;
+		}
+		_model->reserveEvent(*res.ok());
+		startLoading();
+	};
+	_mainScreen->onFree = [this]() {
+		if (_loading)
+			return;
+		_model->endCurrentEvent();
+		startLoading();
+	};
+	_mainScreen->onExtend = [this]() {
+		if (_loading)
+			return;
+		_model->extendCurrentEvent(15 * 60);
+		startLoading();
+	};
 }
 
-void GUI::handleTouch(int16_t x, int16_t y) { _screens[_currentScreen]->handleTouch(x, y); }
+void GUI::handleTouch(int16_t x, int16_t y) {
+	sleepManager.refreshTouchWake();
+	_screens[_currentScreen]->handleTouch(x, y);
+}
 
-void GUI::wake() { M5.EPD.Active(); }
+void GUI::wake() {}
 
 void GUI::sleep() {
 	if (_currentScreen != SCR_MAIN) {
@@ -59,7 +97,6 @@ void GUI::switchToScreen(ScreenIdx screenId) {
 	_screens[_currentScreen]->hide();
 
 	_screens[screenId]->show();
-	M5.EPD.Active();
 	_screens[screenId]->draw(UPDATE_MODE_GC16);
 
 	_currentScreen = screenId;
@@ -67,7 +104,7 @@ void GUI::switchToScreen(ScreenIdx screenId) {
 
 void GUI::setCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	log_i("Setting calendar status");
-	stopLoadingAnim();
+	stopLoading();
 
 	if (_currentScreen != SCR_MAIN) {  // TODO: maybe don't switch screen from options
 		_mainScreen->update(status, false);
@@ -77,18 +114,19 @@ void GUI::setCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	}
 }
 
-void GUI::startLoadingAnim() {
-	_loadingAnimActive = true;
+void GUI::startLoading() {
+	M5.EPD.Active();
+	_loading = true;
 	_guiTask->enqueueLoadingAnimNextFrame();
 }
 
-void GUI::stopLoadingAnim() {
-	_loadingAnimActive = false;
+void GUI::stopLoading() {
+	_loading = false;
 	_loadingAnim.reset();
 }
 
 void GUI::showLoadingAnimNextFrame() {
-	if (!_loadingAnimActive)
+	if (!_loading)
 		return;
 
 	_loadingAnim.drawNext(UPDATE_MODE_DU4);
