@@ -45,8 +45,8 @@
 		"EN": "Book the room"
 	},
 	"FREE_CONFIRM_TITLE": {
-		"FI": "Vahvista varauksen lopetus",
-		"EN": "Confirm ending the booking"
+		"FI": "Vahvista huoneen vapautus",
+		"EN": "Confirm freeing the room"
 	},
 	"SETTINGS": {
 		"FI": "Asetukset",
