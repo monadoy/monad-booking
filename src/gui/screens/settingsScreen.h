@@ -1,5 +1,5 @@
-#ifndef CONFIRM_FREE_SCREEN_H
-#define CONFIRM_FREE_SCREEN_H
+#ifndef SETTINGS_SCREEN_H
+#define SETTINGS_SCREEN_H
 
 #include <array>
 #include <memory>
@@ -13,16 +13,14 @@
 #include "screen.h"
 
 namespace gui {
-class ConfirmFreeScreen : public Screen {
+class SettingsScreen : public Screen {
   public:
-	ConfirmFreeScreen();
-	~ConfirmFreeScreen(){};
+	SettingsScreen();
+	~SettingsScreen(){};
 
 	enum PanelIdx { PNL_MAIN, PNL_SIZE };
-	enum TextIdx { TXT_TITLE, TXT_ORGANIZER, TXT_SUMMARY, TXT_TIMESPAN, TXT_SIZE };
-	enum ButtonIdx { BTN_CANCEL, BTN_CONFIRM, BTN_SIZE };
-
-	void showEvent(std::shared_ptr<cal::Event> event);
+	enum TextIdx { TXT_TITLE, TXT_MAIN, TXT_SIZE };
+	enum ButtonIdx { BTN_SETTINGS, BTN_UPDATE, BTN_SETUP, BTN_SIZE };
 
 	void show(bool show = true) override;
 
@@ -31,16 +29,14 @@ class ConfirmFreeScreen : public Screen {
 	void handleTouch(int16_t x = -1, int16_t y = -1) override;
 
 	// Callbacks the GUI class can register to (they fire on button presses)
-	std::function<void()> onConfirm = nullptr;
-	std::function<void()> onCancel = nullptr;
+	std::function<void()> onStartUpdate = nullptr;
+	std::function<void()> onGoSetup = nullptr;
+	std::function<void()> onBack = nullptr;
 
   private:
 	std::array<std::unique_ptr<Panel>, PNL_SIZE> _panels;
 	std::array<std::unique_ptr<Text>, TXT_SIZE> _texts;
 	std::array<std::unique_ptr<Button>, BTN_SIZE> _buttons;
-
-	std::unique_ptr<config::ConfigStore> _configStore = nullptr;
-	std::unique_ptr<config::ConfigServer> _configServer = nullptr;
 };
 }  // namespace gui
 

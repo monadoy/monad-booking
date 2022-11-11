@@ -6,7 +6,7 @@ namespace gui {
 
 SetupScreen::SetupScreen() {
 	const int txt_pad = 60;
-	const int txt_w = 960 - 2 * 60;
+	const int txt_w = 960 - 2 * txt_pad;
 
 	ADD_PNL(PNL_MAIN, Panel(Pos{0, 0}, Size{960, 540}, WH));
 
@@ -28,7 +28,6 @@ void SetupScreen::startSetup(bool useAP) {
 
 	if (useAP) {
 		wifiManager.openAccessPoint();
-
 		WiFiInfo info = wifiManager.getAccessPointInfo();
 		_texts[TXT_MAIN]->setText("WIFI SSID: " + info.ssid + "\nPASSWORD: " + info.password
 		                          + "\nIP: " + info.ip.toString());
@@ -39,8 +38,6 @@ void SetupScreen::startSetup(bool useAP) {
 	}
 
 	_configServer->start();
-
-	draw(UPDATE_MODE_GC16);
 }
 
 void SetupScreen::show(bool doShow) {

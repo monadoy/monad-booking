@@ -51,7 +51,7 @@ MainScreen::MainScreen() {
 	                                   FS_TIMESPAN, BK, R_PNL_TAKEN, true));
 
 	ADD_BTN(BTN_SETTINGS, Button(Pos{15, 15}, Size{64, 56}, "/images/settingsWhite.png",
-	                             [this]() { log_i("clicked settings"); }));
+	                             [this]() { onGoSettings(); }));
 	ADD_BTN(BTN_15, Button(BTN_GRID_POSITIONS[0], Size{140, 78}, "15", FS_BUTTON, WH, BK,
 	                       [this]() { onBook(15); }));
 	ADD_BTN(BTN_30, Button(BTN_GRID_POSITIONS[1], Size{140, 78}, "30", FS_BUTTON, WH, BK,

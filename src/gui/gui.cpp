@@ -41,6 +41,8 @@ void GUI::initMain(cal::Model* model) {
 	_model = model;
 
 	// Initialize the rest of the screens
+
+	// CONFIRM FREE SCREEN
 	_confirmFreeScreen = utils::make_unique<ConfirmFreeScreen>();
 	_screens[SCR_CONFIRM_FREE] = _confirmFreeScreen.get();
 	_confirmFreeScreen->onConfirm = [this]() {
@@ -51,6 +53,17 @@ void GUI::initMain(cal::Model* model) {
 	};
 	_confirmFreeScreen->onCancel = [this]() { switchToScreen(SCR_MAIN); };
 
+	// SETTINGS SCREEN
+	_settingsScreen = utils::make_unique<SettingsScreen>();
+	_screens[SCR_SETTINGS] = _settingsScreen.get();
+	_settingsScreen->onBack = [this]() { switchToScreen(SCR_MAIN); };
+	_settingsScreen->onGoSetup = [this]() { startSetup(false); };
+	_settingsScreen->onStartUpdate = [this]() {
+		preferences.putBool(MANUAL_UPDATE_KEY, true);
+		utils::forceRestart();
+	};
+
+	// MAIN SCREEN
 	_mainScreen = utils::make_unique<MainScreen>();
 	_screens[SCR_MAIN] = _mainScreen.get();
 	_mainScreen->onBook = [this](int minutes) {
@@ -90,6 +103,7 @@ void GUI::initMain(cal::Model* model) {
 		_model->extendCurrentEvent(15 * 60);
 		startLoading();
 	};
+	_mainScreen->onGoSettings = [this]() { switchToScreen(SCR_SETTINGS); };
 }
 
 void GUI::handleTouch(int16_t x, int16_t y) {
@@ -128,7 +142,7 @@ void GUI::setCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	if (status)
 		_status = status;
 
-	if (_currentScreen != SCR_MAIN) {  // TODO: maybe don't switch screen from options
+	if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		_mainScreen->update(status, false);
 		switchToScreen(SCR_MAIN);
 	} else {

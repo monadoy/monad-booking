@@ -30,7 +30,6 @@ ConfirmFreeScreen::ConfirmFreeScreen() {
 }
 
 void ConfirmFreeScreen::showEvent(std::shared_ptr<cal::Event> event) {
-	_reserveParams = event;
 	_texts[TXT_ORGANIZER]->setText(event->creator);
 	_texts[TXT_SUMMARY]->setText(event->summary);
 	_texts[TXT_TIMESPAN]->setText(timeSpanStr(event->unixStartTime, event->unixEndTime));

@@ -65,6 +65,7 @@ class MainScreen : public Screen {
 	std::function<void()> onBookUntilNext = nullptr;
 	std::function<void()> onFree = nullptr;
 	std::function<void()> onExtend = nullptr;
+	std::function<void()> onGoSettings = nullptr;
 
   private:
 	std::shared_ptr<cal::CalendarStatus> _status = nullptr;

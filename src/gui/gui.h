@@ -12,6 +12,7 @@
 #include "screens/loadingScreen.h"
 #include "screens/mainScreen.h"
 #include "screens/screen.h"
+#include "screens/settingsScreen.h"
 #include "screens/setupScreen.h"
 #include "screens/shutdownScreen.h"
 
@@ -25,7 +26,7 @@ class GUI {
 
 	void initMain(cal::Model* model);
 
-	enum ScreenIdx { SCR_LOADING, SCR_MAIN, SCR_SETUP, SCR_CONFIRM_FREE, SCR_SHUTDOWN, SCR_SIZE };
+	enum ScreenIdx { SCR_LOADING, SCR_MAIN, SCR_SETTINGS, SCR_SETUP, SCR_CONFIRM_FREE, SCR_SHUTDOWN, SCR_SIZE };
 
 	void switchToScreen(ScreenIdx screenId);
 
@@ -56,6 +57,7 @@ class GUI {
 	std::unique_ptr<SetupScreen> _setupScreen = nullptr;
 	std::unique_ptr<ConfirmFreeScreen> _confirmFreeScreen = nullptr;
 	std::unique_ptr<ShutdownScreen> _shutdownScreen = nullptr;
+	std::unique_ptr<SettingsScreen> _settingsScreen = nullptr;
 
 	// Non owning pointers
 	std::array<Screen*, SCR_SIZE> _screens{};
