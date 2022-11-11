@@ -1,5 +1,5 @@
-#ifndef SETUP_SCREEN_H
-#define SETUP_SCREEN_H
+#ifndef CONFIRM_FREE_SCREEN_H
+#define CONFIRM_FREE_SCREEN_H
 
 #include <array>
 #include <memory>
@@ -13,22 +13,26 @@
 #include "screen.h"
 
 namespace gui {
-class SetupScreen : public Screen {
+class ConfirmFreeScreen : public Screen {
   public:
-	SetupScreen();
-	~SetupScreen(){};
+	ConfirmFreeScreen();
+	~ConfirmFreeScreen(){};
 
 	enum PanelIdx { PNL_MAIN, PNL_SIZE };
-	enum TextIdx { TXT_TITLE, TXT_MAIN, TXT_SIZE };
-	enum ButtonIdx { BTN_SIZE };
+	enum TextIdx { TXT_TITLE, TXT_ORGANIZER, TXT_SUMMARY, TXT_TIMESPAN, TXT_SIZE };
+	enum ButtonIdx { BTN_CANCEL, BTN_CONFIRM, BTN_SIZE };
 
-	void startSetup(bool useAP);
+	void showEvent(std::shared_ptr<cal::Event> event);
 
-	void show(bool doShow = true) override;
+	void show(bool show = true) override;
 
 	void draw(m5epd_update_mode_t mode) override;
 
-	void handleTouch(int16_t x = -1, int16_t y = -1) override{};
+	void handleTouch(int16_t x = -1, int16_t y = -1) override;
+
+	// Callbacks the GUI class can register to (they fire on button presses)
+	std::function<void()> onConfirm = nullptr;
+	std::function<void()> onCancel = nullptr;
 
   private:
 	std::array<std::unique_ptr<Panel>, PNL_SIZE> _panels;
@@ -37,6 +41,8 @@ class SetupScreen : public Screen {
 
 	std::unique_ptr<config::ConfigStore> _configStore = nullptr;
 	std::unique_ptr<config::ConfigServer> _configServer = nullptr;
+
+	std::shared_ptr<cal::Event> _reserveParams = nullptr;
 };
 }  // namespace gui
 

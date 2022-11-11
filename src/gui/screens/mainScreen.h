@@ -4,11 +4,11 @@
 #include <array>
 #include <memory>
 
-#include "../elements/animation.h"
-#include "../elements/button.h"
-#include "../elements/panel.h"
-#include "../elements/text.h"
 #include "calendar/api.h"
+#include "gui/elements/animation.h"
+#include "gui/elements/button.h"
+#include "gui/elements/panel.h"
+#include "gui/elements/text.h"
 #include "screen.h"
 
 namespace gui {
@@ -49,8 +49,6 @@ class MainScreen : public Screen {
 
 	enum BatteryStyle { BATTERY_LIGHT, BATTERY_DARKER };
 
-	// How buttons are placed on the main screen.
-	// First index is column, second is row.
 	const std::array<Pos, 6> BTN_GRID_POSITIONS{Pos{80, 306}, Pos{232, 306}, Pos{384, 306},
 	                                            Pos{80, 396}, Pos{232, 396}, Pos{384, 396}};
 

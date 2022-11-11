@@ -8,6 +8,7 @@
 #include "elements/button.h"
 #include "elements/panel.h"
 #include "elements/text.h"
+#include "screens/confirmFreeScreen.h"
 #include "screens/loadingScreen.h"
 #include "screens/mainScreen.h"
 #include "screens/screen.h"
@@ -42,13 +43,16 @@ class GUI {
 
 	void setLoadingScreenText(String text);
 
+	// Non owning pointers
 	cal::Model* _model;
 	GUITask* _guiTask;
 
 	std::unique_ptr<LoadingScreen> _loadingScreen = nullptr;
 	std::unique_ptr<MainScreen> _mainScreen = nullptr;
 	std::unique_ptr<SetupScreen> _setupScreen = nullptr;
+	std::unique_ptr<ConfirmFreeScreen> _confirmFreeScreen = nullptr;
 
+	// Non owning pointers
 	std::array<Screen*, SCR_SIZE> _screens{};
 
 	ScreenIdx _currentScreen = SCR_LOADING;
@@ -58,6 +62,8 @@ class GUI {
 	// update mode to avoid lag.
 	Animation _loadingAnim = Animation("/images/frame", 15, Pos{292, 107});
 	bool _loading = false;
+
+	std::shared_ptr<cal::CalendarStatus> _status = nullptr;
 
 	M5EPD_Canvas _canvas;
 };

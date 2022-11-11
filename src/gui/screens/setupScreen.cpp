@@ -43,12 +43,12 @@ void SetupScreen::startSetup(bool useAP) {
 	draw(UPDATE_MODE_GC16);
 }
 
-void SetupScreen::show(bool show) {
-	Screen::show(show);
+void SetupScreen::show(bool doShow) {
+	Screen::show(doShow);
 
-	for (auto& p : _panels) p->show(show);
-	for (auto& t : _texts) t->show(show);
-	for (auto& b : _buttons) b->show(show);
+	for (auto& p : _panels) p->show(doShow);
+	for (auto& t : _texts) t->show(doShow);
+	for (auto& b : _buttons) b->show(doShow);
 }
 
 void drawQRCode() {

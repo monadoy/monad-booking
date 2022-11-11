@@ -13,11 +13,11 @@ namespace gui {
 
 /**
  * Freertos task for controlling the GUI.
- * Functions starting with "enqueue" are asynchronous can be called from any thread.
- * They are put to the end of the task queue and executed in later.
+ * Most functions can be can be called from any thread,
+ * as they are put to the end of the task queue and executed later.
  *
- * Other functions are synchronous and must be called from the qui thread or at specific points in
- * initialization.
+ * Some functions are documented as synchronous and must be called
+ * from the qui thread or at specific points in initialization.
  */
 class GUITask {
   public:

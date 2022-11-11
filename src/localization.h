@@ -19,7 +19,7 @@
 	F(BOOKED)             \
 	F(NOT_BOOKED)         \
 	F(BOOK_ROOM_QUESTION) \
-	F(RELEASE_QUESTION)   \
+	F(FREE_CONFIRM_TITLE) \
 	F(SETTINGS)           \
 	F(VERSION)            \
 	F(NEW_EVENT_SUMMARY)  \

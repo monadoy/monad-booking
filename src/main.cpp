@@ -169,7 +169,6 @@ void normalBoot(JsonObjectConst config) {
 	guiTask->initMain(calendarModel.get());
 	calendarModel->updateStatus();
 
-	guiTask->setLoadingScreenText("");
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);

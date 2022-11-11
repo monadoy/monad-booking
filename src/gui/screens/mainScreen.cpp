@@ -1,6 +1,7 @@
 #include "mainScreen.h"
 
 #include "globals.h"
+#include "gui/displayUtils.h"
 
 namespace gui {
 
@@ -85,9 +86,7 @@ void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw
 			auto ce = _status->currentEvent;
 			_texts[TXT_L_TAKEN_ORGANIZER]->setText(ce->creator);
 			_texts[TXT_L_TAKEN_SUMMARY]->setText(ce->summary);
-			String timeStr = safeMyTZ.dateTime(ce->unixStartTime, UTC_TIME, "G:i") + " - "
-			                 + safeMyTZ.dateTime(ce->unixEndTime, UTC_TIME, "G:i");
-			_texts[TXT_L_TAKEN_TIMESPAN]->setText(timeStr);
+			_texts[TXT_L_TAKEN_TIMESPAN]->setText(timeSpanStr(ce->unixStartTime, ce->unixEndTime));
 		}
 		_panels[PNL_RIGHT]->setColor(_status->nextEvent ? R_PNL_TAKEN : R_PNL);
 		if (_status->nextEvent) {
@@ -96,7 +95,7 @@ void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw
 			_texts[TXT_R_TAKEN_SUMMARY]->setText(ne->summary);
 			String timeStr = safeMyTZ.dateTime(ne->unixStartTime, UTC_TIME, "G:i") + " -\n"
 			                 + safeMyTZ.dateTime(ne->unixEndTime, UTC_TIME, "G:i");
-			_texts[TXT_R_TAKEN_TIMESPAN]->setText(timeStr);
+			_texts[TXT_R_TAKEN_TIMESPAN]->setText(timeSpanStr(ne->unixStartTime, ne->unixEndTime));
 		}
 
 		// UPDATE LEFT PANEL COLORS

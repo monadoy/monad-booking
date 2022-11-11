@@ -4,10 +4,10 @@
 #include <array>
 #include <memory>
 
-#include "../elements/animation.h"
-#include "../elements/button.h"
-#include "../elements/panel.h"
-#include "../elements/text.h"
+#include "gui/elements/animation.h"
+#include "gui/elements/button.h"
+#include "gui/elements/panel.h"
+#include "gui/elements/text.h"
 #include "calendar/api.h"
 #include "screen.h"
 

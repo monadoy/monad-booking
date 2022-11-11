@@ -38,17 +38,29 @@ void GUI::initMain(cal::Model* model) {
 	_model = model;
 
 	// Initialize the rest of the screens
+	_confirmFreeScreen = utils::make_unique<ConfirmFreeScreen>();
+	_screens[SCR_CONFIRM_FREE] = _confirmFreeScreen.get();
+	_confirmFreeScreen->onConfirm = [this]() {
+		if (_loading)
+			return;
+		_model->endCurrentEvent();
+		startLoading();
+	};
+	_confirmFreeScreen->onCancel = [this]() { switchToScreen(SCR_MAIN); };
+
 	_mainScreen = utils::make_unique<MainScreen>();
 	_screens[SCR_MAIN] = _mainScreen.get();
 	_mainScreen->onBook = [this](int minutes) {
 		if (_loading)
 			return;
+
 		auto res = _model->calculateReserveParams(minutes * 60);
 		if (res.isErr()) {
 			// TODO: show error
 			log_i("Error calculating reserve params: %s", res.err()->message.c_str());
 			return;
 		}
+
 		_model->reserveEvent(*res.ok());
 		startLoading();
 	};
@@ -64,10 +76,10 @@ void GUI::initMain(cal::Model* model) {
 		startLoading();
 	};
 	_mainScreen->onFree = [this]() {
-		if (_loading)
+		if (!_status || !_status->currentEvent)
 			return;
-		_model->endCurrentEvent();
-		startLoading();
+		_confirmFreeScreen->showEvent(_status->currentEvent);
+		switchToScreen(SCR_CONFIRM_FREE);
 	};
 	_mainScreen->onExtend = [this]() {
 		if (_loading)
@@ -85,6 +97,7 @@ void GUI::handleTouch(int16_t x, int16_t y) {
 void GUI::wake() {}
 
 void GUI::sleep() {
+	log_i("Setting screen to sleep");
 	if (_currentScreen != SCR_MAIN) {
 		switchToScreen(SCR_MAIN);
 	}
@@ -108,6 +121,9 @@ void GUI::switchToScreen(ScreenIdx screenId) {
 void GUI::setCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	log_i("Setting calendar status");
 	stopLoading();
+
+	if (status)
+		_status = status;
 
 	if (_currentScreen != SCR_MAIN) {  // TODO: maybe don't switch screen from options
 		_mainScreen->update(status, false);

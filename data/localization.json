@@ -44,9 +44,9 @@
 		"FI": "Varataanko huone",
 		"EN": "Book the room"
 	},
-	"RELEASE_QUESTION": {
-		"FI": "Vapautetaanko varaus",
-		"EN": "Release the booking"
+	"FREE_CONFIRM_TITLE": {
+		"FI": "Vahvista varauksen lopetus",
+		"EN": "Confirm ending the booking"
 	},
 	"SETTINGS": {
 		"FI": "Asetukset",

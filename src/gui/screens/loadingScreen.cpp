@@ -13,12 +13,12 @@ LoadingScreen::LoadingScreen() {
 	ASSERT_ALL_ELEMENTS();
 }
 
-void LoadingScreen::show(bool show) {
-	Screen::show(show);
+void LoadingScreen::show(bool doShow) {
+	Screen::show(doShow);
 
-	for (auto& p : _panels) p->show(show);
-	for (auto& t : _texts) t->show(show);
-	for (auto& b : _buttons) b->show(show);
+	for (auto& p : _panels) p->show(doShow);
+	for (auto& t : _texts) t->show(doShow);
+	for (auto& b : _buttons) b->show(doShow);
 }
 
 void LoadingScreen::draw(m5epd_update_mode_t mode) {
@@ -46,7 +46,8 @@ void LoadingScreen::setText(String text) {
 	M5.EPD.Active();
 	// Draw only text
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(0, 402, 960, 84, UPDATE_MODE_GC16);
+	M5.EPD.UpdateArea(0, 402, 960, 84, UPDATE_MODE_GL16);
+	delay(50);
 }
 
 }  // namespace gui
