@@ -41,8 +41,8 @@ GUITask::GUITask() : _gui(this) {
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SHUTDOWN, [this]() {
 		// This shouldShutdown call is ignored if an error is already displayed
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
-		shutdownScreen("Shut down. Waking up at "
-		               + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
+		showShutdownScreen("Shut down.\nWaking up at "
+		                   + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
 	});
 }
 
@@ -83,7 +83,9 @@ void GUITask::setLoadingScreenText(String data) {
 	_enqueue(new QueueFunc([=]() { _gui.setLoadingScreenText(data); }));
 }
 
-void GUITask::shutdownScreen(String shutdownText) {}
+void GUITask::showShutdownScreen(String shutdownText) {
+	_enqueue(new QueueFunc([=]() { _gui.showShutdownScreen(shutdownText); }));
+}
 
 void GUITask::_enqueue(void* func) {
 	QueueElement* data = new QueueElement{func};

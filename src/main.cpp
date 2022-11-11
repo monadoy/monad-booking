@@ -79,9 +79,8 @@ void handleBootError(const String& message) {
 	syncEzTimeFromRTC();
 	log_e("%s", message.c_str());
 	if (guiTask) {
-		guiTask->setLoadingScreenText(message + "\nRetrying in " + String(ERROR_REBOOT_DELAY_S / 60)
-		                              + " min...");
-		guiTask->stopLoading();
+		guiTask->showShutdownScreen(message + "\nRetrying in " + String(ERROR_REBOOT_DELAY_S / 60)
+		                            + " min...");
 	}
 	sleepManager.requestErrorReboot();
 };

@@ -53,7 +53,7 @@ void Image::draw(m5epd_update_mode_t updateMode) {
 	int res1 = png.open(_path.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDraw);
 	if (res1 == PNG_SUCCESS) {
 		int res2 = png.decode(this, 0);
-		if (res2 == PNG_SUCCESS) {
+		if (res2 == PNG_SUCCESS && updateMode != UPDATE_MODE_NONE) {
 			M5.EPD.UpdateArea(pos.x, pos.y, png.getWidth(), png.getHeight(), updateMode);
 		}
 	}

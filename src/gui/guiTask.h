@@ -74,7 +74,7 @@ class GUITask {
 	 */
 	void startSetup(bool useAP);
 
-	void shutdownScreen(String shutdownText);
+	void showShutdownScreen(String shutdownText);
 
   private:
 	TaskHandle_t _taskHandle;

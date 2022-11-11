@@ -44,10 +44,11 @@ void LoadingScreen::setText(String text) {
 		_texts[TXT_LOADING_2]->setText(text.substring(newline + 1));
 	}
 	M5.EPD.Active();
+	delay(30);
 	// Draw only text
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	M5.EPD.UpdateArea(0, 402, 960, 84, UPDATE_MODE_GL16);
-	delay(50);
+	delay(30);
 }
 
 }  // namespace gui
