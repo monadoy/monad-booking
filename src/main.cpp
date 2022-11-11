@@ -30,9 +30,9 @@
 #define NTP_TIMEOUT_MS 20 * 1000
 
 // Only used in setup mode
-std::unique_ptr<Config::ConfigServer> configServer = nullptr;
+std::unique_ptr<config::ConfigServer> configServer = nullptr;
 
-std::unique_ptr<Config::ConfigStore> configStore = nullptr;
+std::unique_ptr<config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
 std::unique_ptr<cal::Model> calendarModel = nullptr;
@@ -79,9 +79,9 @@ void handleBootError(const String& message) {
 	syncEzTimeFromRTC();
 	log_e("%s", message.c_str());
 	if (guiTask) {
-		guiTask->enqueueSetLoadingScreenText(message + "\nRetrying in "
-		                                     + String(ERROR_REBOOT_DELAY_S / 60) + " min...");
-		guiTask->enqueueStopLoading();
+		guiTask->setLoadingScreenText(message + "\nRetrying in " + String(ERROR_REBOOT_DELAY_S / 60)
+		                              + " min...");
+		guiTask->stopLoading();
 	}
 	sleepManager.requestErrorReboot();
 };
@@ -90,7 +90,7 @@ void handleBootError(const String& message) {
 // Animation uses flash to load images, so stop it
 // to avoid writing and reading at the same time.
 void onBeforeFilesystemWrite() {
-	guiTask->enqueueStopLoading();
+	guiTask->stopLoading();
 	delay(500);  // Delay to make sure that the last frame has loaded.
 }
 
@@ -103,22 +103,21 @@ void autoUpdateFirmware() {
 		return;
 	}
 
-	guiTask->enqueueSetLoadingScreenText("Updating to firmware: v"
-	                                     + latestVersionResult.ok()->toString()
-	                                     + ".\nThis takes a while...");
+	guiTask->setLoadingScreenText("Updating to firmware: v" + latestVersionResult.ok()->toString()
+	                              + ".\nThis takes a while...");
 	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
 	if (err) {
 		// Errors don't really matter here as they aren't fatal
 		// TODO: somehow show the error to user
 	}
 	// Resume normal operation after failure (updateFirmware reboots on success)
-	guiTask->enqueueStartLoading();
+	guiTask->startLoading();
 }
 
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
-	guiTask->enqueueStartLoading();
-	guiTask->enqueueSetLoadingScreenText("Booting...");
+	guiTask->startLoading();
+	guiTask->setLoadingScreenText("Booting...");
 
 	auto error = l10n.setLanguage(config["language"]);
 	if (error) {
@@ -170,7 +169,7 @@ void normalBoot(JsonObjectConst config) {
 	guiTask->initMain(calendarModel.get());
 	calendarModel->updateStatus();
 
-	guiTask->enqueueSetLoadingScreenText("");
+	guiTask->setLoadingScreenText("");
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);
@@ -185,11 +184,7 @@ void setupBoot() {
 	guiTask = utils::make_unique<gui::GUITask>();
 	delay(100);
 
-	wifiManager.openAccessPoint();
-
-	configServer = utils::make_unique<Config::ConfigServer>(80, configStore.get());
-	configServer->start();
-	guiTask->enqueueSetupScreen();
+	guiTask->startSetup(true);
 
 	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
 	                       + "] setup boot (timestamp unreliable)");
@@ -228,7 +223,7 @@ void setup() {
 	uint8_t* imageBuffer = new uint8_t[PNG_BUFFER_SIZE];
 	png.setBuffer(imageBuffer);
 
-	configStore = utils::make_unique<Config::ConfigStore>(LittleFS);
+	configStore = utils::make_unique<config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
 	if (config.begin() != config.end()) {

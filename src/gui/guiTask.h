@@ -41,17 +41,12 @@ class GUITask {
 	void initMain(cal::Model* model);
 
 	/**
-	 * Show the setup screen.
-	 */
-	void enqueueSetupScreen();
-
-	/**
 	 * @brief Called when an operation is executed successfully
 	 *
 	 * @param type What kind of operation was executed
 	 * @param status Current calendar status
 	 */
-	void enqueueSuccess(Request type, std::shared_ptr<cal::CalendarStatus> status);
+	void success(Request type, std::shared_ptr<cal::CalendarStatus> status);
 
 	/**
 	 * @brief Called when an operation caused error
@@ -59,22 +54,27 @@ class GUITask {
 	 * @param type What kind of operation caused the error
 	 * @param error Error to show
 	 */
-	void enqueueError(Request type, const cal::Error& error);
+	void error(Request type, const cal::Error& error);
 
-	void enqueueTouchDown(const tp_finger_t& tp);
-	void enqueueTouchUp();
+	void touchDown(const tp_finger_t& tp);
+	void touchUp();
 
 	/**
 	 * Close dialogs and put screen to sleep. This way we don't waste energy.
 	 */
-	void enqueueSleep();
+	void sleep();
 
-	void enqueueStartLoading();
-	void enqueueSetLoadingScreenText(String data);
-	void enqueueStopLoading();
-	void enqueueLoadingAnimNextFrame();
+	void startLoading();
+	void setLoadingScreenText(String data);
+	void stopLoading();
+	void loadingAnimNextFrame();
 
-	void enqueueShutdownScreen(String shutdownText);
+	/**
+	 * Start setup mode. Set useAP to start an access point.
+	 */
+	void startSetup(bool useAP);
+
+	void shutdownScreen(String shutdownText);
 
   private:
 	TaskHandle_t _taskHandle;

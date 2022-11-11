@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace Config {
+namespace config {
 
 void ConfigStore::loadConfig() {
 	// Release old memory if it exists
@@ -109,4 +109,4 @@ void ConfigServer::start() {
 	server_->begin();
 };
 
-}  // namespace Config
+}  // namespace config

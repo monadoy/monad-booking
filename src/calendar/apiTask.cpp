@@ -29,6 +29,7 @@ void task(void* arg) {
 
 		auto startTime = millis();
 
+		// TODO: return different error when wifi connection fails
 		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
 
 		apiTask->_api->refreshAuth();

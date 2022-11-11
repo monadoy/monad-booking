@@ -22,10 +22,11 @@ void LoadingScreen::show(bool show) {
 }
 
 void LoadingScreen::draw(m5epd_update_mode_t mode) {
+	M5.EPD.Active();
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateFull(UPDATE_MODE_GC16);
+	M5.EPD.UpdateFull(mode);
 }
 
 void LoadingScreen::handleTouch(int16_t x, int16_t y) {

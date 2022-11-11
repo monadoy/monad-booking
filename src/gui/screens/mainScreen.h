@@ -21,7 +21,7 @@ class MainScreen : public Screen {
 	enum TextIdx {
 		TXT_MID_CLOCK,
 		TXT_ROOM_NAME,
-		TXT_HEADER,
+		TXT_TITLE,
 		TXT_L_FREE_SUBHEADER,
 		TXT_L_TAKEN_ORGANIZER,
 		TXT_L_TAKEN_SUMMARY,

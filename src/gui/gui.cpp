@@ -24,9 +24,12 @@ GUI::GUI(GUITask* guiTask) : _guiTask(guiTask) {
 	font.createRender(FS_HEADER, 64);
 	font.createRender(FS_BOOTLOG, 64);
 
-	// Initialize screens (only loading screen for now)
+	// Initialize screens (only loading screen and setup screen for now)
 	_loadingScreen = utils::make_unique<LoadingScreen>();
 	_screens[SCR_LOADING] = _loadingScreen.get();
+
+	_setupScreen = utils::make_unique<SetupScreen>();
+	_screens[SCR_SETUP] = _setupScreen.get();
 
 	switchToScreen(SCR_LOADING);
 }
@@ -114,10 +117,15 @@ void GUI::setCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	}
 }
 
+void GUI::startSetup(bool useAP) {
+	_setupScreen->startSetup(useAP);
+	switchToScreen(SCR_SETUP);
+}
+
 void GUI::startLoading() {
 	M5.EPD.Active();
 	_loading = true;
-	_guiTask->enqueueLoadingAnimNextFrame();
+	_guiTask->loadingAnimNextFrame();
 }
 
 void GUI::stopLoading() {
@@ -130,7 +138,7 @@ void GUI::showLoadingAnimNextFrame() {
 		return;
 
 	_loadingAnim.drawNext(UPDATE_MODE_DU4);
-	_guiTask->enqueueLoadingAnimNextFrame();
+	_guiTask->loadingAnimNextFrame();
 }
 
 void GUI::setLoadingScreenText(String text) { _loadingScreen->setText(text); }

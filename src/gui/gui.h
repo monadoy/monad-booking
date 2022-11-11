@@ -11,6 +11,7 @@
 #include "screens/loadingScreen.h"
 #include "screens/mainScreen.h"
 #include "screens/screen.h"
+#include "screens/setupScreen.h"
 
 class GUITask;
 
@@ -22,7 +23,7 @@ class GUI {
 
 	void initMain(cal::Model* model);
 
-	enum ScreenIdx { SCR_LOADING, SCR_MAIN, SCR_CONFIRM_FREE, SCR_SIZE };
+	enum ScreenIdx { SCR_LOADING, SCR_MAIN, SCR_SETUP, SCR_CONFIRM_FREE, SCR_SIZE };
 
 	void switchToScreen(ScreenIdx screenId);
 
@@ -32,6 +33,8 @@ class GUI {
 
 	void wake();
 	void sleep();
+
+	void startSetup(bool useAP);
 
 	void startLoading();
 	void stopLoading();
@@ -44,6 +47,7 @@ class GUI {
 
 	std::unique_ptr<LoadingScreen> _loadingScreen = nullptr;
 	std::unique_ptr<MainScreen> _mainScreen = nullptr;
+	std::unique_ptr<SetupScreen> _setupScreen = nullptr;
 
 	std::array<Screen*, SCR_SIZE> _screens{};
 

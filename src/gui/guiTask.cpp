@@ -30,60 +30,60 @@ void task(void* arg) {
 
 GUITask::GUITask() : _gui(this) {
 	using namespace std::placeholders;
-	M5.TP.onTouch(std::bind(&GUITask::enqueueTouchDown, this, _1),
-	              std::bind(&GUITask::enqueueTouchUp, this));
+	M5.TP.onTouch(std::bind(&GUITask::touchDown, this, _1), std::bind(&GUITask::touchUp, this));
 
 	_queueHandle = xQueueCreate(GUI_QUEUE_LENGTH, sizeof(GUITask::QueueElement*));
 	xTaskCreatePinnedToCore(task, "GUI", GUI_TASK_STACK_SIZE, static_cast<void*>(this),
 	                        GUI_TASK_PRIORITY, &_taskHandle, 0);
 
-	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP,
-	                              [this]() { enqueueSleep(); });
+	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SLEEP, [this]() { sleep(); });
 
 	sleepManager.registerCallback(SleepManager::Callback::BEFORE_SHUTDOWN, [this]() {
 		// This shouldShutdown call is ignored if an error is already displayed
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
-		enqueueShutdownScreen("Shut down. Waking up at "
-		                      + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
+		shutdownScreen("Shut down. Waking up at "
+		               + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
 	});
 }
 
 void GUITask::initMain(cal::Model* model) { _gui.initMain(model); }
 
-void GUITask::enqueueSetupScreen() {}
+void GUITask::startSetup(bool useAP) { _gui.startSetup(useAP); }
 
-void GUITask::enqueueSuccess(Request type, std::shared_ptr<cal::CalendarStatus> status) {
+void GUITask::success(Request type, std::shared_ptr<cal::CalendarStatus> status) {
 	_enqueue(new QueueFunc([=]() { _gui.setCalendarStatus(status); }));
 }
 
-void GUITask::enqueueError(Request type, const cal::Error& error) {}
+void GUITask::error(Request type, const cal::Error& error) {
+	// TODO: show error
+}
 
-void GUITask::enqueueTouchDown(const tp_finger_t& tp) {
+void GUITask::touchDown(const tp_finger_t& tp) {
 	_enqueue(new QueueFunc([=]() { _gui.handleTouch(tp.x, tp.y); }));
 }
-void GUITask::enqueueTouchUp() {
+void GUITask::touchUp() {
 	_enqueue(new QueueFunc([=]() { _gui.handleTouch(-1, -1); }));
 }
 
-void GUITask::enqueueSleep() {
+void GUITask::sleep() {
 	_enqueue(new QueueFunc([=]() { _gui.sleep(); }));
 }
 
-void GUITask::enqueueStartLoading() {
+void GUITask::startLoading() {
 	_enqueue(new QueueFunc([=]() { _gui.startLoading(); }));
 }
-void GUITask::enqueueStopLoading() {
+void GUITask::stopLoading() {
 	_enqueue(new QueueFunc([=]() { _gui.stopLoading(); }));
 }
-void GUITask::enqueueLoadingAnimNextFrame() {
+void GUITask::loadingAnimNextFrame() {
 	_enqueue(new QueueFunc([=]() { _gui.showLoadingAnimNextFrame(); }));
 }
 
-void GUITask::enqueueSetLoadingScreenText(String data) {
+void GUITask::setLoadingScreenText(String data) {
 	_enqueue(new QueueFunc([=]() { _gui.setLoadingScreenText(data); }));
 }
 
-void GUITask::enqueueShutdownScreen(String shutdownText) {}
+void GUITask::shutdownScreen(String shutdownText) {}
 
 void GUITask::_enqueue(void* func) {
 	QueueElement* data = new QueueElement{func};

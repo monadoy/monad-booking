@@ -28,7 +28,7 @@
 #include "ArduinoJson.h"
 #include "utils.h"
 
-namespace Config {
+namespace config {
 
 struct ConfigError_t {
 	String errorMessage;
@@ -102,6 +102,6 @@ class ConfigServer : public AsyncWebHandler {
 	AsyncEventSource events_{"/events"};
 };
 
-}  // namespace Config
+}  // namespace config
 
 #endif

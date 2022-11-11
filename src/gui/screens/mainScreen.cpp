@@ -21,8 +21,8 @@ MainScreen::MainScreen() {
 	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{77, 40}, "00:00", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_ROOM_NAME,
 	        Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "room", FS_NORMAL, BK, L_PNL));
-	ADD_TXT(TXT_HEADER, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
-	                         l10n.msg(L10nMessage::NOT_BOOKED), FS_TITLE, BK, L_PNL, true));
+	ADD_TXT(TXT_TITLE, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
+	                        l10n.msg(L10nMessage::NOT_BOOKED), FS_TITLE, BK, L_PNL, true));
 
 	ADD_TXT(TXT_L_FREE_SUBHEADER,
 	        Text(Pos{l_txt_pad, 249}, Size{l_txt_w, 60}, l10n.msg(L10nMessage::BOOK_ROOM),
@@ -79,8 +79,8 @@ void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw
 
 		// UPDATE TEXT CONTENTS
 		_texts[TXT_ROOM_NAME]->setText(_status->name);
-		_texts[TXT_HEADER]->setText(_status->currentEvent ? l10n.msg(L10nMessage::BOOKED)
-		                                                  : l10n.msg(L10nMessage::NOT_BOOKED));
+		_texts[TXT_TITLE]->setText(_status->currentEvent ? l10n.msg(L10nMessage::BOOKED)
+		                                                 : l10n.msg(L10nMessage::NOT_BOOKED));
 		if (_status->currentEvent) {
 			auto ce = _status->currentEvent;
 			_texts[TXT_L_TAKEN_ORGANIZER]->setText(ce->creator);
@@ -105,7 +105,7 @@ void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw
 		_panels[PNL_LEFT]->setColor(leftBGColor);
 		_texts[TXT_MID_CLOCK]->setColors(leftColor, leftBGColor);
 		_texts[TXT_ROOM_NAME]->setColors(leftColor, leftBGColor);
-		_texts[TXT_HEADER]->setColors(leftColor, leftBGColor);
+		_texts[TXT_TITLE]->setColors(leftColor, leftBGColor);
 		_texts[TXT_L_FREE_SUBHEADER]->setColors(leftColor, leftBGColor);
 		_texts[TXT_L_TAKEN_ORGANIZER]->setColors(leftColor, leftBGColor);
 		_texts[TXT_L_TAKEN_SUMMARY]->setColors(leftColor, leftBGColor);
@@ -132,6 +132,8 @@ void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw
 
 	if (doDraw) {
 		draw(UPDATE_MODE_GC16);
+		// TODO: do a less flashy draw if possible (update clock, battery and buttons individually
+		// if screen color hasn't changed)
 	}
 }
 
