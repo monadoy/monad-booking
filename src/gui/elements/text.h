@@ -10,7 +10,8 @@ namespace gui {
 class Text : public Element {
   public:
 	Text(Pos pos, Size size, const String& text, uint8_t fontSize = 24, uint8_t textColor = 15,
-	     uint8_t bgColor = 0, bool bold = false, bool centered = false);
+	     uint8_t bgColor = 0, bool bold = false, bool centered = false,
+	     Margins margins = Margins{4, 4, 4, 4});
 	~Text(){};
 
 	void setText(const String& text) { _text = text; }
@@ -34,7 +35,7 @@ class Text : public Element {
 
 	uint8_t _bgColor;
 
-	Margins _margins = {4, 4, 4, 4};
+	Margins _margins;
 };
 }  // namespace gui
 #endif

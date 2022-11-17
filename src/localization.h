@@ -24,7 +24,8 @@
 	F(VERSION)            \
 	F(NEW_EVENT_SUMMARY)  \
 	F(UPDATE)             \
-	F(LATEST_VERSION)
+	F(LATEST_VERSION)     \
+	F(CHARGE_ME)
 
 #define L10N_MESSAGE_AS_ENUM(M) M,
 #define L10N_MESSAGE_AS_STRING(M) #M,

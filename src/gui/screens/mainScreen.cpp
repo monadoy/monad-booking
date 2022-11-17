@@ -20,8 +20,8 @@ MainScreen::MainScreen() {
 
 	ADD_TXT(TXT_TOP_CLOCK, Text(Pos{875, 20}, Size{77, 40}, "00:00", FS_NORMAL, BK, R_PNL));
 	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{77, 40}, "00:00", FS_NORMAL, BK, L_PNL));
-	ADD_TXT(TXT_ROOM_NAME,
-	        Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "room", FS_NORMAL, BK, L_PNL));
+	ADD_TXT(TXT_ROOM_NAME, Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "Couldn't fetch room name",
+	                            FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_TITLE, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
 	                        l10n.msg(L10nMessage::NOT_BOOKED), FS_TITLE, BK, L_PNL, true));
 
@@ -51,6 +51,10 @@ MainScreen::MainScreen() {
 	                                   FS_TIMESPAN, BK, R_PNL_TAKEN, true));
 
 	ADD_TXT(TXT_ERROR, Text(Pos{156, 8}, Size{l_pnl_w - 156 - 16, 112}, "", FS_NORMAL, BK, 1));
+
+	ADD_TXT(TXT_BATTERY_WARNING,
+	        Text(Pos{l_pnl_w + r_txt_pad, 64}, Size{r_txt_w, 56}, l10n.msg(L10nMessage::CHARGE_ME),
+	             FS_NORMAL, WH, 14, false, false, Margins{16, 16, 16, 80}));
 
 	ADD_BTN(BTN_SETTINGS, Button(Pos{16, 16}, Size{64, 56}, "/images/settingsWhite.png",
 	                             [this]() { onGoSettings(); }));
@@ -154,6 +158,8 @@ void MainScreen::setError(const String& error) {
 }
 
 void MainScreen::show(bool doShow) {
+	log_i("showerror: %d", _showError);
+
 	Screen::show(doShow);
 
 	// Show everything by default
@@ -213,6 +219,11 @@ void MainScreen::show(bool doShow) {
 		} else {
 			_texts[TXT_ERROR]->hide();
 		}
+
+		// Battery warning
+		if (_curBatteryImage != 0) {
+			_texts[TXT_BATTERY_WARNING]->hide();
+		}
 	}
 }
 
@@ -222,6 +233,9 @@ void MainScreen::draw(m5epd_update_mode_t mode) {
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
 	_batteryAnim[_curBatteryStyle].drawFrame(_curBatteryImage + 1, UPDATE_MODE_NONE);
+	if (_curBatteryImage == 0) {
+		_batteryWarningIcon.draw(UPDATE_MODE_NONE);
+	}
 	M5.EPD.UpdateFull(mode);
 }
 

@@ -5,7 +5,7 @@
 namespace gui {
 
 Text::Text(Pos pos, Size size, const String& text, uint8_t fontSize, uint8_t textColor,
-           uint8_t bgColor, bool bold, bool centered)
+           uint8_t bgColor, bool bold, bool centered, Margins margins)
     : Element(pos, size),
       _text{text},
       _fontSize{fontSize},
@@ -13,6 +13,7 @@ Text::Text(Pos pos, Size size, const String& text, uint8_t fontSize, uint8_t tex
       _bgColor{bgColor},
       _bold{bold},
       _centered{centered},
+      _margins{margins},
       _canvas{&M5.EPD} {
 	// log_i("Creating text element %s", _text.c_str());
 	_canvas.createCanvas(_size.w, _size.h);

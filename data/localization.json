@@ -67,5 +67,9 @@
 	"LATEST_VERSION": {
 		"FI": "Uusin versio",
 		"EN": "Latest version"
+	},
+	"CHARGE_ME": {
+		"FI": "Kytke laturi",
+		"EN": "Charge me"
 	}
 }

@@ -33,6 +33,7 @@ class MainScreen : public Screen {
 		TXT_R_TAKEN_SUMMARY,
 		TXT_R_TAKEN_TIMESPAN,
 		TXT_ERROR,
+		TXT_BATTERY_WARNING,
 		TXT_SIZE
 	};
 
@@ -87,6 +88,9 @@ class MainScreen : public Screen {
 
 	std::array<Animation, 2> _batteryAnim{Animation("/images/battery", 6, Pos{812, 18}),
 	                                      Animation("/images/batteryDarker", 6, Pos{812, 18})};
+
+	Image _batteryWarningIcon{"/images/battery1.png", Pos{652 + 32 + 12 + 4, 64 + 8 + 4}, true};
+
 	BatteryStyle _curBatteryStyle = BATTERY_LIGHT;
 	uint8_t _curBatteryImage = 0;
 };
