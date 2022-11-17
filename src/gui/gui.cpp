@@ -143,24 +143,27 @@ void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	if (status)
 		_status = status;
 
-	if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
-		_mainScreen->setStatus(status);
+	_mainScreen->setStatus(status);
+
+	if (_currentScreen == SCR_MAIN) {
+		_mainScreen->updateElements(true);
+	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		_mainScreen->updateElements(false);
 		switchToScreen(SCR_MAIN);
-	} else {
-		_mainScreen->updateElements(true);
 	}
 }
 
 void GUI::showError(const String& error) {
 	log_i("Showing error");
 	stopLoading();
-	if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
-		_mainScreen->setError(error);
+
+	_mainScreen->setError(error);
+
+	if (_currentScreen == SCR_MAIN) {
+		_mainScreen->updateElements(true);
+	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		_mainScreen->updateElements(false);
 		switchToScreen(SCR_MAIN);
-	} else {
-		_mainScreen->updateElements(true);
 	}
 }
 
