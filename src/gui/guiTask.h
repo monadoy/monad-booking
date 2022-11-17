@@ -27,6 +27,8 @@ class GUITask {
 	GUI _gui;
 
 	enum class Request { RESERVE, FREE, MODEL, UPDATE, OTHER, SIZE };
+	static String errorEnumToString(GUITask::Request type);
+
 	QueueHandle_t _queueHandle;
 	struct QueueElement {
 		QueueElement(void* func) : func{func} {}
@@ -54,7 +56,7 @@ class GUITask {
 	 * @param type What kind of operation caused the error
 	 * @param error Error to show
 	 */
-	void error(Request type, const cal::Error& error);
+	void error(Request type, std::shared_ptr<cal::Error> error);
 
 	void touchDown(const tp_finger_t& tp);
 	void touchUp();
@@ -65,7 +67,7 @@ class GUITask {
 	void sleep();
 
 	void startLoading();
-	void setLoadingScreenText(String data);
+	void setLoadingScreenText(const String& data);
 	void stopLoading();
 	void loadingAnimNextFrame();
 
@@ -74,7 +76,7 @@ class GUITask {
 	 */
 	void startSetup(bool useAP);
 
-	void showShutdownScreen(String shutdownText);
+	void showShutdownScreen(const String& shutdownText);
 
   private:
 	TaskHandle_t _taskHandle;

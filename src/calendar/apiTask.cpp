@@ -29,9 +29,10 @@ void task(void* arg) {
 
 		auto startTime = millis();
 
-		// TODO: return different error when wifi connection fails
+		// TODO: return different error when wifi connection fails (don't leak memory of ireq->func)
 		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
 
+		// TODO: return error when auth refresh fails (don't leak memory of ireq->func)
 		apiTask->_api->refreshAuth();
 
 		switch (req->type) {

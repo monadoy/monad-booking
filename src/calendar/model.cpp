@@ -14,7 +14,7 @@ void Model::_handleError(size_t reqType, std::shared_ptr<Error> error) {
 	if (reqType != (size_t)GuiReq::UPDATE && error->type == Error::Type::LOGICAL)
 		updateStatus();
 	log_e("%s", error->message.c_str());
-	_guiTask->error((GuiReq)reqType, *error);
+	_guiTask->error((GuiReq)reqType, error);
 }
 
 template <typename T>

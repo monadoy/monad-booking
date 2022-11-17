@@ -20,19 +20,32 @@ class GUITask;
 
 namespace gui {
 
+/**
+ * Don't call methods of this class multithreaded,
+ * only from GUI task or from within this class.
+ */
 class GUI {
   public:
 	GUI(GUITask* guiTask);
 
 	void initMain(cal::Model* model);
 
-	enum ScreenIdx { SCR_LOADING, SCR_MAIN, SCR_SETTINGS, SCR_SETUP, SCR_CONFIRM_FREE, SCR_SHUTDOWN, SCR_SIZE };
+	enum ScreenIdx {
+		SCR_LOADING,
+		SCR_MAIN,
+		SCR_SETTINGS,
+		SCR_SETUP,
+		SCR_CONFIRM_FREE,
+		SCR_SHUTDOWN,
+		SCR_SIZE
+	};
 
 	void switchToScreen(ScreenIdx screenId);
 
 	void handleTouch(int16_t x = -1, int16_t y = -1);
 
-	void setCalendarStatus(std::shared_ptr<cal::CalendarStatus> status);
+	void showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status);
+	void showError(const String& error);
 
 	void wake();
 	void sleep();

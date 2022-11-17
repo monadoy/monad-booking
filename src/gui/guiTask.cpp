@@ -51,11 +51,31 @@ void GUITask::initMain(cal::Model* model) { _gui.initMain(model); }
 void GUITask::startSetup(bool useAP) { _gui.startSetup(useAP); }
 
 void GUITask::success(Request type, std::shared_ptr<cal::CalendarStatus> status) {
-	_enqueue(new QueueFunc([=]() { _gui.setCalendarStatus(status); }));
+	_enqueue(new QueueFunc([=]() { _gui.showCalendarStatus(status); }));
 }
 
-void GUITask::error(Request type, const cal::Error& error) {
-	// TODO: show error
+String GUITask::errorEnumToString(GUITask::Request type) {
+	switch (type) {
+		case GUITask::Request::RESERVE:
+			return "RESERVE";
+		case GUITask::Request::FREE:
+			return "FREEING";
+		case GUITask::Request::MODEL:
+			return "MODEL";
+		case GUITask::Request::UPDATE:
+			return "UPDATE";
+		default:
+			return "OTHER";
+	}
+}
+
+void GUITask::error(Request type, std::shared_ptr<cal::Error> error) {
+	if (!error)
+		return;
+
+	String errorStr = errorEnumToString(type) + " ERROR:\n" + error->message;
+
+	_enqueue(new QueueFunc([=]() { _gui.showError(errorStr); }));
 }
 
 void GUITask::touchDown(const tp_finger_t& tp) {
@@ -79,11 +99,11 @@ void GUITask::loadingAnimNextFrame() {
 	_enqueue(new QueueFunc([=]() { _gui.showLoadingAnimNextFrame(); }));
 }
 
-void GUITask::setLoadingScreenText(String data) {
+void GUITask::setLoadingScreenText(const String& data) {
 	_enqueue(new QueueFunc([=]() { _gui.setLoadingScreenText(data); }));
 }
 
-void GUITask::showShutdownScreen(String shutdownText) {
+void GUITask::showShutdownScreen(const String& shutdownText) {
 	_enqueue(new QueueFunc([=]() { _gui.showShutdownScreen(shutdownText); }));
 }
 

@@ -50,7 +50,9 @@ MainScreen::MainScreen() {
 	ADD_TXT(TXT_R_TAKEN_TIMESPAN, Text(Pos{r_txt_pos, 370}, Size{r_txt_w, 106}, "00:00 -\n00:00",
 	                                   FS_TIMESPAN, BK, R_PNL_TAKEN, true));
 
-	ADD_BTN(BTN_SETTINGS, Button(Pos{15, 15}, Size{64, 56}, "/images/settingsWhite.png",
+	ADD_TXT(TXT_ERROR, Text(Pos{156, 8}, Size{l_pnl_w - 156 - 16, 112}, "", FS_NORMAL, BK, 1));
+
+	ADD_BTN(BTN_SETTINGS, Button(Pos{16, 16}, Size{64, 56}, "/images/settingsWhite.png",
 	                             [this]() { onGoSettings(); }));
 	ADD_BTN(BTN_15, Button(BTN_GRID_POSITIONS[0], Size{140, 78}, "15", FS_BUTTON, WH, BK,
 	                       [this]() { onBook(15); }));
@@ -72,11 +74,13 @@ MainScreen::MainScreen() {
 	ASSERT_ALL_ELEMENTS();
 }
 
-void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw) {
-	if (status) {
-		_status = status;
+void MainScreen::updateElements(bool doDraw) {
+	if (_showError) {
+		_texts[TXT_ERROR]->setText(_error);
+	}
 
-		show();
+	if (_statusChanged) {
+		_statusChanged = false;
 
 		// UPDATE TEXT CONTENTS
 		_texts[TXT_ROOM_NAME]->setText(_status->name);
@@ -130,15 +134,29 @@ void MainScreen::update(std::shared_ptr<cal::CalendarStatus> status, bool doDraw
 	_curBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
 
 	if (doDraw) {
+		show();
 		draw(UPDATE_MODE_GC16);
 		// TODO: do a less flashy draw if possible (update clock, battery and buttons individually
 		// if screen color hasn't changed)
 	}
 }
 
+void MainScreen::setStatus(std::shared_ptr<cal::CalendarStatus> status) {
+	// status is  null if it hasn't changed
+	if (status) {
+		_status = status;
+		_statusChanged = true;
+	}
+}
+void MainScreen::setError(const String& error) {
+	_error = error;
+	_showError = true;
+}
+
 void MainScreen::show(bool doShow) {
 	Screen::show(doShow);
 
+	// Show everything by default
 	for (auto& p : _panels) p->show(doShow);
 	for (auto& t : _texts) t->show(doShow);
 	for (auto& b : _buttons) b->show(doShow);
@@ -147,13 +165,6 @@ void MainScreen::show(bool doShow) {
 		// Hide specific things based on taken or free
 		bool haveCurEvent = !!_status->currentEvent;
 		bool haveNextEvent = !!_status->nextEvent;
-		time_t diffToNext
-		    = haveNextEvent ? _status->nextEvent->unixStartTime - safeUTC.now() : LONG_MAX;
-
-		time_t diffFromCurrToNext
-		    = haveCurEvent && haveNextEvent
-		          ? _status->nextEvent->unixStartTime - _status->currentEvent->unixEndTime
-		          : LONG_MAX;
 
 		_texts[TXT_L_FREE_SUBHEADER]->show(!haveCurEvent);
 		_texts[TXT_L_TAKEN_ORGANIZER]->show(haveCurEvent);
@@ -168,8 +179,16 @@ void MainScreen::show(bool doShow) {
 		_texts[TXT_R_TAKEN_TIMESPAN]->show(haveNextEvent);
 
 		// Booking buttons with numbers are pretty complicated, they need to be hidden based on
-		// the current and next event. Also the "until next" button needs to be properly positioned
-		// after the 90min button or to the left side.
+		// the current and next event. Also the "until next" button needs to be properly
+		// positioned after the 90min button or to the left side.
+		time_t diffToNext
+		    = haveNextEvent ? _status->nextEvent->unixStartTime - safeUTC.now() : LONG_MAX;
+
+		time_t diffFromCurrToNext
+		    = haveCurEvent && haveNextEvent
+		          ? _status->nextEvent->unixStartTime - _status->currentEvent->unixEndTime
+		          : LONG_MAX;
+
 		std::array<bool, 4> buttonShow{!haveCurEvent && diffToNext >= 15 * SECS_PER_MIN,
 		                               !haveCurEvent && diffToNext >= 30 * SECS_PER_MIN,
 		                               !haveCurEvent && diffToNext >= 60 * SECS_PER_MIN,
@@ -181,11 +200,19 @@ void MainScreen::show(bool doShow) {
 		_buttons[BTN_UNTIL_NEXT]->show(!haveCurEvent && haveNextEvent
 		                               && diffToNext >= 5 * SECS_PER_MIN
 		                               && diffToNext <= 3 * 60 * SECS_PER_MIN);
-		// Move the "until next" button to the third or fourth position depending on the 90 button
+		// Move the "until next" button to the third or fourth position depending on the 90
+		// button
 		_buttons[BTN_UNTIL_NEXT]->setPos(BTN_GRID_POSITIONS[3 + size_t(buttonShow[3])]);
 
 		_buttons[BTN_FREE_ROOM]->show(haveCurEvent);
 		_buttons[BTN_EXTEND_15]->show(haveCurEvent && diffFromCurrToNext >= 15 * SECS_PER_MIN);
+
+		// Hide old errors and let new ones show
+		if (_showError) {
+			_showError = false;
+		} else {
+			_texts[TXT_ERROR]->hide();
+		}
 	}
 }
 

@@ -32,6 +32,7 @@ class MainScreen : public Screen {
 		TXT_R_TAKEN_ORGANIZER,
 		TXT_R_TAKEN_SUMMARY,
 		TXT_R_TAKEN_TIMESPAN,
+		TXT_ERROR,
 		TXT_SIZE
 	};
 
@@ -52,7 +53,13 @@ class MainScreen : public Screen {
 	const std::array<Pos, 6> BTN_GRID_POSITIONS{Pos{80, 306}, Pos{232, 306}, Pos{384, 306},
 	                                            Pos{80, 396}, Pos{232, 396}, Pos{384, 396}};
 
-	void update(std::shared_ptr<cal::CalendarStatus> status, bool draw = true);
+	/**
+	 * Update internal state of elements based on current status and error
+	 * */
+	void updateElements(bool draw = true);
+
+	void setStatus(std::shared_ptr<cal::CalendarStatus> status);
+	void setError(const String& error);
 
 	void show(bool doShow = true) override;
 
@@ -68,7 +75,11 @@ class MainScreen : public Screen {
 	std::function<void()> onGoSettings = nullptr;
 
   private:
-	std::shared_ptr<cal::CalendarStatus> _status = nullptr;
+	std::shared_ptr<cal::CalendarStatus> _status = std::shared_ptr<cal::CalendarStatus>(
+	    new cal::CalendarStatus{.name = "Room", .currentEvent = nullptr, .nextEvent = nullptr});
+	bool _statusChanged = false;
+	String _error = "";
+	bool _showError = false;
 
 	std::array<std::unique_ptr<Panel>, PNL_SIZE> _panels;
 	std::array<std::unique_ptr<Text>, TXT_SIZE> _texts;
