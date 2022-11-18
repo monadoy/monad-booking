@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #define DEST_FS_USES_LITTLEFS
 #include <ESP32-targz.h>
-#include <ESPHTTPClient.h>
+#include <HTTPClient.h>
 #include <HttpsOTAUpdate.h>
 #include <M5EPD.h>
 
@@ -47,22 +47,21 @@ utils::Result<Version> parseVersion(String version) {
 }
 
 utils::Result<Version> getLatestFirmwareVersion() {
-	ESPHTTPClient http;
-	String url = String(UPDATE_STORAGE_URL) + "/current-version";
-	http.open(HTTP_METHOD_GET, url.c_str(), UPDATE_SERVER_CERT);
+	HTTPClient http;
+	http.setReuse(false);
+	http.begin(String(UPDATE_STORAGE_URL) + "/current-version", UPDATE_SERVER_CERT);
 
-	String responseBody;
-	utils::Result<int> httpCodeRes = http.run(responseBody);
+	const int httpCode = http.GET();
 
-	if (httpCodeRes.isErr()) {
-		log_e("%s", httpCodeRes.err()->message.c_str());
-		return utils::Result<Version>::makeErr(new utils::Error("HTTP connection failed."));
-	}
-	if (*httpCodeRes.ok() < 200 || *httpCodeRes.ok() >= 300) {
-		log_e("HTTP returned %d", *httpCodeRes.ok());
+	if (httpCode != 200) {
+		log_e("http returned code %d", httpCode);
+		http.end();
 		return utils::Result<Version>::makeErr(
-		    new utils::Error("HTTP returned: " + String(*httpCodeRes.ok())));
+		    new utils::Error("HTTP returned: " + String(httpCode)));
 	}
+
+	const String responseBody = http.getString();
+	http.end();
 
 	log_i("Response body: %s", responseBody.c_str());
 
@@ -77,28 +76,33 @@ utils::Result<Version> getLatestFirmwareVersion() {
 std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String& filename) {
 	auto startTime = millis();
 
-	ESPHTTPClient http;
+	HTTPClient http;
+	http.setReuse(false);
 
-	http.open(HTTP_METHOD_GET, url.c_str(), UPDATE_SERVER_CERT);
+	http.begin(url, UPDATE_SERVER_CERT);
+
+	const int httpCode = http.GET();
+
+	if (httpCode != 200) {
+		log_e("http returned code %d", httpCode);
+		http.end();
+		return utils::make_unique<utils::Error>("Firmware updater HTTP returned "
+		                                        + String(httpCode));
+	}
 
 	File file = LittleFS.open(filename, "w", true);
 
 	if (!file) {
+		http.end();
 		return utils::make_unique<utils::Error>("Firmware updater couldn't open file " + filename);
 	}
 
-	utils::Result<int> httpCodeRes = http.run(file);
-
-	if (httpCodeRes.isErr()) {
+	int bytes = http.writeToStream(&file);
+	http.end();
+	if (bytes < 0) {
 		file.close();
-		log_e("%s", httpCodeRes.err()->message.c_str());
-		return utils::make_unique<utils::Error>("Firmware updater: " + httpCodeRes.err()->message);
-	}
-	if (*httpCodeRes.ok() < 200 || *httpCodeRes.ok() >= 300) {
-		file.close();
-		log_e("HTTP returned %d", *httpCodeRes.ok());
-		return utils::make_unique<utils::Error>("Firmware updater: HTTP returned "
-		                                        + String(*httpCodeRes.ok()));
+		return utils::make_unique<utils::Error>("Firmware updater file write failed, code: "
+		                                        + String(bytes));
 	}
 
 	log_i("Download done in %u ms", millis() - startTime);

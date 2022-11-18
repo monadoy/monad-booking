@@ -21,7 +21,9 @@ const int EVENT_MAX_SIZE = 1024;
 const int EVENT_LIST_MAX_SIZE = LIST_MAX_EVENTS * EVENT_MAX_SIZE;
 
 GoogleAPI::GoogleAPI(const Token& token, const String& calendarId)
-    : _token{token}, _calendarId{calendarId} {}
+    : _token{token}, _calendarId{calendarId} {
+	_http.setReuse(true);
+};
 
 bool GoogleAPI::refreshAuth() {
 	log_i("Refreshing token...");
@@ -31,20 +33,20 @@ bool GoogleAPI::refreshAuth() {
 	}
 
 	// BUILD REQUEST
-	_http.open(HTTP_METHOD_POST, _token.tokenUri.c_str(), GOOGLE_API_FULL_CHAIN_CERT);
-	_http.setHeader("Content-Type", "application/x-www-form-urlencoded");
-	const String postData = "client_id=" + _token.clientId + "&client_secret=" + _token.clientSecret
-	                        + "&refresh_token=" + _token.refreshToken + "&grant_type=refresh_token";
-	_http.setPostData(postData.c_str(), postData.length());
+	_http.begin(_token.tokenUri, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
 	// SEND REQUEST
-	String responseBody;
-	utils::Result<int> httpCodeRes = _http.run(responseBody);
+	int httpCode
+	    = _http.POST("client_id=" + _token.clientId + "&client_secret=" + _token.clientSecret
+	                 + "&refresh_token=" + _token.refreshToken + "&grant_type=refresh_token");
 
 	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
 	log_i("Received refresh auth response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
-	auto err = deserializeResponse(doc, httpCodeRes, responseBody);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return false;
 
@@ -72,18 +74,20 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	             + "&maxResults=" + LIST_MAX_EVENTS
 	             + "&maxAttendees=1&singleEvents=true&orderBy=startTime&fields=summary,items("
 	             + EVENT_FIELDS + ")";
-	_http.open(HTTP_METHOD_GET, url.c_str(), GOOGLE_API_FULL_CHAIN_CERT);
-	_http.setHeader("Content-Type", "application/json");
-	_http.setHeader("Authorization", String("Bearer " + _token.accessToken).c_str());
+
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// SEND REQUEST
-	String responseBody;
-	utils::Result<int> httpCodeRes = _http.run(responseBody);
+	int httpCode = _http.GET();
 
 	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
 	log_i("Received event list response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
-	auto err = deserializeResponse(doc, httpCodeRes, responseBody);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<CalendarStatus>::makeErr(err);
 
@@ -120,9 +124,9 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	String nowStr = safeMyTZ.dateTime(RFC3339);
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
 	             + eventId + "?fields=" + EVENT_FIELDS;
-	_http.open(HTTP_METHOD_PATCH, url.c_str(), GOOGLE_API_FULL_CHAIN_CERT);
-	_http.setHeader("Content-Type", "application/json");
-	_http.setHeader("Authorization", String("Bearer " + _token.accessToken).c_str());
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
@@ -130,16 +134,18 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
 	String payload = "";
 	serializeJson(payloadDoc, payload);
-	_http.setPostData(payload.c_str(), payload.length());
 
 	// SEND REQUEST
-	String responseBody;
-	utils::Result<int> httpCodeRes = _http.run(responseBody);
+	int httpCode = _http.PATCH(payload);
+	payload.clear();
 
 	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
 	log_i("Received event patch response:\n%s", responseBody.c_str());
 	StaticJsonDocument<1024> doc;
-	auto err = deserializeResponse(doc, httpCodeRes, responseBody);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<Event>::makeErr(err);
 
@@ -166,9 +172,9 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	// BUILD REQUEST
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId
 	             + "/events?fields=" + EVENT_FIELDS;
-	_http.open(HTTP_METHOD_POST, url.c_str(), GOOGLE_API_FULL_CHAIN_CERT);
-	_http.setHeader("Content-Type", "application/json");
-	_http.setHeader("Authorization", String("Bearer " + _token.accessToken).c_str());
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
@@ -179,18 +185,20 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	payloadDoc["summary"] = l10n.msg(L10nMessage::NEW_EVENT_SUMMARY);
 	String payload = "";
 	serializeJson(payloadDoc, payload);
-	_http.setPostData(payload.c_str(), payload.length());
 
 	log_i("Sending event insert payload:\n%s", payload.c_str());
 
 	// SEND REQUEST
-	String responseBody;
-	utils::Result<int> httpCodeRes = _http.run(responseBody);
+	int httpCode = _http.POST(payload);
+	payload.clear();
 
 	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
 	log_i("Received event insert response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(1024);
-	auto err = deserializeResponse(doc, httpCodeRes, responseBody);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<Event>::makeErr(err);
 
@@ -218,9 +226,9 @@ Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t ne
 	// BUILD REQUEST
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
 	             + event->id + "?fields=" + EVENT_FIELDS;
-	_http.open(HTTP_METHOD_PATCH, url.c_str(), GOOGLE_API_FULL_CHAIN_CERT);
-	_http.setHeader("Content-Type", "application/json");
-	_http.setHeader("Authorization", String("Bearer " + _token.accessToken).c_str());
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// CREATE PAYLOAD
 	StaticJsonDocument<256> payloadDoc;
@@ -230,16 +238,18 @@ Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t ne
 	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
 	String payload = "";
 	serializeJson(payloadDoc, payload);
-	_http.setPostData(payload.c_str(), payload.length());
 
 	// SEND REQUEST
-	String responseBody;
-	utils::Result<int> httpCodeRes = _http.run(responseBody);
+	int httpCode = _http.PATCH(payload);
+	payload.clear();
 
 	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
 	log_i("Received event patch response:\n%s", responseBody.c_str());
 	StaticJsonDocument<1024> doc;
-	auto err = deserializeResponse(doc, httpCodeRes, responseBody);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<Event>::makeErr(err);
 
@@ -275,19 +285,19 @@ utils::Result<Token, utils::Error> GoogleAPI::parseToken(JsonObjectConst obj) {
 	              .unixExpiry = 0});
 }
 
-std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc,
-                                                           const utils::Result<int>& httpCodeRes,
+std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc, int httpCode,
                                                            const String& responseBody) {
-	if (httpCodeRes.isErr()) {
-		log_w("HTTP: %d, %s", httpCodeRes.err()->message.c_str());
+	// Negative codes are errors special to HTTPClient
+	if (httpCode < 0) {
+		String errStr = _http.errorToString(httpCode);
+		log_w("HTTP: %d, %s", httpCode, errStr.c_str());
 		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
-		                                    httpCodeRes.err()->message.c_str());
+		                                    "HTTP: " + String(httpCode) + ", " + errStr.c_str());
 	}
 
-	int httpCode = *httpCodeRes.ok();
 	if (httpCode < 200 || httpCode >= 300) {
 		String errStr = utils::httpCodeToString(httpCode);
-		log_w("HTTP: %d, %s", httpCode, errStr.c_str());
+		log_w("HTTP response: %d, %s", httpCode, errStr.c_str());
 		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
 		                                    "HTTP: " + String(httpCode) + ", " + errStr);
 	}
@@ -326,18 +336,20 @@ Result<bool> GoogleAPI::isFree(time_t startTime, time_t endTime, const String& i
 	             + "&maxResults=" + LIST_MAX_EVENTS
 	             + "&maxAttendees=1&singleEvents=true&orderBy=startTime"
 	             + "&fields=items(id,attendees(resource,responseStatus))";
-	_http.open(HTTP_METHOD_GET, url.c_str(), GOOGLE_API_FULL_CHAIN_CERT);
-	_http.setHeader("Content-Type", "application/json");
-	_http.setHeader("Authorization", String("Bearer " + _token.accessToken).c_str());
+
+	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// SEND REQUEST
-	String responseBody;
-	utils::Result<int> httpCodeRes = _http.run(responseBody);
+	int httpCode = _http.GET();
 
 	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
 	log_i("Received event isFree response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
-	auto err = deserializeResponse(doc, httpCodeRes, responseBody);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<bool>::makeErr(err);
 
@@ -381,7 +393,5 @@ std::shared_ptr<Event> GoogleAPI::extractEvent(JsonObjectConst object, bool igno
 	    .unixEndTime = endTime,
 	});
 }
-
-void GoogleAPI::closeHTTPClient() { _http.close(); }
 
 }  // namespace cal

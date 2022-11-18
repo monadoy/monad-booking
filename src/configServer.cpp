@@ -53,7 +53,7 @@ Result<bool> ConfigStore::remove() {
 };
 
 bool ConfigServer::canHandle(AsyncWebServerRequest* request) {
-	return request->url() == "/config" and request->method() == WEBSERVER_HTTP_GET;
+	return request->url() == "/config" and request->method() == HTTP_GET;
 };
 
 void ConfigServer::handleRequest(AsyncWebServerRequest* request) {
@@ -93,7 +93,7 @@ void ConfigServer::start() {
 	server_->addHandler(configHandler);
 
 	// Serve index.html without cache on the empty path
-	server_->on("/", WEBSERVER_HTTP_GET, [](AsyncWebServerRequest* request) {
+	server_->on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
 		request->send(LittleFS, "/webroot/index.html");
 	});
 

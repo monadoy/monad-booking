@@ -36,7 +36,6 @@ Model::Model(APITask& apiTask) : _apiTask{apiTask} {
 		if (_nextStatusUpdate <= now) {
 			updateStatus();  // This will cancel sleep
 		}
-		_apiTask.closeHTTPClient();
 	});
 
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE_TIMER, [this]() {

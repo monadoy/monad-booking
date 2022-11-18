@@ -2,8 +2,8 @@
 #define GOOGLE_API_H
 
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
 
-#include "ESPHTTPClient.h"
 #include "api.h"
 #include "utils.h"
 
@@ -20,8 +20,6 @@ class GoogleAPI : public API {
 	Result<Event> rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
 	                              time_t newEndTime) override final;
 
-	void closeHTTPClient() override final;
-
 	static utils::Result<Token> parseToken(JsonObjectConst obj);
 
   private:
@@ -37,14 +35,13 @@ class GoogleAPI : public API {
 
 	bool isRoomAccepted(JsonObjectConst eventObject);
 
-	std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc,
-	                                                const utils::Result<int>& httpCodeRes,
+	std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
 	                                                const String& responseBody);
 
 	Token _token;
 	String _calendarId;
 
-	ESPHTTPClient _http;
+	HTTPClient _http;
 };
 
 }  // namespace cal

@@ -5,27 +5,11 @@
 #ifndef MONAD_BOOKING_CONFIGSERVER
 #define MONAD_BOOKING_CONFIGSERVER
 
-#define HTTP_DELETE WEBSERVER_HTTP_DELETE
-#define HTTP_GET WEBSERVER_HTTP_GET
-#define HTTP_HEAD WEBSERVER_HTTP_HEAD
-#define HTTP_POST WEBSERVER_HTTP_POST
-#define HTTP_PUT WEBSERVER_HTTP_PUT
-#define HTTP_OPTIONS WEBSERVER_HTTP_OPTIONS
-#define HTTP_PATCH WEBSERVER_HTTP_PATCH
 #include <ESPAsyncWebServer.h>
-
-#include "AsyncJson.h"
-#undef HTTP_DELETE
-#undef HTTP_GET
-#undef HTTP_HEAD
-#undef HTTP_POST
-#undef HTTP_PUT
-#undef HTTP_OPTIONS
-#undef HTTP_PATCH
-
 #include <LittleFS.h>
 
 #include "ArduinoJson.h"
+#include "AsyncJson.h"
 #include "utils.h"
 
 namespace config {
