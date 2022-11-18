@@ -15,6 +15,8 @@
 // We use 4 bits per pixel
 #define PNG_BUFFER_SIZE (MAX_PNG_SIZE / 2)
 
+const m5epd_update_mode_t MY_UPDATE_MODE = UPDATE_MODE_GC16;
+
 extern SafeTimezone safeMyTZ;
 extern SafeTimezone safeUTC;
 extern SleepManager sleepManager;

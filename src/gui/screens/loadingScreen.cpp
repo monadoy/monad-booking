@@ -39,7 +39,7 @@ void LoadingScreen::setText(String text) {
 	delay(30);
 	// Draw only text
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateArea(0, 402, 960, 84, UPDATE_MODE_GL16);
+	M5.EPD.UpdateArea(0, 402, 960, 84, MY_UPDATE_MODE);
 	delay(30);
 }
 

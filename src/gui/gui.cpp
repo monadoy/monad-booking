@@ -138,7 +138,7 @@ void GUI::switchToScreen(ScreenIdx screenId) {
 	log_i("Switching to screen %d", _currentScreen);
 
 	_currentScreen = screenId;
-	_screens[screenId]->draw(UPDATE_MODE_GC16);
+	_screens[screenId]->draw(MY_UPDATE_MODE);
 }
 
 void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
@@ -151,7 +151,7 @@ void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	_mainScreen->setStatus(status);
 
 	if (_currentScreen == SCR_MAIN) {
-		_mainScreen->draw(UPDATE_MODE_GC16);
+		_mainScreen->draw(MY_UPDATE_MODE);
 	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		switchToScreen(SCR_MAIN);
 	}
@@ -164,7 +164,7 @@ void GUI::showError(const String& error) {
 	_mainScreen->setError(error);
 
 	if (_currentScreen == SCR_MAIN) {
-		_mainScreen->draw(UPDATE_MODE_GC16);
+		_mainScreen->draw(MY_UPDATE_MODE);
 	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		switchToScreen(SCR_MAIN);
 	}
