@@ -130,7 +130,10 @@ void WiFiManager::wakeWiFi() {
 	_connect();
 }
 
-void WiFiManager::sleepWiFi() { esp_wifi_stop(); }
+void WiFiManager::sleepWiFi() {
+	WiFi.disconnect();
+	esp_wifi_stop();
+}
 
 void WiFiManager::openAccessPoint() {
 	auto randNumString = [](size_t length) {

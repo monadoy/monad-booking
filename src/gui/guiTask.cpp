@@ -22,7 +22,7 @@ void task(void* arg) {
 		(*func)();
 
 		// Fix "watchdog triggered" crash by giving some processing time to idle tasks
-		delay(2);
+		delay(5);
 	}
 
 	vTaskDelete(NULL);
