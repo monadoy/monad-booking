@@ -24,8 +24,6 @@ class SetupScreen : public Screen {
 
 	void startSetup(bool useAP);
 
-	void show(bool doShow = true) override;
-
 	void draw(m5epd_update_mode_t mode) override;
 
 	void handleTouch(int16_t x = -1, int16_t y = -1) override{};

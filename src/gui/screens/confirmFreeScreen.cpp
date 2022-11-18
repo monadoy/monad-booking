@@ -29,18 +29,14 @@ ConfirmFreeScreen::ConfirmFreeScreen() {
 	ASSERT_ALL_ELEMENTS();
 }
 
-void ConfirmFreeScreen::showEvent(std::shared_ptr<cal::Event> event) {
+void ConfirmFreeScreen::setEvent(std::shared_ptr<cal::Event> event) {
+	if (!event) {
+		log_e("Event is null");
+		return;
+	}
 	_texts[TXT_ORGANIZER]->setText(event->creator);
 	_texts[TXT_SUMMARY]->setText(event->summary);
 	_texts[TXT_TIMESPAN]->setText(timeSpanStr(event->unixStartTime, event->unixEndTime));
-}
-
-void ConfirmFreeScreen::show(bool doShow) {
-	Screen::show(doShow);
-
-	for (auto& p : _panels) p->show(doShow);
-	for (auto& t : _texts) t->show(doShow);
-	for (auto& b : _buttons) b->show(doShow);
 }
 
 void ConfirmFreeScreen::draw(m5epd_update_mode_t mode) {

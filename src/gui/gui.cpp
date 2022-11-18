@@ -70,7 +70,7 @@ void GUI::initMain(cal::Model* model) {
 		if (_loading)
 			return;
 
-		auto res = _model->calculateReserveParams(minutes * 60);
+		auto res = _model->calculateReserveParams(minutes * SECS_PER_MIN);
 		if (res.isErr()) {
 			showError(res.err()->message);
 			log_i("Error calculating reserve params: %s", res.err()->message.c_str());
@@ -95,7 +95,7 @@ void GUI::initMain(cal::Model* model) {
 	_mainScreen->onFree = [this]() {
 		if (!_status || !_status->currentEvent)
 			return;
-		_confirmFreeScreen->showEvent(_status->currentEvent);
+		_confirmFreeScreen->setEvent(_status->currentEvent);
 		switchToScreen(SCR_CONFIRM_FREE);
 	};
 	_mainScreen->onExtend = [this]() {
@@ -128,12 +128,8 @@ void GUI::switchToScreen(ScreenIdx screenId) {
 
 	log_i("Switching to screen %d", _currentScreen);
 
-	_screens[_currentScreen]->hide();
-
-	_screens[screenId]->show();
-	_screens[screenId]->draw(UPDATE_MODE_GC16);
-
 	_currentScreen = screenId;
+	_screens[screenId]->draw(UPDATE_MODE_GC16);
 }
 
 void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
@@ -146,9 +142,8 @@ void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	_mainScreen->setStatus(status);
 
 	if (_currentScreen == SCR_MAIN) {
-		_mainScreen->updateElements(true);
+		_mainScreen->draw(UPDATE_MODE_GC16);
 	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
-		_mainScreen->updateElements(false);
 		switchToScreen(SCR_MAIN);
 	}
 }
@@ -160,9 +155,8 @@ void GUI::showError(const String& error) {
 	_mainScreen->setError(error);
 
 	if (_currentScreen == SCR_MAIN) {
-		_mainScreen->updateElements(true);
+		_mainScreen->draw(UPDATE_MODE_GC16);
 	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
-		_mainScreen->updateElements(false);
 		switchToScreen(SCR_MAIN);
 	}
 }

@@ -22,9 +22,7 @@ class ConfirmFreeScreen : public Screen {
 	enum TextIdx { TXT_TITLE, TXT_ORGANIZER, TXT_SUMMARY, TXT_TIMESPAN, TXT_SIZE };
 	enum ButtonIdx { BTN_CANCEL, BTN_CONFIRM, BTN_SIZE };
 
-	void showEvent(std::shared_ptr<cal::Event> event);
-
-	void show(bool show = true) override;
+	void setEvent(std::shared_ptr<cal::Event> event);
 
 	void draw(m5epd_update_mode_t mode) override;
 

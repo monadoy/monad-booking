@@ -34,19 +34,11 @@ SettingsScreen::SettingsScreen() {
 	ASSERT_ALL_ELEMENTS();
 }
 
-void SettingsScreen::show(bool doShow) {
-	Screen::show(doShow);
-
-	for (auto& p : _panels) p->show(doShow);
-	for (auto& t : _texts) t->show(doShow);
-	for (auto& b : _buttons) b->show(doShow);
-
-	_buttons[BTN_UPDATE]->show(doShow && latestVersionResult.isOk()
-	                           && *latestVersionResult.ok() != CURRENT_VERSION);
-}
-
 void SettingsScreen::draw(m5epd_update_mode_t mode) {
 	M5.EPD.Active();
+	_buttons[BTN_UPDATE]->show(latestVersionResult.isOk()
+	                           && *latestVersionResult.ok() != CURRENT_VERSION);
+
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);

@@ -21,8 +21,6 @@ class ShutdownScreen : public Screen {
 	enum TextIdx { TXT_1, TXT_2, TXT_SIZE };
 	enum ButtonIdx { BTN_SIZE };
 
-	void show(bool show = true) override;
-
 	void draw(m5epd_update_mode_t mode) override;
 
 	void handleTouch(int16_t x = -1, int16_t y = -1) override{};

@@ -25,7 +25,7 @@ struct Margins {
 
 class Element {
   public:
-	Element(Pos pos, Size size, bool hidden = true) : _pos{pos}, _size{size}, _hidden{hidden} {};
+	Element(Pos pos, Size size, bool hidden = false) : _pos{pos}, _size{size}, _hidden{hidden} {};
 	virtual ~Element() = default;
 
 	virtual void draw(m5epd_update_mode_t mode) = 0;

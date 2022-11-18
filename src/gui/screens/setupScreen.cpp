@@ -40,14 +40,6 @@ void SetupScreen::startSetup(bool useAP) {
 	_configServer->start();
 }
 
-void SetupScreen::show(bool doShow) {
-	Screen::show(doShow);
-
-	for (auto& p : _panels) p->show(doShow);
-	for (auto& t : _texts) t->show(doShow);
-	for (auto& b : _buttons) b->show(doShow);
-}
-
 void drawQRCode() {
 	if (!wifiManager.isAccessPoint())
 		return;
@@ -66,7 +58,6 @@ void SetupScreen::draw(m5epd_update_mode_t mode) {
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
 	drawQRCode();
-
 	M5.EPD.UpdateFull(mode);
 
 	// Usually the screen goes to sleep when the device goes to sleep,

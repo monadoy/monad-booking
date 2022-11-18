@@ -20,8 +20,7 @@ MainScreen::MainScreen() {
 
 	ADD_TXT(TXT_TOP_CLOCK, Text(Pos{875, 20}, Size{77, 40}, "00:00", FS_NORMAL, BK, R_PNL));
 	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{77, 40}, "00:00", FS_NORMAL, BK, L_PNL));
-	ADD_TXT(TXT_ROOM_NAME, Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "Couldn't fetch room name",
-	                            FS_NORMAL, BK, L_PNL));
+	ADD_TXT(TXT_ROOM_NAME, Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_TITLE, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
 	                        l10n.msg(L10nMessage::NOT_BOOKED), FS_TITLE, BK, L_PNL, true));
 
@@ -76,159 +75,137 @@ MainScreen::MainScreen() {
 	                              [this]() { onExtend(); }));
 
 	ASSERT_ALL_ELEMENTS();
+
+	// Set initial screen state (hides and shows correct stuff)
+	setStatus(std::shared_ptr<cal::CalendarStatus>(new cal::CalendarStatus{
+	    .name = "Couldn't fetch room name", .currentEvent = nullptr, .nextEvent = nullptr}));
 }
 
-void MainScreen::updateElements(bool doDraw) {
-	if (_showError) {
-		_texts[TXT_ERROR]->setText(_error);
+void MainScreen::updateButtons() {
+	// Booking buttons are pretty complicated, they need to be hidden based on
+	// the the timings of current and next event. Also the "until next" button needs to be
+	// properly positioned after the 90min button or to the left side.
+
+	bool curTaken = !!_status->currentEvent;
+	bool nextTaken = !!_status->nextEvent;
+
+	time_t diffToNext = nextTaken ? _status->nextEvent->unixStartTime - safeUTC.now() : LONG_MAX;
+	time_t diffFromCurrToNext = curTaken && nextTaken ? _status->nextEvent->unixStartTime
+	                                                        - _status->currentEvent->unixEndTime
+	                                                  : LONG_MAX;
+
+	std::array<bool, 4> buttonShow{
+	    !curTaken && diffToNext >= 15 * SECS_PER_MIN, !curTaken && diffToNext >= 30 * SECS_PER_MIN,
+	    !curTaken && diffToNext >= 60 * SECS_PER_MIN, !curTaken && diffToNext >= 90 * SECS_PER_MIN};
+	for (int i = 0; i < buttonShow.size(); i++) {
+		_buttons[BTN_15 + i]->show(buttonShow[i]);
+	}
+	_buttons[BTN_UNTIL_NEXT]->show(!curTaken && nextTaken && diffToNext >= 5 * SECS_PER_MIN
+	                               && diffToNext <= 3 * 60 * SECS_PER_MIN);
+	// Move the "until next" button to the third or fourth position depending on the "90" button
+	_buttons[BTN_UNTIL_NEXT]->setPos(BTN_GRID_POSITIONS[3 + size_t(buttonShow[3])]);
+
+	_buttons[BTN_FREE_ROOM]->show(curTaken);
+	_buttons[BTN_EXTEND_15]->show(curTaken && diffFromCurrToNext >= 15 * SECS_PER_MIN);
+}
+
+void MainScreen::updateLeftSide() {
+	std::shared_ptr<cal::Event>& event = _status->currentEvent;
+	bool taken = !!event;
+
+	// Update text
+	_texts[TXT_ROOM_NAME]->setText(_status->name);
+	_texts[TXT_TITLE]->setText(taken ? l10n.msg(L10nMessage::BOOKED)
+	                                 : l10n.msg(L10nMessage::NOT_BOOKED));
+	if (taken) {
+		_texts[TXT_L_TAKEN_ORGANIZER]->setText(event->creator);
+		_texts[TXT_L_TAKEN_SUMMARY]->setText(event->summary);
+		_texts[TXT_L_TAKEN_TIMESPAN]->setText(
+		    timeSpanStr(event->unixStartTime, event->unixEndTime));
 	}
 
-	if (_statusChanged) {
-		_statusChanged = false;
+	// Hide/show
+	_texts[TXT_L_FREE_SUBHEADER]->show(!taken);
+	_texts[TXT_L_TAKEN_ORGANIZER]->show(taken);
+	_texts[TXT_L_TAKEN_SUMMARY]->show(taken);
+	_texts[TXT_L_TAKEN_TIMESPAN]->show(taken);
 
-		// UPDATE TEXT CONTENTS
-		_texts[TXT_ROOM_NAME]->setText(_status->name);
-		_texts[TXT_TITLE]->setText(_status->currentEvent ? l10n.msg(L10nMessage::BOOKED)
-		                                                 : l10n.msg(L10nMessage::NOT_BOOKED));
-		if (_status->currentEvent) {
-			auto ce = _status->currentEvent;
-			_texts[TXT_L_TAKEN_ORGANIZER]->setText(ce->creator);
-			_texts[TXT_L_TAKEN_SUMMARY]->setText(ce->summary);
-			_texts[TXT_L_TAKEN_TIMESPAN]->setText(timeSpanStr(ce->unixStartTime, ce->unixEndTime));
-		}
-		_panels[PNL_RIGHT]->setColor(_status->nextEvent ? R_PNL_TAKEN : R_PNL);
-		if (_status->nextEvent) {
-			auto ne = _status->nextEvent;
-			_texts[TXT_R_TAKEN_ORGANIZER]->setText(ne->creator);
-			_texts[TXT_R_TAKEN_SUMMARY]->setText(ne->summary);
-			String timeStr = safeMyTZ.dateTime(ne->unixStartTime, UTC_TIME, "G:i") + " -\n"
-			                 + safeMyTZ.dateTime(ne->unixEndTime, UTC_TIME, "G:i");
-			_texts[TXT_R_TAKEN_TIMESPAN]->setText(timeSpanStr(ne->unixStartTime, ne->unixEndTime));
-		}
+	// Update colors
+	uint8_t color = taken ? WH : BK;
+	uint8_t bgColor = taken ? L_PNL_TAKEN : L_PNL;
+	_panels[PNL_LEFT]->setColor(bgColor);
+	_texts[TXT_MID_CLOCK]->setColors(color, bgColor);
+	_texts[TXT_ROOM_NAME]->setColors(color, bgColor);
+	_texts[TXT_TITLE]->setColors(color, bgColor);
+	_texts[TXT_L_FREE_SUBHEADER]->setColors(color, bgColor);
+	_texts[TXT_L_TAKEN_ORGANIZER]->setColors(color, bgColor);
+	_texts[TXT_L_TAKEN_SUMMARY]->setColors(color, bgColor);
+	_texts[TXT_L_TAKEN_TIMESPAN]->setColors(color, bgColor);
+	_buttons[BTN_SETTINGS]->setReverseColor(taken ? true : false);
+}
 
-		// UPDATE LEFT PANEL COLORS
-		uint8_t leftColor = _status->currentEvent ? WH : BK;
-		uint8_t leftBGColor = _status->currentEvent ? L_PNL_TAKEN : L_PNL;
-		_panels[PNL_LEFT]->setColor(leftBGColor);
-		_texts[TXT_MID_CLOCK]->setColors(leftColor, leftBGColor);
-		_texts[TXT_ROOM_NAME]->setColors(leftColor, leftBGColor);
-		_texts[TXT_TITLE]->setColors(leftColor, leftBGColor);
-		_texts[TXT_L_FREE_SUBHEADER]->setColors(leftColor, leftBGColor);
-		_texts[TXT_L_TAKEN_ORGANIZER]->setColors(leftColor, leftBGColor);
-		_texts[TXT_L_TAKEN_SUMMARY]->setColors(leftColor, leftBGColor);
-		_texts[TXT_L_TAKEN_TIMESPAN]->setColors(leftColor, leftBGColor);
-		_buttons[BTN_SETTINGS]->setReverseColor(_status->currentEvent ? true : false);
+void MainScreen::updateRightSide() {
+	std::shared_ptr<cal::Event>& event = _status->nextEvent;
+	bool taken = !!event;
 
-		// UPDATE RIGHT PANEL COLORS (text colors stay black, only bg changes)
-		uint8_t rightBGColor = _status->nextEvent ? R_PNL_TAKEN : R_PNL;
-		_panels[PNL_RIGHT]->setColor(rightBGColor);
-		_texts[TXT_TOP_CLOCK]->setBGColor(rightBGColor);
-		_texts[TXT_R_FREE_HEADER]->setBGColor(rightBGColor);
-		_texts[TXT_R_TAKEN_HEADER]->setBGColor(rightBGColor);
-		_texts[TXT_R_TAKEN_ORGANIZER]->setBGColor(rightBGColor);
-		_texts[TXT_R_TAKEN_SUMMARY]->setBGColor(rightBGColor);
-		_texts[TXT_R_TAKEN_TIMESPAN]->setBGColor(rightBGColor);
-
-		_curBatteryStyle = _status->nextEvent ? BATTERY_DARKER : BATTERY_LIGHT;
-	};
-
-	_texts[TXT_TOP_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
-	_texts[TXT_MID_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
-
-	_curBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
-
-	if (doDraw) {
-		show();
-		draw(UPDATE_MODE_GC16);
-		// TODO: do a less flashy draw if possible (update clock, battery and buttons individually
-		// if screen color hasn't changed)
+	// Update text
+	if (event) {
+		_texts[TXT_R_TAKEN_ORGANIZER]->setText(event->creator);
+		_texts[TXT_R_TAKEN_SUMMARY]->setText(event->summary);
+		_texts[TXT_R_TAKEN_TIMESPAN]->setText(
+		    safeMyTZ.dateTime(event->unixStartTime, UTC_TIME, "G:i") + " -\n"
+		    + safeMyTZ.dateTime(event->unixEndTime, UTC_TIME, "G:i"));
 	}
+
+	// Hide/show
+	_texts[TXT_R_FREE_HEADER]->show(!taken);
+	_texts[TXT_R_TAKEN_HEADER]->show(taken);
+	_texts[TXT_R_TAKEN_ORGANIZER]->show(taken);
+	_texts[TXT_R_TAKEN_SUMMARY]->show(taken);
+	_texts[TXT_R_TAKEN_TIMESPAN]->show(taken);
+
+	// Update colors (text colors stay black, only bg changes)
+	uint8_t bgColor = taken ? R_PNL_TAKEN : R_PNL;
+	_panels[PNL_RIGHT]->setColor(bgColor);
+	_texts[TXT_TOP_CLOCK]->setBGColor(bgColor);
+	_texts[TXT_R_FREE_HEADER]->setBGColor(bgColor);
+	_texts[TXT_R_TAKEN_HEADER]->setBGColor(bgColor);
+	_texts[TXT_R_TAKEN_ORGANIZER]->setBGColor(bgColor);
+	_texts[TXT_R_TAKEN_SUMMARY]->setBGColor(bgColor);
+	_texts[TXT_R_TAKEN_TIMESPAN]->setBGColor(bgColor);
+
+	_curBatteryStyle = taken ? BATTERY_DARKER : BATTERY_LIGHT;
 }
 
 void MainScreen::setStatus(std::shared_ptr<cal::CalendarStatus> status) {
+	log_i("setting status....");
 	// status is  null if it hasn't changed
 	if (status) {
 		_status = status;
-		_statusChanged = true;
+
+		updateLeftSide();
+		updateRightSide();
 	}
+
+	// Calling setStatus means that no error happened
+	_texts[TXT_ERROR]->hide();
 }
+
 void MainScreen::setError(const String& error) {
 	_error = error;
-	_showError = true;
-}
-
-void MainScreen::show(bool doShow) {
-	log_i("showerror: %d", _showError);
-
-	Screen::show(doShow);
-
-	// Show everything by default
-	for (auto& p : _panels) p->show(doShow);
-	for (auto& t : _texts) t->show(doShow);
-	for (auto& b : _buttons) b->show(doShow);
-
-	if (doShow) {
-		// Hide specific things based on taken or free
-		bool haveCurEvent = !!_status->currentEvent;
-		bool haveNextEvent = !!_status->nextEvent;
-
-		_texts[TXT_L_FREE_SUBHEADER]->show(!haveCurEvent);
-		_texts[TXT_L_TAKEN_ORGANIZER]->show(haveCurEvent);
-		_texts[TXT_L_TAKEN_SUMMARY]->show(haveCurEvent);
-		_texts[TXT_L_TAKEN_TIMESPAN]->show(haveCurEvent);
-
-		_texts[TXT_R_FREE_HEADER]->show(!haveNextEvent);
-
-		_texts[TXT_R_TAKEN_HEADER]->show(haveNextEvent);
-		_texts[TXT_R_TAKEN_ORGANIZER]->show(haveNextEvent);
-		_texts[TXT_R_TAKEN_SUMMARY]->show(haveNextEvent);
-		_texts[TXT_R_TAKEN_TIMESPAN]->show(haveNextEvent);
-
-		// Booking buttons with numbers are pretty complicated, they need to be hidden based on
-		// the current and next event. Also the "until next" button needs to be properly
-		// positioned after the 90min button or to the left side.
-		time_t diffToNext
-		    = haveNextEvent ? _status->nextEvent->unixStartTime - safeUTC.now() : LONG_MAX;
-
-		time_t diffFromCurrToNext
-		    = haveCurEvent && haveNextEvent
-		          ? _status->nextEvent->unixStartTime - _status->currentEvent->unixEndTime
-		          : LONG_MAX;
-
-		std::array<bool, 4> buttonShow{!haveCurEvent && diffToNext >= 15 * SECS_PER_MIN,
-		                               !haveCurEvent && diffToNext >= 30 * SECS_PER_MIN,
-		                               !haveCurEvent && diffToNext >= 60 * SECS_PER_MIN,
-		                               !haveCurEvent && diffToNext >= 90 * SECS_PER_MIN};
-		for (int i = 0; i < buttonShow.size(); i++) {
-			if (!buttonShow[i])
-				_buttons[BTN_15 + i]->hide();
-		}
-		_buttons[BTN_UNTIL_NEXT]->show(!haveCurEvent && haveNextEvent
-		                               && diffToNext >= 5 * SECS_PER_MIN
-		                               && diffToNext <= 3 * 60 * SECS_PER_MIN);
-		// Move the "until next" button to the third or fourth position depending on the 90
-		// button
-		_buttons[BTN_UNTIL_NEXT]->setPos(BTN_GRID_POSITIONS[3 + size_t(buttonShow[3])]);
-
-		_buttons[BTN_FREE_ROOM]->show(haveCurEvent);
-		_buttons[BTN_EXTEND_15]->show(haveCurEvent && diffFromCurrToNext >= 15 * SECS_PER_MIN);
-
-		// Hide old errors and let new ones show
-		if (_showError) {
-			_showError = false;
-		} else {
-			_texts[TXT_ERROR]->hide();
-		}
-
-		// Battery warning
-		if (_curBatteryImage != 0) {
-			_texts[TXT_BATTERY_WARNING]->hide();
-		}
-	}
+	_texts[TXT_ERROR]->show();
+	_texts[TXT_ERROR]->setText(_error);
 }
 
 void MainScreen::draw(m5epd_update_mode_t mode) {
 	M5.EPD.Active();
+	// Always update passive elements before draw (dependent on things other than status)
+	_texts[TXT_TOP_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
+	_texts[TXT_MID_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
+	_curBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
+	_texts[TXT_BATTERY_WARNING]->show(_curBatteryImage == 0);
+	updateButtons();
+
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
@@ -236,6 +213,7 @@ void MainScreen::draw(m5epd_update_mode_t mode) {
 	if (_curBatteryImage == 0) {
 		_batteryWarningIcon.draw(UPDATE_MODE_NONE);
 	}
+
 	M5.EPD.UpdateFull(mode);
 }
 

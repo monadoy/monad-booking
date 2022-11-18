@@ -22,8 +22,6 @@ class SettingsScreen : public Screen {
 	enum TextIdx { TXT_TITLE, TXT_MAIN, TXT_SIZE };
 	enum ButtonIdx { BTN_SETTINGS, BTN_UPDATE, BTN_SETUP, BTN_SIZE };
 
-	void show(bool show = true) override;
-
 	void draw(m5epd_update_mode_t mode) override;
 
 	void handleTouch(int16_t x = -1, int16_t y = -1) override;

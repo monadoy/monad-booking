@@ -33,15 +33,10 @@ class Screen {
 	Screen() = default;
 	virtual ~Screen() = default;
 
-	virtual void show(bool show = true) { _hidden = !show; }
-	virtual void hide() { show(false); }
-
 	virtual void draw(m5epd_update_mode_t mode) = 0;
 
 	virtual void handleTouch(int16_t x = -1, int16_t y = -1) = 0;
 
-  private:
-	bool _hidden = true;
 };
 }  // namespace gui
 

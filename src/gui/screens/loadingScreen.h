@@ -4,11 +4,11 @@
 #include <array>
 #include <memory>
 
+#include "calendar/api.h"
 #include "gui/elements/animation.h"
 #include "gui/elements/button.h"
 #include "gui/elements/panel.h"
 #include "gui/elements/text.h"
-#include "calendar/api.h"
 #include "screen.h"
 
 namespace gui {
@@ -21,13 +21,12 @@ class LoadingScreen : public Screen {
 	enum TextIdx { TXT_LOADING_1, TXT_LOADING_2, TXT_SIZE };
 	enum ButtonIdx { BTN_SIZE };
 
-	void show(bool show = true) override;
-
 	void draw(m5epd_update_mode_t mode) override;
 
 	void handleTouch(int16_t x = -1, int16_t y = -1) override;
 
-	/** Set the main loading screen text. It is drawn instantly. Use a newline to utilize the second line. */
+	/** Set the main loading screen text. It is drawn instantly.
+	 * Use a newline to utilize the second line. */
 	void setText(String text);
 
   private:

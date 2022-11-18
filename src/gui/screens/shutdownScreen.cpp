@@ -13,14 +13,6 @@ ShutdownScreen::ShutdownScreen() {
 	ASSERT_ALL_ELEMENTS();
 }
 
-void ShutdownScreen::show(bool doShow) {
-	Screen::show(doShow);
-
-	for (auto& p : _panels) p->show(doShow);
-	for (auto& t : _texts) t->show(doShow);
-	for (auto& b : _buttons) b->show(doShow);
-}
-
 void ShutdownScreen::draw(m5epd_update_mode_t mode) {
 	M5.EPD.Active();
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
