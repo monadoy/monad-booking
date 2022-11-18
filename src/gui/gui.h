@@ -77,6 +77,8 @@ class GUI {
 
 	ScreenIdx _currentScreen = SCR_LOADING;
 
+	bool _touching = false;
+
 	// Loading animation is overlayed on top of the current screen when needed.
 	// When animating, it only updates the area it occupies and uses a faster
 	// update mode to avoid lag.

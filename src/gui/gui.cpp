@@ -108,8 +108,17 @@ void GUI::initMain(cal::Model* model) {
 }
 
 void GUI::handleTouch(int16_t x, int16_t y) {
-	sleepManager.refreshTouchWake();
-	_screens[_currentScreen]->handleTouch(x, y);
+	// Negatives mean touch up
+	if (x < 0 || y < 0) {
+		_touching = false;
+		return;
+	}
+	// Only register the first touch down
+	if (!_touching) {
+		_touching = true;
+		sleepManager.refreshTouchWake();
+		_screens[_currentScreen]->handleTouch(x, y);
+	}
 }
 
 void GUI::wake() {}

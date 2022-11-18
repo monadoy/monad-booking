@@ -35,18 +35,8 @@ void Button::handleTouch(int16_t x, int16_t y) {
 
 	// log_i("Handling touch at (%d, %d)", x, y);
 
-	// This means touch up
-	if (x == -1 && y == -1 && _pressed) {
-		if (_callback) {
-			_callback();
-		}
-	}
-
-	if (x >= 0 && y >= 0 && x >= _pos.x && x <= _pos.x + _size.w && y >= _pos.y
-	    && y <= _pos.y + _size.h) {
-		_pressed = true;
-	} else {
-		_pressed = false;
+	if (x >= _pos.x && x <= _pos.x + _size.w && y >= _pos.y && y <= _pos.y + _size.h) {
+		_callback();
 	}
 }
 
