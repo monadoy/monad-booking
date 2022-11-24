@@ -21,7 +21,13 @@ Designed for the [M5Paper](https://shop.m5stack.com/products/m5paper-esp32-devel
 
 ## Setup
 
-Visit our [wiki](https://github.com/monadoy/m5paper/wiki) to learn exactly how to set up Monad Booking.
+### [How to Set Up Monad Booking](https://github.com/monadoy/monad-booking/wiki)
+
+Click the link above ^ to learn step by step how to set up Monad Booking.
+
+## Contributing
+
+Programmers wanting to contribute code should additionally check our [Developer Guide Wiki](https://github.com/monadoy/monad-booking/wiki/Developer-Guide).
 
 
 
