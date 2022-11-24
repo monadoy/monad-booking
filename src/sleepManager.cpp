@@ -204,6 +204,8 @@ SleepManager::WakeReason SleepManager::_sleep() {
 void SleepManager::requestErrorReboot() { _enqueue(Action::ERROR_REBOOT); }
 
 void SleepManager::setOnTimes(JsonObjectConst config) {
+	// FIXME: Parsing json objects is not really the job of this class
+
 	std::lock_guard<std::mutex> lock(_onTimesMutex);
 
 	auto parseHM = [](const String& input) {
