@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #include <LittleFS.h>
 #include <M5EPD.h>
@@ -10,7 +9,6 @@
 #include "calendar/apiTask.h"
 #include "calendar/googleApi.h"
 #include "calendar/model.h"
-#include "configServer.h"
 #include "globals.h"
 #include "gui/guiTask.h"
 #include "localization.h"
@@ -28,9 +26,6 @@
 #define BOOT_WIFI_CONNECT_MAX_RETRIES 7
 
 #define NTP_TIMEOUT_MS 20 * 1000
-
-// Only used in setup mode
-std::unique_ptr<config::ConfigServer> configServer = nullptr;
 
 std::unique_ptr<config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
