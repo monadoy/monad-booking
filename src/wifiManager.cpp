@@ -116,7 +116,8 @@ bool WiFiManager::waitWiFi(int maxRetries) {
 		if (WiFi.isConnected()) {
 			return true;
 		} else {
-			// Wait a little before retrying
+			// Deauth and wait a little before retrying
+			esp_wifi_deauth_sta(0);
 			delay(100);
 		}
 	}
@@ -132,6 +133,7 @@ void WiFiManager::wakeWiFi() {
 
 void WiFiManager::sleepWiFi() {
 	WiFi.disconnect();
+	esp_wifi_deauth_sta(0);
 	esp_wifi_stop();
 }
 

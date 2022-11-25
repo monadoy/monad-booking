@@ -7,6 +7,7 @@
 #define API_TASK_PRIORITY 5
 #define API_TASK_STACK_SIZE 8192
 #define API_TASK_WIFI_CONNECT_MAX_RETRIES 7
+#define API_TASK_AUTH_MAX_RETRIES 3
 
 namespace cal {
 void task(void* arg) {
@@ -24,7 +25,11 @@ void task(void* arg) {
 		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
 
 		// TODO: return error when auth refresh fails (don't leak memory of req->func)
-		apiTask->_api->refreshAuth();
+		for (int i = 0; i < API_TASK_AUTH_MAX_RETRIES; ++i) {
+			if (apiTask->_api->refreshAuth())
+				break;
+			delay(200);
+		}
 
 		switch (req->type) {
 			case APITask::RequestType::CALENDAR_STATUS: {
