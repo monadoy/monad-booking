@@ -4,7 +4,6 @@
 #include <WiFi.h>
 
 #include <atomic>
-#include <mutex>
 #include <vector>
 
 struct WiFiInfo {
@@ -41,6 +40,7 @@ class WiFiManager {
 	 * Creates a new connection or waits for an existing one to complete.
 	 */
 	bool waitWiFi(int maxRetries = 0);
+	SemaphoreHandle_t _waitWifiSemaphore = xSemaphoreCreateBinary();
 
 	/**
 	 * Tells esp to start wifi and create a new connection.
