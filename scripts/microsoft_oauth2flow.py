@@ -91,10 +91,11 @@ def main():
         print(f"Failed to fetch refresh token. Reason: {response.text}")
         return
 
-    print("Refresh token: " + response.text)
+    data = response.json()
+    data["client_id"] = client_id
 
     with open("microsoft_token.json", "w") as f:
-        f.write(json.dumps(response.json(), indent=2))
+        f.write(json.dumps(data, indent=2))
 
 
 if __name__ == "__main__":
