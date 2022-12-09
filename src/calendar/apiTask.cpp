@@ -22,7 +22,7 @@ void task(void* arg) {
 		auto startTime = millis();
 
 		// TODO: return different error when wifi connection fails (don't leak memory of req->func)
-		wifiManager.waitWiFi(API_TASK_WIFI_CONNECT_MAX_RETRIES);
+		wifiManager.waitWiFi();
 
 		// TODO: return error when auth refresh fails (don't leak memory of req->func)
 		for (int i = 0; i < API_TASK_AUTH_MAX_RETRIES; ++i) {

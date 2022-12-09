@@ -32,7 +32,7 @@ void SetupScreen::startSetup(bool useAP) {
 		_texts[TXT_MAIN]->setText("WIFI SSID: " + info.ssid + "\nPASSWORD: " + info.password
 		                          + "\nIP: " + info.ip.toString());
 	} else {
-		wifiManager.waitWiFi(5);
+		wifiManager.waitWiFi();
 		WiFiInfo info = wifiManager.getStationInfo();
 		_texts[TXT_MAIN]->setText("WIFI SSID: " + info.ssid + "\nIP: " + info.ip.toString());
 	}

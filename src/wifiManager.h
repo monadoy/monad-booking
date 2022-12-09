@@ -12,6 +12,8 @@ struct WiFiInfo {
 	IPAddress ip;
 };
 
+const int DEFAULT_RETRY_COUNT = 7;
+
 /**
  * Designed as a singleton, creating multiple instances will probably mess stuff up.
  */
@@ -39,7 +41,7 @@ class WiFiManager {
 	 * Non-busy wait for wifi connection.
 	 * Creates a new connection or waits for an existing one to complete.
 	 */
-	bool waitWiFi(int maxRetries = 0);
+	bool waitWiFi(int maxRetries = DEFAULT_RETRY_COUNT);
 	SemaphoreHandle_t _waitWifiSemaphore = xSemaphoreCreateBinary();
 
 	/**
