@@ -8,6 +8,7 @@
 
 #include "calendar/apiTask.h"
 #include "calendar/googleApi.h"
+#include "calendar/microsoftApi.h"
 #include "calendar/model.h"
 #include "globals.h"
 #include "gui/guiTask.h"
@@ -108,6 +109,42 @@ void autoUpdateFirmware() {
 	guiTask->startLoading();
 }
 
+std::unique_ptr<cal::APITask> createApiTask(JsonObjectConst config) {
+	cal::API* api = nullptr;
+
+	const auto provider = config["calendar_provider"] | "google";
+	const auto key = provider == "google" ? "gcalsettings" : "mscalsettings";
+
+	auto tokenRes = cal::jsonToToken(config[key]["token"]);
+	if (tokenRes.isErr()) {
+		handleBootError(tokenRes.err()->message);
+		return nullptr;
+	}
+	if (provider == "google") {
+		api = new cal::GoogleAPI{*tokenRes.ok(), config[key]["calendarid"]};
+	} else if (provider == "microsoft") {
+		api = new cal::MicrosoftAPI{*tokenRes.ok(), config[key]["calendarid"]};
+	} else {
+		handleBootError("Unknown calendar provider: " + String(provider));
+		return nullptr;
+	}
+
+	api->registerSaveTokenFunc([key](const cal::Token& token) {
+		auto newConfig = DynamicJsonDocument(4096);
+		JsonObject newKey = newConfig.createNestedObject(key);
+		JsonObject newToken = newKey.createNestedObject("token");
+		cal::tokenToJson(newToken, token);
+
+		log_i("Saving token");
+		token.print();
+		serializeJsonPretty(newConfig, Serial);
+		configStore->mergeConfig(newConfig);
+		log_i("Updated token saved");
+	});
+
+	return utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
+}
+
 void normalBoot(JsonObjectConst config) {
 	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
@@ -149,21 +186,17 @@ void normalBoot(JsonObjectConst config) {
 		autoUpdateFirmware();
 	}
 
-	auto tokenRes
-	    = cal::GoogleAPI::parseToken(config["gcalsettings"]["token"].as<JsonObjectConst>());
-	if (tokenRes.isErr()) {
-		handleBootError(tokenRes.err()->message);
-		return;
+	apiTask = createApiTask(config);
+	if (!apiTask) {
+		return;  // Error already handled
 	}
-	cal::API* api = new cal::GoogleAPI{*tokenRes.ok(), config["gcalsettings"]["calendarid"]};
-	apiTask = utils::make_unique<cal::APITask>(std::unique_ptr<cal::API>(api));
 
 	calendarModel = utils::make_unique<cal::Model>(*apiTask);
 	calendarModel->registerGUITask(guiTask.get());
 	guiTask->initMain(calendarModel.get());
 	calendarModel->updateStatus();
 
-	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
+	// utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);
 }
@@ -179,8 +212,8 @@ void setupBoot() {
 
 	guiTask->startSetup(true);
 
-	utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
-	                       + "] setup boot (timestamp unreliable)");
+	// utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339)
+	//                        + "] setup boot (timestamp unreliable)");
 }
 
 void setup() {
@@ -225,11 +258,11 @@ void setup() {
 		setupBoot();
 	}
 
-	Serial.println("Boot log: ");
-	auto entries = utils::getBootLog();
-	for (int i = entries.size() - 1; i >= 0; --i) {
-		Serial.println(entries[i]);
-	}
+	// Serial.println("Boot log: ");
+	// auto entries = utils::getBootLog();
+	// for (int i = entries.size() - 1; i >= 0; --i) {
+	// 	Serial.println(entries[i]);
+	// }
 }
 
 void loop() { vTaskDelete(NULL); }

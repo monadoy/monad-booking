@@ -275,8 +275,8 @@ void SleepManager::_shutdown(time_t wakeAfter) {
 	const String logShut = "[" + safeMyTZ.dateTime(RFC3339) + "] Shut down";
 	const String logWake = "Try wake at " + safeMyTZ.dateTime(turnOnTimeUTC, UTC_TIME, RFC3339);
 	log_i("%s, %s", logShut.c_str(), logWake.c_str());
-	utils::addBootLogEntry(logWake);
-	utils::addBootLogEntry(logShut);
+	// utils::addBootLogEntry(logWake);
+	// utils::addBootLogEntry(logShut);
 
 	Serial.flush();
 

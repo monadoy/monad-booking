@@ -12,10 +12,44 @@ MicrosoftAPI::MicrosoftAPI(const Token& token, const String& calendarId)
 	_http.setReuse(true);
 };
 
+const int AUTH_RESPONSE_MAX_SIZE = 4096;
+
 bool MicrosoftAPI::refreshAuth() {
-	// UNIMPLEMENTED
-	assert(false);
-	return false;
+	log_i("Refreshing token...");
+	if (_token.unixExpiry + 60 > safeUTC.now()) {
+		log_i("Token doesn't need refreshing");
+		return true;
+	}
+
+	// BUILD REQUEST
+	_http.begin("https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+	            MICROSOFT_LOGIN_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+	// SEND REQUEST
+	int httpCode = _http.POST("client_id=" + _token.clientId + "&refresh_token="
+	                          + _token.refreshToken + "&grant_type=refresh_token");
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+	log_i("Received refresh auth response:\n%s", responseBody.c_str());
+	DynamicJsonDocument doc(AUTH_RESPONSE_MAX_SIZE);
+	auto err = deserializeResponse(doc, httpCode, responseBody);
+	if (err)
+		return false;
+
+	// PARSE JSON VALUES INTO TOKEN
+	_token.accessToken = doc["access_token"].as<String>();
+	_token.unixExpiry = safeUTC.now() + doc["expires_in"].as<long>();
+	if (doc.containsKey("refresh_token")) {
+		_token.refreshToken = doc["refresh_token"].as<String>();
+	}
+
+	assert(_saveTokenFunc);
+	_saveTokenFunc(_token);
+
+	return true;
 };
 
 Result<CalendarStatus> MicrosoftAPI::fetchCalendarStatus() {
@@ -41,12 +75,6 @@ Result<Event> MicrosoftAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t
 	// UNIMPLEMENTED
 	assert(false);
 	return Result<Event>::makeErr(new Error{Error::Type::LOGICAL, "Unimplemented"});
-}
-
-utils::Result<Token, utils::Error> MicrosoftAPI::parseToken(JsonObjectConst obj) {
-	// UNIMPLEMENTED
-	assert(false);
-	return utils::Result<Token, utils::Error>::makeErr(new utils::Error{"Unimplemented"});
 }
 
 std::shared_ptr<cal::Error> MicrosoftAPI::deserializeResponse(JsonDocument& doc, int httpCode,

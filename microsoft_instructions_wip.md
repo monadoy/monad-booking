@@ -35,13 +35,13 @@
     - Click "Add permissions"
 - Select "Overview" in the left sidebar:
   - Copy the line of random characters next to "Application (client) ID" to clipboard
-  - Create a file called "microsoft_credentials.txt" in the root folder of this repository
+  - Create a file called "microsoft_client.txt" in the root folder of this repository
   - Paste the previously copied line into the file and save it
   - Now the text file should only contain the line of random characters and nothing else
 
 ## Generate the credentials
 - Open this repository in a terminal
-- Make sure that "microsoft_credentials.txt" is in the root folder as instructed earlier
+- Make sure that "microsoft_client.txt" is in the root folder as instructed earlier
 - Install dependencies with command `pip install -r ./scripts/requirements.txt`
 - Run command `python ./scripts/microsoft_oauth2flow.py`
 - Log in with the booking user created earlier

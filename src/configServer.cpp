@@ -6,7 +6,7 @@ namespace config {
 
 void ConfigStore::loadConfig() {
 	// Release old memory if it exists
-	config_ = DynamicJsonDocument(2048);
+	config_ = DynamicJsonDocument(4096);
 
 	log_i("Trying to load %s.json from flash...", configFileName_.c_str());
 
@@ -24,7 +24,7 @@ void ConfigStore::loadConfig() {
 	log_i("No existing config file found on flash");
 };
 
-Result<bool> ConfigStore::saveConfig(JsonVariantConst newConfig) {
+Result<bool> ConfigStore::mergeConfig(JsonVariantConst newConfig) {
 	File configFileHandle = fs_.open(configFileName_ + ".json", FILE_WRITE);
 
 	if (!configFileHandle) {
@@ -62,12 +62,13 @@ void ConfigServer::handleRequest(AsyncWebServerRequest* request) {
 	auto config = configDoc.as<JsonVariant>();
 
 	auto hideElement = [&](JsonVariant location, const char* key) {
-		if (location.containsKey(key))
+		if (location && location.containsKey(key))
 			location[key] = nullptr;
 	};
 
 	// Hide sensitive information
 	hideElement(config["gcalsettings"], "token");
+	hideElement(config["mscalsettings"], "token");
 	hideElement(config["wifi"], "password");
 
 	serializeJson(config, *response);
@@ -83,7 +84,7 @@ void ConfigServer::start() {
 		    // TODO: Probably good idea to validate the config before writing, somehow
 		    log_i("Writing new config to filesystem...");
 
-		    auto result = configStore_->saveConfig(configJson);
+		    auto result = configStore_->mergeConfig(configJson);
 
 		    result.isOk() ? request->send(204)
 		                  : request->send(500, "application/json",

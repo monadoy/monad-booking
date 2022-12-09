@@ -32,7 +32,7 @@ class ConfigStore {
 	 * Load existing configuration from flash to memory, if any any
 	 */
 	ConfigStore(fs::FS& fs, String configFileName = "/config")
-	    : fs_(fs), configFileName_(configFileName), config_{DynamicJsonDocument(2048)} {
+	    : fs_(fs), configFileName_(configFileName), config_{DynamicJsonDocument(4096)} {
 		loadConfig();
 	};
 	/**
@@ -52,7 +52,7 @@ class ConfigStore {
 	/**
 	 * Merge new config with old if it exists and save to disk.
 	 */
-	Result<bool> saveConfig(JsonVariantConst newConfig);
+	Result<bool> mergeConfig(JsonVariantConst newConfig);
 	/**
 	 * Delete current configuration from memory and flash
 	 */

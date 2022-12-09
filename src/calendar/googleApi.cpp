@@ -33,7 +33,7 @@ bool GoogleAPI::refreshAuth() {
 	}
 
 	// BUILD REQUEST
-	_http.begin(_token.tokenUri, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin("https://oauth2.googleapis.com/token", GOOGLE_API_FULL_CHAIN_CERT);
 	_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
 	// SEND REQUEST
@@ -44,15 +44,22 @@ bool GoogleAPI::refreshAuth() {
 	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
-	log_i("Received refresh auth response:\n%s", responseBody.c_str());
+	// log_i("Received refresh auth response:\n%s", responseBody.c_str());
+	log_i("Received refresh auth response: hidden");
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
-	auto err = deserializeResponse(doc, httpCode, responseBody);
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
 		return false;
 
 	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
 	_token.unixExpiry = safeUTC.now() + doc["expires_in"].as<long>();
+	if (doc.containsKey("refresh_token")) {
+		_token.refreshToken = doc["refresh_token"].as<String>();
+	}
+
+	assert(_saveTokenFunc);
+	_saveTokenFunc(_token);
 
 	return true;
 };
@@ -87,7 +94,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	_http.end();
 	log_i("Received event list response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
-	auto err = deserializeResponse(doc, httpCode, responseBody);
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<CalendarStatus>::makeErr(err);
 
@@ -145,7 +152,7 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 
 	log_i("Received event patch response:\n%s", responseBody.c_str());
 	StaticJsonDocument<1024> doc;
-	auto err = deserializeResponse(doc, httpCode, responseBody);
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<Event>::makeErr(err);
 
@@ -198,7 +205,7 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 
 	log_i("Received event insert response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(1024);
-	auto err = deserializeResponse(doc, httpCode, responseBody);
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<Event>::makeErr(err);
 
@@ -249,7 +256,7 @@ Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t ne
 
 	log_i("Received event patch response:\n%s", responseBody.c_str());
 	StaticJsonDocument<1024> doc;
-	auto err = deserializeResponse(doc, httpCode, responseBody);
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<Event>::makeErr(err);
 
@@ -261,56 +268,6 @@ Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t ne
 	}
 
 	return Result<Event>::makeOk(newEvent);
-}
-
-utils::Result<Token, utils::Error> GoogleAPI::parseToken(JsonObjectConst obj) {
-	if (!obj) {
-		return utils::Result<Token, utils::Error>::makeErr(
-		    new utils::Error{"Token parse failed, token is null."});
-	}
-
-	if (!(obj["token"] && obj["refresh_token"] && obj["token_uri"] && obj["client_id"]
-	      && obj["client_secret"] && obj["scopes"][0])) {
-		return utils::Result<Token, utils::Error>::makeErr(
-		    new utils::Error{"Token parse failed, missing some required keys."});
-	}
-
-	return utils::Result<Token, utils::Error>::makeOk(
-	    new Token{.accessToken = obj["token"],
-	              .refreshToken = obj["refresh_token"],
-	              .tokenUri = obj["token_uri"],
-	              .clientId = obj["client_id"],
-	              .clientSecret = obj["client_secret"],
-	              .scope = obj["scopes"][0],
-	              .unixExpiry = 0});
-}
-
-std::shared_ptr<cal::Error> GoogleAPI::deserializeResponse(JsonDocument& doc, int httpCode,
-                                                           const String& responseBody) {
-	// Negative codes are errors special to HTTPClient
-	if (httpCode < 0) {
-		String errStr = _http.errorToString(httpCode);
-		log_w("HTTP: %d, %s", httpCode, errStr.c_str());
-		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
-		                                    "HTTP: " + String(httpCode) + ", " + errStr.c_str());
-	}
-
-	if (httpCode < 200 || httpCode >= 300) {
-		String errStr = utils::httpCodeToString(httpCode);
-		log_w("HTTP response: %d, %s", httpCode, errStr.c_str());
-		return std::make_shared<cal::Error>(cal::Error::Type::HTTP,
-		                                    "HTTP: " + String(httpCode) + ", " + errStr);
-	}
-
-	DeserializationError err = deserializeJson(doc, responseBody);
-	if (err) {
-		String errStr = err.f_str();
-		log_w("deserializeJson() failed with code %s", errStr.c_str());
-		return std::make_shared<cal::Error>(cal::Error::Type::PARSE,
-		                                    "deserializeJson() failed with code " + errStr);
-	}
-
-	return nullptr;
 }
 
 bool GoogleAPI::isRoomAccepted(JsonObjectConst eventObject) {
@@ -349,7 +306,7 @@ Result<bool> GoogleAPI::isFree(time_t startTime, time_t endTime, const String& i
 	_http.end();
 	log_i("Received event isFree response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(EVENT_LIST_MAX_SIZE);
-	auto err = deserializeResponse(doc, httpCode, responseBody);
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
 		return Result<bool>::makeErr(err);
 

@@ -20,7 +20,9 @@ class MicrosoftAPI : public API {
 	Result<Event> rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
 	                              time_t newEndTime) override final;
 
-	static utils::Result<Token> parseToken(JsonObjectConst obj);
+	void registerSaveTokenFunc(std::function<void(const Token&)> saveTokenFunc) {
+		_saveTokenFunc = saveTokenFunc;
+	}
 
   private:
 	/**
@@ -37,6 +39,8 @@ class MicrosoftAPI : public API {
 
 	std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
 	                                                const String& responseBody);
+
+	std::function<void(const Token&)> _saveTokenFunc;
 
 	Token _token;
 	String _calendarId;

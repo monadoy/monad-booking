@@ -12,11 +12,20 @@ namespace cal {
 struct Token {
 	String accessToken;
 	String refreshToken;
-	String tokenUri;
 	String clientId;
 	String clientSecret;
 	String scope;
 	time_t unixExpiry;
+
+	void print() const {
+		Serial.println("Token:");
+		Serial.println("  access_token: " + accessToken);
+		Serial.println("  refresh_token: " + refreshToken);
+		Serial.println("  client_id: " + clientId);
+		Serial.println("  client_secret: " + clientSecret);
+		Serial.println("  scope: " + scope);
+		Serial.println("  expiry: " + String(unixExpiry));
+	}
 };
 
 struct Event {
@@ -76,6 +85,8 @@ class API {
 	 */
 	virtual bool refreshAuth() = 0;
 
+	virtual void registerSaveTokenFunc(std::function<void(const Token&)> saveTokenFunc) = 0;
+
 	/**
 	 * Fetch the current and next events from calendar today. Also contains the name
 	 * of the room. Returns the calendar status on success and error on failure.
@@ -105,6 +116,13 @@ class API {
 	                                      time_t newEndTime)
 	    = 0;
 };
+
+// Helpers:
+utils::Result<Token, utils::Error> jsonToToken(JsonObjectConst obj);
+void tokenToJson(JsonObject& resultObj, const Token& token);
+
+std::shared_ptr<cal::Error> parseJSONResponse(JsonDocument& doc, int httpCode,
+                                              const String& responseBody);
 
 }  // namespace cal
 #endif

@@ -1,5 +1,6 @@
-*credentials.*
-*token.json
+*credentials*.*
+*client*.*
+*token*.*
 .python-version
 .vscode
 

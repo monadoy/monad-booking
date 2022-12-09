@@ -5,13 +5,15 @@ import random
 import string
 import requests
 import json
+from datetime import datetime
+import time
 
 
 def randStr(chars=string.ascii_uppercase + string.digits, N=10):
     return ''.join(random.choice(chars) for _ in range(N))
 
 
-CREDENTIALS_FILE = "microsoft_credentials.txt"
+CLIENT_FILE = "microsoft_client.txt"
 REDIRECT_URI = "http://localhost:3000"
 SCOPE = "offline_access https://graph.microsoft.com/calendars.readwrite https://graph.microsoft.com/calendars.readwrite.shared"
 STATE = randStr(N=20)
@@ -46,11 +48,11 @@ class OAuthHandler(BaseHTTPRequestHandler):
 
 def main():
     try:
-        with open(CREDENTIALS_FILE, "r") as f:
+        with open(CLIENT_FILE, "r") as f:
             client_id = f.read().strip()
     except FileNotFoundError:
-        print(f"Error: File `{CREDENTIALS_FILE}` not found.\n"
-              f"    Please create a file called {CREDENTIALS_FILE} and put "
+        print(f"Error: File `{CLIENT_FILE}` not found.\n"
+              f"    Please create a file called {CLIENT_FILE} and put "
               "your client ID in it.")
         return
 
@@ -92,10 +94,19 @@ def main():
         return
 
     data = response.json()
-    data["client_id"] = client_id
+
+    expiry = datetime.fromtimestamp((time.time()) + data["expires_in"])
+    token = {
+        "access_token": data["access_token"],
+        "refresh_token": data["refresh_token"],
+        "client_id": client_id,
+        "client_secret": "",
+        "scope": data["scope"],
+        "expiry": expiry.isoformat() + "Z"
+    }
 
     with open("microsoft_token.json", "w") as f:
-        f.write(json.dumps(data, indent=2))
+        f.write(json.dumps(token, indent=2))
 
 
 if __name__ == "__main__":
