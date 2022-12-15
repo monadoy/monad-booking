@@ -12,38 +12,33 @@ utils::Result<Token, utils::Error> jsonToToken(JsonObjectConst obj) {
 		return TokenRes::makeErr(new utils::Error{"Token parse failed, token is null."});
 	}
 
-	// token is legacy token formats, replaced by access_token
-	const auto accessToken = obj["access_token"] | obj["token"];
 	const auto refreshToken = obj["refresh_token"];
 	const auto clientId = obj["client_id"];
 	const auto clientSecret = obj["client_secret"];
 	// scopes[0] is for legacy token formats, replaced by scope
 	const auto scope = obj["scope"] | obj["scopes"][0];
-	const auto expiry = obj["expiry"];
 
 	// Secret is allowed to be null, so we don't check for it. E.g. microsoft doesn't use a secret.
-	if (!(accessToken && refreshToken && clientId && /*clientSecret && */ scope && expiry)) {
+	if (!(refreshToken && clientId && /*clientSecret && */ scope)) {
 		return TokenRes::makeErr(
 		    new utils::Error{"Token parse failed, missing some required keys."});
 	}
 
-	auto token = new Token{.accessToken = accessToken,
+	auto token = new Token{.accessToken = "INVALID",
 	                       .refreshToken = refreshToken,
 	                       .clientId = clientId,
 	                       .clientSecret = clientSecret,
 	                       .scope = scope,
-	                       .unixExpiry = timeutils::parseRfcTimestamp(expiry)};
+	                       .unixExpiry = 0};
 
 	return TokenRes::makeOk(token);
 }
 
 void tokenToJson(JsonObject& resultObj, const Token& token) {
-	resultObj["access_token"] = token.accessToken;
 	resultObj["refresh_token"] = token.refreshToken;
 	resultObj["client_id"] = token.clientId;
 	resultObj["client_secret"] = token.clientSecret;
 	resultObj["scope"] = token.scope;
-	resultObj["expiry"] = safeUTC.dateTime(token.unixExpiry, RFC3339);
 }
 
 std::shared_ptr<cal::Error> parseJSONResponse(JsonDocument& doc, int httpCode,
