@@ -97,12 +97,9 @@ def main():
 
     expiry = datetime.fromtimestamp((time.time()) + data["expires_in"])
     token = {
-        "access_token": data["access_token"],
         "refresh_token": data["refresh_token"],
         "client_id": client_id,
-        "client_secret": "",
         "scope": data["scope"],
-        "expiry": expiry.isoformat() + "Z"
     }
 
     with open("microsoft_token.json", "w") as f:
