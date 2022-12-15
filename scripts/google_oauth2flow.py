@@ -7,6 +7,13 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 def main():
+    if not os.path.isfile(CLIENT_FILE):
+        print(
+            f"Error: File `{CLIENT_FILE}` not found.\n"
+            f"    Please export you credentials as json from Google Cloud and rename it to {CLIENT_FILE}."
+        )
+        return
+
     flow = InstalledAppFlow.from_client_secrets_file(CLIENT_FILE, SCOPES)
     credentials = flow.run_local_server(port=0)
 
