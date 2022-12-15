@@ -54,12 +54,11 @@ bool GoogleAPI::refreshAuth() {
 	// PARSE JSON VALUES INTO TOKEN
 	_token.accessToken = doc["access_token"].as<String>();
 	_token.unixExpiry = safeUTC.now() + doc["expires_in"].as<long>();
+	assert(_saveTokenFunc);
 	if (doc.containsKey("refresh_token")) {
 		_token.refreshToken = doc["refresh_token"].as<String>();
+		_saveTokenFunc(_token);
 	}
-
-	assert(_saveTokenFunc);
-	_saveTokenFunc(_token);
 
 	return true;
 };
