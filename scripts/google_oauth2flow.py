@@ -28,6 +28,8 @@ def main():
     with open(TOKEN_FILE, "w") as token:
         token.write(json.dumps(token, indent=2))
 
+    print("All done!")
+
 
 if __name__ == "__main__":
     main()

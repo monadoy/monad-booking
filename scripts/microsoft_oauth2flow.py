@@ -104,6 +104,8 @@ def main():
 
     with open("microsoft_token.json", "w") as f:
         f.write(json.dumps(token, indent=2))
+    
+    print("All done!")
 
 
 if __name__ == "__main__":
