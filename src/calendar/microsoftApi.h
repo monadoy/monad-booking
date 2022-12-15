@@ -11,7 +11,7 @@ namespace cal {
 
 class MicrosoftAPI : public API {
   public:
-	MicrosoftAPI(const Token& token, const String& calendarId);
+	MicrosoftAPI(const Token& token, const String& roomEmail);
 
 	bool refreshAuth() override final;
 	Result<CalendarStatus> fetchCalendarStatus() override final;
@@ -31,19 +31,17 @@ class MicrosoftAPI : public API {
 	 * ignoreRoomAccept can be used when extracting events that have just been created,
 	 * as they may not yet be accepted, but we still want to parse them.
 	 */
-	std::shared_ptr<cal::Event> extractEvent(JsonObjectConst object, bool ignoreRoomAccept = false);
+	std::shared_ptr<cal::Event> extractEvent(JsonObjectConst object);
 
 	Result<bool> isFree(time_t startTime, time_t endTime, const String& ignoreId = "");
 
-	bool isRoomAccepted(JsonObjectConst eventObject);
-
-	std::shared_ptr<cal::Error> deserializeResponse(JsonDocument& doc, int httpCode,
-	                                                const String& responseBody);
+	Result<String> getRoomName();
 
 	std::function<void(const Token&)> _saveTokenFunc;
 
 	Token _token;
-	String _calendarId;
+	String _roomEmail;
+	String _roomName;
 
 	HTTPClient _http;
 };

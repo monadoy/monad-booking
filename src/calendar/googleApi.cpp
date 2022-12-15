@@ -7,6 +7,7 @@
 
 namespace cal {
 
+namespace {
 const char* EVENT_FIELDS = "id,creator,start,end,summary,attendees(resource,responseStatus)";
 
 // Techincally we need to fetch only two events to gain knowledge of the current and next event.
@@ -19,6 +20,7 @@ const int LIST_MAX_EVENTS = 16;
 const int EVENT_MAX_SIZE = 1024;
 
 const int EVENT_LIST_MAX_SIZE = LIST_MAX_EVENTS * EVENT_MAX_SIZE;
+}  // namespace
 
 GoogleAPI::GoogleAPI(const Token& token, const String& calendarId)
     : _token{token}, _calendarId{calendarId} {

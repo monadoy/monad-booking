@@ -112,8 +112,8 @@ void autoUpdateFirmware() {
 std::unique_ptr<cal::APITask> createApiTask(JsonObjectConst config) {
 	cal::API* api = nullptr;
 
-	const auto provider = config["calendar_provider"] | "google";
-	const auto key = provider == "google" ? "gcalsettings" : "mscalsettings";
+	const String provider = config["calendar_provider"] | "google";
+	const String key = provider == "google" ? "gcalsettings" : "mscalsettings";
 
 	auto tokenRes = cal::jsonToToken(config[key]["token"]);
 	if (tokenRes.isErr()) {
@@ -123,7 +123,7 @@ std::unique_ptr<cal::APITask> createApiTask(JsonObjectConst config) {
 	if (provider == "google") {
 		api = new cal::GoogleAPI{*tokenRes.ok(), config[key]["calendarid"]};
 	} else if (provider == "microsoft") {
-		api = new cal::MicrosoftAPI{*tokenRes.ok(), config[key]["calendarid"]};
+		api = new cal::MicrosoftAPI{*tokenRes.ok(), config[key]["room_email"]};
 	} else {
 		handleBootError("Unknown calendar provider: " + String(provider));
 		return nullptr;
