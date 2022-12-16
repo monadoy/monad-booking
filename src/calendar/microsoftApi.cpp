@@ -15,7 +15,7 @@ const int NAME_GET_MAX_SIZE = 1024;
 
 MicrosoftAPI::MicrosoftAPI(const Token& token, const String& calendarId)
     : _token{token}, _roomEmail{calendarId} {
-	_http.setReuse(true);
+	_http.setReuse(false);  // FIXME: Cannot for some reason reuse when using multiple certificates
 };
 
 const int AUTH_RESPONSE_MAX_SIZE = 4096;
@@ -221,9 +221,55 @@ Result<Event> MicrosoftAPI::insertEvent(time_t startTime, time_t endTime) {
 
 Result<Event> MicrosoftAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t newStartTime,
                                             time_t newEndTime) {
-	// UNIMPLEMENTED
-	assert(false);
-	return Result<Event>::makeErr(new Error{Error::Type::LOGICAL, "Unimplemented"});
+	// Check that reschedule is possible
+	Result<bool> isFreeRes = isFree(newStartTime, newEndTime, event->id);
+	if (isFreeRes.isErr())
+		return Result<Event>::makeErr(isFreeRes.err());
+	if (*isFreeRes.ok() == false) {
+		return Result<Event>::makeErr(new Error(
+		    Error::Type::LOGICAL, "Couldn't reschedule, it would overlap with another event"));
+	}
+
+	/// BUILD REQUEST
+	String nowStr = safeMyTZ.dateTime(RFC3339);
+	String url = "https://graph.microsoft.com/v1.0/users/" + _roomEmail + "/events/" + event->id
+	             + "?$select=" + EVENT_FIELDS;
+	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.addHeader("Content-Type", "application/json");
+	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
+	_http.addHeader("Prefer", "outlook.timezone=\"UTC\"");
+
+	// CREATE PAYLOAD
+	StaticJsonDocument<256> payloadDoc;
+	payloadDoc["start"]["dateTime"] = safeMyTZ.dateTime(newStartTime, UTC_TIME, RFC3339);
+	payloadDoc["start"]["timeZone"] = safeMyTZ.getOlson();
+	payloadDoc["end"]["dateTime"] = safeMyTZ.dateTime(newEndTime, UTC_TIME, RFC3339);
+	payloadDoc["end"]["timeZone"] = safeMyTZ.getOlson();
+	String payload = "";
+	serializeJson(payloadDoc, payload);
+
+	// SEND REQUEST
+	int httpCode = _http.PATCH(payload);
+	payload.clear();
+
+	// PARSE RESPONSE AS JSON
+	String responseBody = _http.getString();
+	_http.end();
+
+	log_i("Received event patch response:\n%s", responseBody.c_str());
+	StaticJsonDocument<1024> doc;
+	auto err = parseJSONResponse(doc, httpCode, responseBody);
+	if (err)
+		return Result<Event>::makeErr(err);
+
+	// PARSE JSON AS EVENT STRUCT
+	std::shared_ptr<Event> newEvent = extractEvent(doc.as<JsonObject>());
+	if (!newEvent) {
+		return Result<Event>::makeErr(
+		    new Error{Error::Type::LOGICAL, "PATCH didn't return a valid event"});
+	}
+
+	return Result<Event>::makeOk(newEvent);
 }
 
 Result<bool> MicrosoftAPI::isFree(time_t startTime, time_t endTime, const String& ignoreId) {
