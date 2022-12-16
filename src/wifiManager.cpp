@@ -131,8 +131,9 @@ bool WiFiManager::waitWiFi(int maxRetries) {
 		} else {
 			// Deauth and wait a little before retrying
 			// WiFi.disconnect();
-			esp_wifi_deauth_sta(0);
-			delay(200);
+			// esp_wifi_deauth_sta(0);
+			// WiFi.enableSTA(false);
+			// delay(200);
 		}
 	}
 	log_w("Couldn't connect to WiFi even after %d tries.", maxRetries + 1);
@@ -143,12 +144,12 @@ bool WiFiManager::waitWiFi(int maxRetries) {
 void WiFiManager::wakeWiFi() {
 	esp_wifi_start();
 	log_i("WiFi status after start: %d", WiFi.status());
-	waitWiFi();
+	// waitWiFi();
 }
 
 void WiFiManager::sleepWiFi() {
 	// WiFi.disconnect();
-	esp_wifi_deauth_sta(0);
+	// esp_wifi_deauth_sta(0);
 	esp_wifi_stop();
 }
 
