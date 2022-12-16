@@ -1,6 +1,5 @@
 #include "googleApi.h"
 
-#include "cert.h"
 #include "globals.h"
 #include "timeUtils.h"
 #include "utils.h"
@@ -35,7 +34,7 @@ bool GoogleAPI::refreshAuth() {
 	}
 
 	// BUILD REQUEST
-	_http.begin("https://oauth2.googleapis.com/token", GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin("https://oauth2.googleapis.com/token");
 	_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
 	// SEND REQUEST
@@ -83,7 +82,7 @@ Result<CalendarStatus> GoogleAPI::fetchCalendarStatus() {
 	             + "&maxAttendees=1&singleEvents=true&orderBy=startTime&fields=summary,items("
 	             + EVENT_FIELDS + ")";
 
-	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
@@ -132,7 +131,7 @@ Result<Event> GoogleAPI::endEvent(const String& eventId) {
 	String nowStr = safeMyTZ.dateTime(RFC3339);
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
 	             + eventId + "?fields=" + EVENT_FIELDS;
-	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
@@ -180,7 +179,7 @@ Result<Event> GoogleAPI::insertEvent(time_t startTime, time_t endTime) {
 	// BUILD REQUEST
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId
 	             + "/events?fields=" + EVENT_FIELDS;
-	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
@@ -234,7 +233,7 @@ Result<Event> GoogleAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t ne
 	// BUILD REQUEST
 	String url = "https://www.googleapis.com/calendar/v3/calendars/" + _calendarId + "/events/"
 	             + event->id + "?fields=" + EVENT_FIELDS;
-	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
@@ -295,7 +294,7 @@ Result<bool> GoogleAPI::isFree(time_t startTime, time_t endTime, const String& i
 	             + "&maxAttendees=1&singleEvents=true&orderBy=startTime"
 	             + "&fields=items(id,attendees(resource,responseStatus))";
 
-	_http.begin(url, GOOGLE_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 

@@ -6,8 +6,8 @@
 #include <HTTPClient.h>
 #include <HttpsOTAUpdate.h>
 #include <M5EPD.h>
+#include <cert.h>
 
-#include "cert.h"
 #include "esp_ota_ops.h"
 #include "globals.h"
 #include "utils.h"
@@ -49,7 +49,7 @@ utils::Result<Version> parseVersion(String version) {
 utils::Result<Version> getLatestFirmwareVersion() {
 	HTTPClient http;
 	http.setReuse(false);
-	http.begin(String(UPDATE_STORAGE_URL) + "/current-version", UPDATE_SERVER_CERT);
+	http.begin(String(UPDATE_STORAGE_URL) + "/current-version");
 
 	const int httpCode = http.GET();
 
@@ -79,7 +79,7 @@ std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String
 	HTTPClient http;
 	http.setReuse(false);
 
-	http.begin(url, UPDATE_SERVER_CERT);
+	http.begin(url);
 
 	const int httpCode = http.GET();
 

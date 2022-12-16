@@ -2,6 +2,8 @@
 #include <LittleFS.h>
 #include <M5EPD.h>
 #include <Preferences.h>
+#include <esp_crt_bundle.h>
+#include <esp_tls.h>
 #include <esp_wifi.h>
 
 #include <memory>
@@ -218,6 +220,10 @@ void setupBoot() {
 
 void setup() {
 	vTaskPrioritySet(NULL, 5);
+
+	esp_tls_cfg_t cfg = {
+	    .crt_bundle_attach = esp_crt_bundle_attach,
+	};
 
 #ifdef USE_EXTERNAL_SERIAL
 	Serial.begin(115200, SERIAL_8N1, GPIO_NUM_18, GPIO_NUM_19);

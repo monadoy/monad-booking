@@ -1,6 +1,5 @@
 #include "microsoftApi.h"
 
-#include "cert.h"
 #include "globals.h"
 #include "timeUtils.h"
 #include "utils.h"
@@ -15,7 +14,7 @@ const int NAME_GET_MAX_SIZE = 1024;
 
 MicrosoftAPI::MicrosoftAPI(const Token& token, const String& calendarId)
     : _token{token}, _roomEmail{calendarId} {
-	_http.setReuse(false);  // FIXME: Cannot for some reason reuse when using multiple certificates
+	_http.setReuse(true);
 };
 
 const int AUTH_RESPONSE_MAX_SIZE = 4096;
@@ -28,8 +27,7 @@ bool MicrosoftAPI::refreshAuth() {
 	}
 
 	// BUILD REQUEST
-	_http.begin("https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-	            MICROSOFT_LOGIN_API_FULL_CHAIN_CERT);
+	_http.begin("https://login.microsoftonline.com/organizations/oauth2/v2.0/token");
 	_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
 	// SEND REQUEST
@@ -81,7 +79,7 @@ Result<CalendarStatus> MicrosoftAPI::fetchCalendarStatus() {
 	             + "/calendarView?startDateTime=" + timeMin + "&endDateTime=" + timeMax
 	             + "&$select=" + EVENT_FIELDS + "&$orderby=start/dateTime&$top=2";
 
-	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 	_http.addHeader("Prefer", "outlook.timezone=\"UTC\"");
 
@@ -129,7 +127,7 @@ Result<Event> MicrosoftAPI::endEvent(const String& eventId) {
 	String nowStr = safeMyTZ.dateTime(RFC3339);
 	String url = "https://graph.microsoft.com/v1.0/users/" + _roomEmail + "/events/" + eventId
 	             + "?$select=" + EVENT_FIELDS;
-	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 	_http.addHeader("Prefer", "outlook.timezone=\"UTC\"");
@@ -178,7 +176,7 @@ Result<Event> MicrosoftAPI::insertEvent(time_t startTime, time_t endTime) {
 	// BUILD REQUEST
 	String url = "https://graph.microsoft.com/v1.0/users/" + _roomEmail
 	             + "/events/?$select=" + String(EVENT_FIELDS);
-	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Prefer", "outlook.timezone=\"UTC\"");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
@@ -234,7 +232,7 @@ Result<Event> MicrosoftAPI::rescheduleEvent(std::shared_ptr<Event> event, time_t
 	String nowStr = safeMyTZ.dateTime(RFC3339);
 	String url = "https://graph.microsoft.com/v1.0/users/" + _roomEmail + "/events/" + event->id
 	             + "?$select=" + EVENT_FIELDS;
-	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Content-Type", "application/json");
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 	_http.addHeader("Prefer", "outlook.timezone=\"UTC\"");
@@ -288,7 +286,7 @@ Result<bool> MicrosoftAPI::isFree(time_t startTime, time_t endTime, const String
 	             + "/calendarView?startDateTime=" + timeMin + "&endDateTime=" + timeMin
 	             + "&$select=id&$orderby=start/dateTime&$top=2";
 
-	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 	_http.addHeader("Prefer", "outlook.timezone=\"UTC\"");
 
@@ -320,7 +318,7 @@ Result<bool> MicrosoftAPI::isFree(time_t startTime, time_t endTime, const String
 Result<String> MicrosoftAPI::getRoomName() {  // BUILD REQUEST
 	String url = "https://graph.microsoft.com/v1.0/users/" + _roomEmail + "/calendar?$select=owner";
 
-	_http.begin(url, MICROSOFT_GRAPH_API_FULL_CHAIN_CERT);
+	_http.begin(url);
 	_http.addHeader("Authorization", "Bearer " + _token.accessToken);
 
 	// SEND REQUEST
