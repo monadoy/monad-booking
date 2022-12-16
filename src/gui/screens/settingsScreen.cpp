@@ -15,10 +15,9 @@ SettingsScreen::SettingsScreen() {
 	ADD_TXT(TXT_TITLE, Text(Pos{txt_pad_x, txt_pad_y}, Size{txt_w, 78},
 	                        l10n.msg(L10nMessage::SETTINGS), FS_TITLE, BK, WH, true));
 
-	String mainText = l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION.toString() + "\n";
+	String mainText = l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION + "\n";
 	if (latestVersionResult.isOk()) {
-		mainText
-		    += l10n.msg(L10nMessage::LATEST_VERSION) + ": " + latestVersionResult.ok()->toString();
+		mainText += l10n.msg(L10nMessage::LATEST_VERSION) + ": " + *latestVersionResult.ok();
 	}
 	ADD_TXT(TXT_MAIN,
 	        Text(Pos{txt_pad_x, txt_pad_y + 78 + 20}, Size{txt_w, 540 - 78 - 20 - txt_pad_y * 2},

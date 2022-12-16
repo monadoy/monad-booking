@@ -25,7 +25,7 @@ extern Localization l10n;
 extern Preferences preferences;
 extern PNG png;
 
-extern const Version CURRENT_VERSION;
-extern utils::Result<Version> latestVersionResult;
+extern const String CURRENT_VERSION;
+extern utils::Result<String> latestVersionResult;
 
 #endif

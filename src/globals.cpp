@@ -9,6 +9,12 @@ Localization l10n;
 Preferences preferences;
 PNG png;
 
-const Version CURRENT_VERSION{VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH};
-utils::Result<Version> latestVersionResult
-    = utils::Result<Version>::makeErr(new utils::Error("Not initialized."));
+#define _STRINGIZE(x) #x
+#define STRINGIZE(x) String(_STRINGIZE(x))
+
+const String CURRENT_VERSION
+    = String(VERSION_MAJOR) + "." + String(VERSION_MINOR) + "." + String(VERSION_PATCH)
+      + (STRINGIZE(VERSION_PRERELEASE).length() > 0 ? "-" + STRINGIZE(VERSION_PRERELEASE) : "")
+         + (STRINGIZE(VERSION_BUILD).length() > 0 ? "+" + STRINGIZE(VERSION_BUILD) : "");
+utils::Result<String> latestVersionResult
+    = utils::Result<String>::makeErr(new utils::Error("Not initialized."));

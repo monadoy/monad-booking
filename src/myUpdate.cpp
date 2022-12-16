@@ -15,38 +15,7 @@
 #define UPDATE_SERVER_CERT GOOGLE_API_FULL_CHAIN_CERT
 #define UPDATE_STORAGE_URL "https://storage.googleapis.com/no-booking-binaries"
 
-/**
- * Parses at least three numbers from the given string, separated by periods.
- * Even if the string doesn't contain three or more numbers,
- * zeros are added until there are three numbers.
- */
-utils::Result<Version> parseVersion(String version) {
-	version.trim();
-
-	std::vector<int> versionParts;
-	String current = "";
-	for (const char c : version) {
-		if (c == '.' && !current.isEmpty()) {
-			versionParts.push_back(current.toInt());
-			current = "";
-		} else if (isdigit(c)) {
-			current += c;
-		}
-	}
-	if (!current.isEmpty())
-		versionParts.push_back(current.toInt());
-
-	// If not enough numbers were found, fail
-	while (versionParts.size() < 3) {
-		return utils::Result<Version>::makeErr(
-		    new utils::Error("Parse failed: Invalid version string."));
-	}
-
-	return utils::Result<Version>::makeOk(
-	    new Version{versionParts[0], versionParts[1], versionParts[2]});
-}
-
-utils::Result<Version> getLatestFirmwareVersion() {
+utils::Result<String> getLatestFirmwareVersion() {
 	HTTPClient http;
 	http.setReuse(false);
 	http.begin(String(UPDATE_STORAGE_URL) + "/current-version");
@@ -56,21 +25,21 @@ utils::Result<Version> getLatestFirmwareVersion() {
 	if (httpCode != 200) {
 		log_e("http returned code %d", httpCode);
 		http.end();
-		return utils::Result<Version>::makeErr(
+		return utils::Result<String>::makeErr(
 		    new utils::Error("HTTP returned: " + String(httpCode)));
 	}
 
-	const String responseBody = http.getString();
+	const String version = http.getString();
 	http.end();
 
-	log_i("Response body: %s", responseBody.c_str());
+	if (version.length() < 1 || version[0] < '0' || version[0] > '9') {
+		return utils::Result<String>::makeErr(
+		    new utils::Error("Invalid version string: " + version));
+	}
 
-	utils::Result<Version> versionRes = parseVersion(responseBody);
+	log_i("Detected latest version: %s", version.c_str());
 
-	log_i("Detected latest version: %s", versionRes.isOk() ? versionRes.ok()->toString().c_str()
-	                                                       : versionRes.err()->message.c_str());
-
-	return versionRes;
+	return utils::Result<String>::makeOk(new String(version));
 }
 
 std::unique_ptr<utils::Error> downloadUpdateFile(const String& url, const String& filename) {
@@ -162,7 +131,7 @@ void HttpEvent(HttpEvent_t* event) {
 	}
 }
 
-std::unique_ptr<utils::Error> updateFirmware(const Version& newVersion,
+std::unique_ptr<utils::Error> updateFirmware(const String& newVersion,
                                              std::function<void()> onBeforeFormat) {
 	auto count = sleepManager.scopedTaskCount();
 
@@ -170,13 +139,13 @@ std::unique_ptr<utils::Error> updateFirmware(const Version& newVersion,
 
 	log_i("Downloading new filesystem...");
 	const String fileSystemUpdateUrl
-	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion.toString() + "/file-system.tar.gz";
+	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion + "/file-system.tar.gz";
 	auto err = downloadUpdateFile(fileSystemUpdateUrl, "/tmp/file-system.tar.gz");
 	if (err)
 		return err;
 
 	const String firmwareUpdateUrl
-	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion.toString() + "/firmware.bin";
+	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion + "/firmware.bin";
 
 	log_i("Downloading and updating firmware...");
 	HttpsOTA.onHttpEvent(HttpEvent);

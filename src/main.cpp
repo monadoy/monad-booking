@@ -100,7 +100,7 @@ void autoUpdateFirmware() {
 		return;
 	}
 
-	guiTask->setLoadingScreenText("Updating to firmware: v" + latestVersionResult.ok()->toString()
+	guiTask->setLoadingScreenText("Updating to firmware: v" + *latestVersionResult.ok()
 	                              + ".\nThis takes a while...");
 	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
 	if (err) {
@@ -137,8 +137,8 @@ std::unique_ptr<cal::APITask> createApiTask(JsonObjectConst config) {
 		JsonObject newToken = newKey.createNestedObject("token");
 		cal::tokenToJson(newToken, token);
 
-		log_i("Saving token");
-		token.print();
+		// log_i("Saving token");
+		// token.print();
 		serializeJsonPretty(newConfig, Serial);
 		configStore->mergeConfig(newConfig);
 		log_i("Updated token saved");
@@ -235,7 +235,7 @@ void setup() {
 	M5.EPD.Clear(true);
 	M5.RTC.begin();
 
-	Serial.println("========== Monad Booking v" + CURRENT_VERSION.toString() + " ==========");
+	Serial.println("========== Monad Booking v" + CURRENT_VERSION + " ==========");
 	Serial.println("Booting up...");
 
 	if (!preferences.begin("main")) {
