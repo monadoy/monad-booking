@@ -89,6 +89,9 @@ class WiFiManager {
 
   private:
 	void _connect();
+
+	String _ssid;
+	String _password;
 };
 
 namespace {

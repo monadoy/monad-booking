@@ -89,16 +89,17 @@ WiFiManager::WiFiManager() {
 
 bool WiFiManager::openStation(const String& ssid, const String& password, int maxRetries) {
 	log_i("Opening WiFi station...");
+	_ssid = ssid;
+	_password = password;
 
 	WiFi.setAutoReconnect(false);
-	WiFi.begin(ssid.c_str(), password.c_str(), 0, 0, false);
 	return waitWiFi(maxRetries);
 }
 
 void WiFiManager::_connect() {
 	xSemaphoreTake(_connectSemaphore, portMAX_DELAY);
 	log_i("Connecting WiFi...");
-	WiFi.begin();
+	WiFi.begin(_ssid.c_str(), _password.c_str());
 	_connectTimer = millis();
 }
 
@@ -129,8 +130,8 @@ bool WiFiManager::waitWiFi(int maxRetries) {
 			return true;
 		} else {
 			// Deauth and wait a little before retrying
+			// WiFi.disconnect();
 			esp_wifi_deauth_sta(0);
-			WiFi.disconnect();
 			delay(200);
 		}
 	}
@@ -145,7 +146,11 @@ void WiFiManager::wakeWiFi() {
 	waitWiFi();
 }
 
-void WiFiManager::sleepWiFi() { esp_wifi_stop(); }
+void WiFiManager::sleepWiFi() {
+	// WiFi.disconnect();
+	esp_wifi_deauth_sta(0);
+	esp_wifi_stop();
+}
 
 void WiFiManager::openAccessPoint() {
 	auto randNumString = [](size_t length) {
