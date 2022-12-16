@@ -37,7 +37,7 @@ bool MicrosoftAPI::refreshAuth() {
 	// PARSE RESPONSE AS JSON
 	String responseBody = _http.getString();
 	_http.end();
-	log_i("Received refresh auth response:\n%s", responseBody.c_str());
+	// log_i("Received refresh auth response:\n%s", responseBody.c_str());
 	DynamicJsonDocument doc(AUTH_RESPONSE_MAX_SIZE);
 	auto err = parseJSONResponse(doc, httpCode, responseBody);
 	if (err)
