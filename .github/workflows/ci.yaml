@@ -1,10 +1,18 @@
-name: Build & Deploy on Version Tag
+name: CI
 
-on: [push]
+on: 
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      deploy_staging:
+        description: 'Deploy to staging'
+      deploy_production:
+        description: 'Deploy to production'
 
 jobs:
   build-firmware:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
@@ -33,7 +41,7 @@ jobs:
           path: .pio/build/m5paper/firmware.bin
 
   build-file-system:
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
@@ -61,68 +69,21 @@ jobs:
         with:
           name: file-system
           path: data
-  deploy:
-    runs-on: self-hosted
+          
+  deploy-staging:
+    runs-on: ubuntu-22.04
     needs: [build-firmware, build-file-system]
-    if: startsWith(github.ref, 'refs/tags/v') # Runs only on tag push starting with 'v'
+    if: github.ref == 'refs/heads/master' || github.event.inputs.deploy_staging == 'true'
+    environment: staging
     steps:
-      - uses: actions/checkout@v3
+      - name: Deploy
+        run: echo Deploying ${{ github.run_id }} to Staging
 
-      - name: Get tag
-        id: tag
-        uses: dawidd6/action-get-tag@v1
-        with:
-          strip_v: true
-
-      - name: Verify that platformio.ini defines the same version as the tag
-        run: |
-          MAJOR="$(cut -d'.' -f1 <<< '${{ steps.tag.outputs.tag }}')"
-          MINOR="$(cut -d'.' -f2 <<< '${{ steps.tag.outputs.tag }}')"
-          PATCH="$(cut -d'.' -f3 <<< '${{ steps.tag.outputs.tag }}')"
-          grep "\-DVERSION_MAJOR=$MAJOR" ./platformio.ini
-          grep "\-DVERSION_MINOR=$MINOR" ./platformio.ini
-          grep "\-DVERSION_PATCH=$PATCH" ./platformio.ini
-
-      - name: Download firmware artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: firmware
-          path: ./artifacts
-
-      - name: Download file system artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: file-system
-          path: ./artifacts/data
-
-      - run: mkdir ./v${{ steps.tag.outputs.tag }}
-
-      - name: Move firmware
-        run: mv ./artifacts/firmware.bin ./v${{ steps.tag.outputs.tag }}/firmware.bin
-
-      - name: Compress file system
-        working-directory: ./artifacts/data
-        run: tar -czvf ../../v${{ steps.tag.outputs.tag }}/file-system.tar.gz ./*
-
-      - name: Make current-version file
-        run: echo -n ${{ steps.tag.outputs.tag }} > current-version
-
-      - name: Authorize account for Google Storage
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
-      - name: Upload to Google Storage bucket
-        uses: "google-github-actions/upload-cloud-storage@v0"
-        with:
-          path: "./v${{ steps.tag.outputs.tag }}"
-          destination: "no-booking-binaries"
-
-      - name: Update current-version in Google Storage bucket
-        uses: "google-github-actions/upload-cloud-storage@v0"
-        with:
-          path: "./current-version"
-          destination: "no-booking-binaries"
-          headers: |-
-            content-type: text/plain
-            cache-control: no-cache
+  deploy-production:
+    runs-on: ubuntu-22.04
+    needs: [deploy-staging, build-firmware, build-file-system]
+    if: github.ref == 'refs/heads/master' || github.event.inputs.deploy_production == 'true'
+    environment: staging
+    steps:
+      - name: Deploy
+        run: echo Deploying ${{ github.run_id }} to Production
