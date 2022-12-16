@@ -16,11 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache PlatformIO
-        uses: actions/cache@v2
-        with:
-          path: ~/.platformio
-          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+      # - name: Cache PlatformIO
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: ~/.platformio
+      #     key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 
       - name: Set up Python with cache
         uses: actions/setup-python@v4
