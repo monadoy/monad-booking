@@ -8,7 +8,7 @@ on:
         type: string
 
 jobs:
-  reusable_deploy:
+  deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.channel }}
     steps:
@@ -31,14 +31,15 @@ jobs:
 
       - name: Get version numbers from platformio.ini
         run: |
-          echo MAJOR="$(grep -oP 'DVERSION_MAJOR=\K\w+$' platformio.ini)" >> $GITHUB_ENV
-          echo MINOR="$(grep -oP 'DVERSION_MINOR=\K\w+$' platformio.ini)" >> $GITHUB_ENV
-          echo PATCH="$(grep -oP 'DVERSION_PATCH=\K\w+$' platformio.ini)" >> $GITHUB_ENV
-          echo VERSION="${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.PATCH }}." >> $GITHUB_ENV
+          export MAJOR="$(grep -oP 'DVERSION_MAJOR=\K\w+$' platformio.ini)"
+          export MINOR="$(grep -oP 'DVERSION_MINOR=\K\w+$' platformio.ini)"
+          export PATCH="$(grep -oP 'DVERSION_PATCH=\K\w+$' platformio.ini)"
+          export VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo VERSION="${VERSION}" >> $GITHUB_ENV
       
       - name: Verify that this version is not already deployed
         run: |
-          curl -s -o /dev/null -w "%{http_code}" https://storage.googleapis.com/no-booking-binaries/${{ env.DEPLOY_FOLDER }}/v${{ env.VERSION }}/firmware.bin | grep -q 404
+          curl -s -o /dev/null -w "%{http_code}" https://storage.googleapis.com/no-booking-binaries/${{ env.DEPLOY_FOLDER }}v${{ env.VERSION }}/firmware.bin | grep -q 404
 
       - name: Download firmware artifact
         uses: actions/download-artifact@v3
@@ -54,9 +55,7 @@ jobs:
   
       - name: Compress file system
         working-directory: ./artifacts
-        run: 
-          tar -czvf ./file-system.tar.gz ./data/*
-          rm -r ./data
+        run: tar -czvf ./file-system.tar.gz ./data/* && rm -r ./data
 
       - name: Make current-version file
         run: echo -n ${{ env.VERSION }} > current-version
