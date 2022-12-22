@@ -60,7 +60,7 @@ jobs:
           
   deploy-beta:
     needs: [build-firmware, build-file-system, deploy-beta]
-    uses: ./deploy.yaml
+    uses: ./.github/workflows/deploy.yaml
     with:
       channel: beta
     secrets: inherit
@@ -68,7 +68,7 @@ jobs:
 
   deploy-stable:
     needs: [build-firmware, build-file-system, deploy-beta]
-    uses: ./deploy.yaml
+    uses: ./.github/workflows/deploy.yaml
     with:
       channel: stable
     secrets: inherit
