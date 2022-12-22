@@ -149,7 +149,7 @@ void WiFiManager::wakeWiFi() {
 
 void WiFiManager::sleepWiFi() {
 	// WiFi.disconnect();
-	// esp_wifi_deauth_sta(0);
+	esp_wifi_deauth_sta(0);
 	esp_wifi_stop();
 }
 
