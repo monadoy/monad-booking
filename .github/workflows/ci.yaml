@@ -59,7 +59,7 @@ jobs:
           path: data
           
   deploy-beta:
-    needs: [build-firmware, build-file-system, deploy-beta]
+    needs: [build-firmware, build-file-system]
     uses: ./.github/workflows/deploy.yaml
     with:
       channel: beta
