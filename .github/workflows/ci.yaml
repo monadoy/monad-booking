@@ -19,6 +19,16 @@ jobs:
       - name: Install Python requirements
         run: pip install -r ./scripts/requirements.txt
 
+      - name: Create cache key for platformio.ini from platform_packages and lib_deps
+        run: |
+          echo "PLATFORM_IO_KEY=$(cat platformio.ini | grep -oPz '(?:lib_deps|platform_packages) =\\s*?(?:(?:\\t| )+.*\\n?)*' | md5sum | cut -d ' ' -f 1)" >> $GITHUB_ENV
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v3
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-${{ env.PLATFORM_IO_KEY }}
+
       - name: Build the firmware
         run: pio run -e m5paper
 
