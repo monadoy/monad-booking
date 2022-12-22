@@ -20,14 +20,14 @@ void restart();
  * Fetch information about the latest available firmware version from the internet.
  * Returns nullptr on failure.
  */
-utils::Result<String> getLatestFirmwareVersion();
+utils::Result<String> getLatestFirmwareVersion(const String& channel);
 
 /**
  * Fetches new firmware and filesystem from the internet based on newVersion.
  * onBeforeFilesystemWrite() callback is called before the filesystem is overwritten.
  * Use it to stop all reading and writing operations to avoid race conditions.
  */
-std::unique_ptr<utils::Error> updateFirmware(const String& newVersion,
+std::unique_ptr<utils::Error> updateFirmware(const String& newVersion, const String& channel,
                                              std::function<void()> onBeforeFilesystemWrite);
 
 #endif

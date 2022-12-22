@@ -14,5 +14,7 @@ PNG png;
 
 const String CURRENT_VERSION
     = String(VERSION_MAJOR) + "." + String(VERSION_MINOR) + "." + String(VERSION_PATCH);
+
+String UPDATE_CHANNEL = "stable";
 utils::Result<String> latestVersionResult
     = utils::Result<String>::makeErr(new utils::Error("Not initialized."));

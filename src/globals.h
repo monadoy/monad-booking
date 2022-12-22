@@ -25,6 +25,7 @@ extern Localization l10n;
 extern Preferences preferences;
 extern PNG png;
 
+extern String UPDATE_CHANNEL;
 extern const String CURRENT_VERSION;
 extern utils::Result<String> latestVersionResult;
 

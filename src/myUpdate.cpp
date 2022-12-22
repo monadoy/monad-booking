@@ -15,10 +15,15 @@
 #define UPDATE_SERVER_CERT GOOGLE_API_FULL_CHAIN_CERT
 #define UPDATE_STORAGE_URL "https://storage.googleapis.com/no-booking-binaries"
 
-utils::Result<String> getLatestFirmwareVersion() {
+String getUrlBase(const String& channel) {
+	return String(UPDATE_STORAGE_URL) + (channel == "beta" ? "/beta" : "");
+}
+
+utils::Result<String> getLatestFirmwareVersion(const String& channel) {
 	HTTPClient http;
 	http.setReuse(false);
-	http.begin(String(UPDATE_STORAGE_URL) + "/current-version");
+
+	http.begin(getUrlBase(channel) + "/current-version");
 
 	const int httpCode = http.GET();
 
@@ -131,21 +136,19 @@ void HttpEvent(HttpEvent_t* event) {
 	}
 }
 
-std::unique_ptr<utils::Error> updateFirmware(const String& newVersion,
-                                             std::function<void()> onBeforeFormat) {
+std::unique_ptr<utils::Error> updateFirmware(const String& newVersion, const String& channel,
+                                             const std::function<void()> onBeforeFormat) {
 	auto count = sleepManager.scopedTaskCount();
 
 	LittleFS.rmdir("/tmp");
 
 	log_i("Downloading new filesystem...");
-	const String fileSystemUpdateUrl
-	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion + "/file-system.tar.gz";
-	auto err = downloadUpdateFile(fileSystemUpdateUrl, "/tmp/file-system.tar.gz");
+	auto err = downloadUpdateFile(getUrlBase(channel) + "/v" + newVersion + "/file-system.tar.gz",
+	                              "/tmp/file-system.tar.gz");
 	if (err)
 		return err;
 
-	const String firmwareUpdateUrl
-	    = String(UPDATE_STORAGE_URL) + "/v" + newVersion + "/firmware.bin";
+	const String firmwareUpdateUrl = getUrlBase(channel) + "/v" + newVersion + "/firmware.bin";
 
 	log_i("Downloading and updating firmware...");
 	HttpsOTA.onHttpEvent(HttpEvent);

@@ -100,9 +100,9 @@ void autoUpdateFirmware() {
 		return;
 	}
 
-	guiTask->setLoadingScreenText("Updating to firmware: v" + *latestVersionResult.ok()
-	                              + ".\nThis takes a while...");
-	auto err = updateFirmware(*latestVersionResult.ok(), onBeforeFilesystemWrite);
+	guiTask->setLoadingScreenText("Updating to firmware: v" + *latestVersionResult.ok() + " ("
+	                              + UPDATE_CHANNEL + ")\nThis takes a while...");
+	auto err = updateFirmware(*latestVersionResult.ok(), UPDATE_CHANNEL, onBeforeFilesystemWrite);
 	if (err) {
 		// Errors don't really matter here as they aren't fatal
 		// TODO: somehow show the error to user
@@ -181,7 +181,8 @@ void normalBoot(JsonObjectConst config) {
 	sleepManager.registerCallback(SleepManager::Callback::AFTER_WAKE,
 	                              []() { syncEzTimeFromRTC(); });
 
-	latestVersionResult = getLatestFirmwareVersion();
+	UPDATE_CHANNEL = config["update_channel"] | String("stable");
+	latestVersionResult = getLatestFirmwareVersion(UPDATE_CHANNEL);
 	if (preferences.getBool(LAST_BOOT_SUCCESS_KEY)
 	    && (config["autoupdate"] | false || preferences.getBool(MANUAL_UPDATE_KEY))) {
 		preferences.putBool(MANUAL_UPDATE_KEY, false);

@@ -15,7 +15,8 @@ SettingsScreen::SettingsScreen() {
 	ADD_TXT(TXT_TITLE, Text(Pos{txt_pad_x, txt_pad_y}, Size{txt_w, 78},
 	                        l10n.msg(L10nMessage::SETTINGS), FS_TITLE, BK, WH, true));
 
-	String mainText = l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION + "\n";
+	String mainText
+	    = l10n.msg(L10nMessage::VERSION) + ": " + CURRENT_VERSION + " (" + UPDATE_CHANNEL + ")\n";
 	if (latestVersionResult.isOk()) {
 		mainText += l10n.msg(L10nMessage::LATEST_VERSION) + ": " + *latestVersionResult.ok();
 	}
