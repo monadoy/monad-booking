@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment: ${{ inputs.channel }}
     steps:
       - uses: actions/checkout@v3
@@ -60,25 +60,23 @@ jobs:
       - name: Make current-version file
         run: echo -n ${{ env.VERSION }} > current-version
 
-      - run: echo uploading to no-booking-binaries/${{ env.DEPLOY_FOLDER }}v${{ env.VERSION }}
+      - name: Authorize account for Google Storage
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # - name: Authorize account for Google Storage
-      #   uses: google-github-actions/auth@v1
-      #   with:
-      #     credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      - name: Upload to Google Storage bucket
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "./artifacts"
+          destination: "no-booking-binaries/${{ env.DEPLOY_FOLDER }}v${{ env.VERSION }}"
+          parent: false
 
-      # - name: Upload to Google Storage bucket
-      #   uses: "google-github-actions/upload-cloud-storage@v1"
-      #   with:
-      #     path: "./artifacts"
-      #     destination: "no-booking-binaries/${{ env.DEPLOY_FOLDER }}v${VERSION}"
-      #     parent: false
-
-      # - name: Update current-version in Google Storage bucket
-      #   uses: "google-github-actions/upload-cloud-storage@v1"
-      #   with:
-      #     path: "./current-version"
-      #     destination: "no-booking-binaries/${{ env.DEPLOY_FOLDER }}"
-      #     headers: |-
-      #       content-type: text/plain
-      #       cache-control: no-cache
+      - name: Update current-version in Google Storage bucket
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "./current-version"
+          destination: "no-booking-binaries/${{ env.DEPLOY_FOLDER }}"
+          headers: |-
+            content-type: text/plain
+            cache-control: no-cache
