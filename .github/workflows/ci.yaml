@@ -59,17 +59,16 @@ jobs:
           path: data
           
   deploy-beta:
-    runs-on: ubuntu-22.04
-    needs: [build-firmware, build-file-system]
-    environment: beta
-    steps:
-      - name: Deploy
-        run: echo Deploying ${{ github.run_id }} to beta
+    needs: [build-firmware, build-file-system, deploy-beta]
+    uses: ./deploy.yaml
+    with:
+      channel: beta
+    secrets: inherit
+  
 
   deploy-stable:
-    runs-on: ubuntu-22.04
-    needs: [deploy-beta, build-firmware, build-file-system]
-    environment: stable
-    steps:
-      - name: Deploy
-        run: echo Deploying ${{ github.run_id }} to stable
+    needs: [build-firmware, build-file-system, deploy-beta]
+    uses: ./deploy.yaml
+    with:
+      channel: stable
+    secrets: inherit
