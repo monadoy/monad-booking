@@ -3,24 +3,12 @@ name: CI
 on: 
   push:
     branches: [master]
-  workflow_dispatch:
-    inputs:
-      deploy_staging:
-        description: 'Deploy to staging'
-      deploy_production:
-        description: 'Deploy to production'
 
 jobs:
   build-firmware:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-
-      # - name: Cache PlatformIO
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: ~/.platformio
-      #     key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 
       - name: Set up Python with cache
         uses: actions/setup-python@v4
@@ -70,20 +58,18 @@ jobs:
           name: file-system
           path: data
           
-  deploy-staging:
+  deploy-beta:
     runs-on: ubuntu-22.04
     needs: [build-firmware, build-file-system]
-    if: github.ref == 'refs/heads/master' || github.event.inputs.deploy_staging == 'true'
-    environment: staging
+    environment: beta
     steps:
       - name: Deploy
-        run: echo Deploying ${{ github.run_id }} to Staging
+        run: echo Deploying ${{ github.run_id }} to beta
 
-  deploy-production:
+  deploy-stable:
     runs-on: ubuntu-22.04
-    needs: [deploy-staging, build-firmware, build-file-system]
-    if: github.ref == 'refs/heads/master' || github.event.inputs.deploy_production == 'true'
-    environment: staging
+    needs: [deploy-beta, build-firmware, build-file-system]
+    environment: stable
     steps:
       - name: Deploy
-        run: echo Deploying ${{ github.run_id }} to Production
+        run: echo Deploying ${{ github.run_id }} to stable
