@@ -69,6 +69,7 @@ jobs:
           path: data
           
   deploy-beta:
+    if: github.ref == 'refs/heads/release'
     needs: [build-firmware, build-file-system]
     uses: ./.github/workflows/deploy.yaml
     with:
@@ -77,6 +78,7 @@ jobs:
   
 
   deploy-stable:
+    if: github.ref == 'refs/heads/release'
     needs: [build-firmware, build-file-system, deploy-beta]
     uses: ./.github/workflows/deploy.yaml
     with:
