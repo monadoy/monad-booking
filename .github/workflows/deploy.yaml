@@ -54,8 +54,8 @@ jobs:
           path: ./artifacts/data
   
       - name: Compress file system
-        working-directory: ./artifacts
-        run: tar -czvf ./file-system.tar.gz ./data/* && rm -r ./data
+        working-directory: ./artifacts/data
+        run: tar -czvf ../file-system.tar.gz . && cd .. && rm -r ./data
 
       - name: Make current-version file
         run: echo -n ${{ env.VERSION }} > current-version
