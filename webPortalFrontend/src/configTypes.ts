@@ -1,8 +1,13 @@
 export let defaultConfig: Config = {
 	name: "",
 	timezone: "Europe/Helsinki",
+	calendar_provider: "google",
 	gcalsettings: {
 		calendarid: "",
+		token: undefined,
+	},
+	mscalsettings: {
+		room_email: "",
 		token: undefined,
 	},
 	wifi: {
@@ -22,10 +27,11 @@ export let defaultConfig: Config = {
 			fri: true,
 			sat: false,
 			sun: false,
-		}
+		},
 	},
 	language: "FI",
 	autoupdate: false,
+	update_channel: "stable",
 }
 
 export interface Config {
@@ -33,7 +39,21 @@ export interface Config {
 	timezone: string
 	gcalsettings: {
 		calendarid: string
-		token: any
+		token?: {
+			scope: string
+			client_id: string
+			client_secret: string
+			refresh_token: string
+		}
+	}
+	calendar_provider: "google" | "microsoft"
+	mscalsettings: {
+		room_email: string
+		token: {
+			scope: string
+			client_id: string
+			refresh_token: string
+		}
 	}
 	wifi: {
 		ssid: string
@@ -54,6 +74,7 @@ export interface Config {
 			sun: boolean
 		}
 	}
-	language: string,
+	language: string
 	autoupdate: boolean
+	update_channel: "stable" | "beta"
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte"
 	import { timeZonesNames } from "@vvo/tzdb"
-	import { Config, defaultConfig } from "./configTypes"
+	import { type Config, defaultConfig } from "./configTypes"
 
 	const safeParseInt = (input: string) => {
 		const parsed = parseInt(input, 10)
@@ -51,39 +51,70 @@
 
 	let config: Config = defaultConfig
 
-	const updateToken = (s: string) => {
+	$: console.log(config)
+
+	const updateGoogleToken = (s: string) => {
 		if (!s) return
 		try {
 			config.gcalsettings.token = JSON.parse(s.trim())
-			clearMessage("[Malformed token.json]")
+			clearMessage("[Malformed google_token.json]")
 		} catch (err) {
 			config.gcalsettings.token = undefined
 			console.log(err)
-			message = { isError: true, content: `[Malformed token.json] ${err.message}` }
+			message = { isError: true, content: `[Malformed google_token.json] ${err.message}` }
 		}
 	}
 
-	let files: FileList
-	$: if (files && files.length > 0) {
-		files[0].text().then(text => (tokenString = text))
+	let googleTokenFiles: FileList
+	$: if (googleTokenFiles && googleTokenFiles.length > 0) {
+		googleTokenFiles[0].text().then(text => (googleTokenString = text))
+	}
+	
+
+	let googleTokenString = ""
+	$: if (googleTokenString) {
+		try {
+			config.gcalsettings.token = JSON.parse(googleTokenString.trim())
+			clearMessage("[Malformed google_token.json]")
+		} catch (err) {
+			config.gcalsettings.token = undefined
+			console.log(err)
+			message = { isError: true, content: `[Malformed google_token.json] ${err.message}` }
+		}
 	}
 
-	let tokenString = ""
-	$: updateToken(tokenString)
+	let microsoftTokenFiles: FileList
+	$: if (microsoftTokenFiles && microsoftTokenFiles.length > 0) {
+		microsoftTokenFiles[0].text().then(text => (microsoftTokenString = text))
+	}
 
-	let configFetchStatus = "Fetching M5Paper config..."
+	let microsoftTokenString = ""
+	$: if (microsoftTokenString) {
+		try {
+			config.mscalsettings.token = JSON.parse(microsoftTokenString.trim())
+			clearMessage("[Malformed microsoft_token.json]")
+		} catch (err) {
+			config.mscalsettings.token = undefined
+			console.log(err)
+			message = { isError: true, content: `[Malformed microsoft_token.json] ${err.message}` }
+		}
+	}
+
+	let configFetchStatus = "Fetching Monad Booking device config..."
 	onMount(() => {
 		fetch("/config")
 			.then(res => res.json())
 			.then(json => {
 				config = { ...defaultConfig, ...json }
 				try {
-					if (config.gcalsettings.token) tokenString = JSON.stringify(config.gcalsettings.token)
+					if (config.gcalsettings.token) googleTokenString = JSON.stringify(config.gcalsettings.token)
+					if (config.mscalsettings.token) googleTokenString = JSON.stringify(config.mscalsettings.token)
 				} catch (err) {}
 
 				// Config server sets these to null when they are hidden
 				let hiddenElements = []
-				if (config.gcalsettings.token === null) hiddenElements.push("token.json")
+				if (config.gcalsettings.token === null) hiddenElements.push("google_token.json")
+				if (config.mscalsettings.token === null) hiddenElements.push("microsooft_token.json")
 				if (config.wifi.password === null) hiddenElements.push("WIFI password")
 
 				let hiddenLabel = ""
@@ -91,18 +122,18 @@
 					hiddenLabel = `\n(Options hidden for security: ${hiddenElements.join(", ")})`
 				}
 
-				configFetchStatus = `M5Paper config fetch success ${hiddenLabel}`
+				configFetchStatus = `Monad Booking device config fetch success ${hiddenLabel}`
 			})
 			.catch(err => {
 				config = defaultConfig
 				console.log(err)
-				configFetchStatus = "Couldn't fetch M5Paper config"
+				configFetchStatus = "Couldn't fetch Monad Booking device config"
 			})
 	})
 </script>
 
 <main>
-	<h1>M5Paper Configuration</h1>
+	<h1>Monad Booking Device Configuration</h1>
 	<p class="status">{configFetchStatus}</p>
 	{#if config}
 		<form class="content" on:submit|preventDefault={submit}>
@@ -115,7 +146,7 @@
 			<label for="wifipassword">WIFI Password</label>
 			<input id="wifipassword" type="text" bind:value={config.wifi.password} />
 			<label for="timezone">IANA Time Zone</label>
-			<select id="timezone" value={config.timezone}>
+			<select id="timezone" bind:value={config.timezone}>
 				{#each timeZonesNames as tz}
 					<option value={tz}>
 						{tz}
@@ -131,6 +162,11 @@
 					(Disabled)
 				{/if}
 			</div>
+			<label for="update-channel">Update Channel</label>
+			<select id="update-channel" bind:value={config.update_channel}>
+				<option value="stable">Stable</option>
+				<option value="beta">Beta</option>
+			</select>
 			<h4>Awake Times</h4>
 			<div class="multi-input">
 				<label for="awaketimefrom">from</label>
@@ -165,18 +201,38 @@
 					/>
 				{/each}
 			</div>
-			<label for="calendarid">Calendar ID</label>
-			<input id="calendarid" type="email" bind:value={config.gcalsettings.calendarid} />
-			<label for="tokenjson">Token.json</label>
-			<div class="multi-input vertical">
-				<input id="tokenjsonfile" type="file" bind:files />
-				<textarea
-					rows="10"
-					id="tokenjson"
-					placeholder="< choose file OR paste file contents here >"
-					bind:value={tokenString}
-				/>
-			</div>
+			<label for="calendar-provider">Calendar Provider</label>
+			<select id="calendar-provider" bind:value={config.calendar_provider}>
+				<option value="google">Google</option>
+				<option value="microsoft">Microsoft 365</option>
+			</select>
+			{#if config.calendar_provider == "google"}
+				<label class="inner-option" for="google-calendarid">Calendar ID</label>
+				<input id="google-calendarid" type="email" bind:value={config.gcalsettings.calendarid} />
+				<label class="inner-option" for="google-token">google_token.json</label>
+				<div class="multi-input vertical">
+					<input id="google-token-file" type="file" bind:files={googleTokenFiles} />
+					<textarea
+						rows="8"
+						id="google-token"
+						placeholder="< choose file OR paste file contents here >"
+						bind:value={googleTokenString}
+					/>
+				</div>
+			{:else if config.calendar_provider == "microsoft"}
+				<label class="inner-option" for="microsoft-room-email">Room Email</label>
+				<input id="microsoft-room-email" type="email" bind:value={config.mscalsettings.room_email} />
+				<label class="inner-option" for="microsoft-token">microsoft_token.json</label>
+				<div class="multi-input vertical">
+					<input id="microsoft-token-file" type="file" bind:files={microsoftTokenFiles} />
+					<textarea
+						rows="8"
+						id="microsoft-token"
+						placeholder="< choose file OR paste file contents here >"
+						bind:value={microsoftTokenString}
+					/>
+				</div>
+			{/if}
 			<button id="submit" type="submit">Submit</button>
 			{#if message.content}
 				<div class={`message ${message.isError ? "error" : "ok"}`}>{message.content}</div>
@@ -208,8 +264,14 @@
 	h4 {
 		display: inline-block;
 		margin: 0.8rem 0 0.2rem 0;
+		/* width: 10rem; */
 		font-weight: normal;
 		font-size: 1rem;
+	}
+
+	label.inner-option {
+		padding-left: 1rem;
+		font-style: italic;
 	}
 
 	textarea {
@@ -299,7 +361,7 @@
 		}
 
 		form {
-			grid-template-columns: auto 1fr;
+			grid-template-columns: 10rem 1fr;
 			grid-gap: 0.8rem;
 		}
 
