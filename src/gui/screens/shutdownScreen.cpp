@@ -9,10 +9,10 @@ ShutdownScreen::ShutdownScreen() {
 
 	ADD_TXT(TXT_SETUP_GUIDE, Text(Pos{960, 12}, Size{960, 32},
 	                              "Hold the button above when restarting to re-enter setup mode",
-	                              FS_NORMAL, BK, WH, false, true));
+	                              FS_NORMAL, BK, WH, false, Align::CENTER));
 
-	ADD_TXT(TXT_1, Text(Pos{0, 402}, Size{960, 42}, "", FS_HEADER, BK, WH, false, true));
-	ADD_TXT(TXT_2, Text(Pos{0, 444}, Size{960, 42}, "", FS_HEADER, BK, WH, false, true));
+	ADD_TXT(TXT_1, Text(Pos{0, 402}, Size{960, 42}, "", FS_HEADER, BK, WH, false, Align::CENTER));
+	ADD_TXT(TXT_2, Text(Pos{0, 444}, Size{960, 42}, "", FS_HEADER, BK, WH, false, Align::CENTER));
 
 	ASSERT_ALL_ELEMENTS();
 }

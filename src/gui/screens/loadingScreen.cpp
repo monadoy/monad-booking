@@ -7,8 +7,10 @@ namespace gui {
 LoadingScreen::LoadingScreen() {
 	ADD_PNL(PNL_MAIN, Panel(Pos{0, 0}, Size{960, 540}, WH));
 
-	ADD_TXT(TXT_LOADING_1, Text(Pos{0, 402}, Size{960, 42}, "", FS_HEADER, BK, WH, false, true));
-	ADD_TXT(TXT_LOADING_2, Text(Pos{0, 444}, Size{960, 42}, "", FS_HEADER, BK, WH, false, true));
+	ADD_TXT(TXT_LOADING_1,
+	        Text(Pos{0, 402}, Size{960, 42}, "", FS_HEADER, BK, WH, false, Align::CENTER));
+	ADD_TXT(TXT_LOADING_2,
+	        Text(Pos{0, 444}, Size{960, 42}, "", FS_HEADER, BK, WH, false, Align::CENTER));
 
 	ASSERT_ALL_ELEMENTS();
 }

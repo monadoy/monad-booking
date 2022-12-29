@@ -3,17 +3,49 @@
 #include <HTTPClient.h>
 #include <LittleFS.h>
 
+#include <deque>
+
 namespace utils {
 const uint32_t BAT_LOW = 3300;
 const uint32_t BAT_HIGH = 4200;
 
-bool isCharging() { return M5.getBatteryVoltage() > 4275; }
+const size_t MAX_BATTERY_HISTORY = 5;
+
+std::deque<uint32_t> batteryVoltageHistory;
+time_t lastBatteryVoltageUpdate = 0;
+uint32_t getSmoothBatteryVoltage() {
+	if (batteryVoltageHistory.size() >= MAX_BATTERY_HISTORY) {
+		batteryVoltageHistory.pop_front();
+	}
+	uint32_t voltage = M5.getBatteryVoltage();
+	batteryVoltageHistory.push_back(M5.getBatteryVoltage());
+
+	uint32_t sum = 0;
+	for (uint32_t v : batteryVoltageHistory) {
+		sum += v;
+	}
+
+	uint32_t avg = sum / batteryVoltageHistory.size();
+
+	// Clear history if voltage is too far off from average (e.g. started or stopped charging)
+	if (abs((int32_t)voltage - (int32_t)avg) > 100) {
+		batteryVoltageHistory.clear();
+		return voltage;
+	}
+
+	return avg;
+}
 
 /**
- * Returns battery level in 0.0-1.0 range
+ * Returns battery level in 0.0-1.0 range.
+ * Returns -1 if charging.
  */
 float getBatteryLevel() {
-	auto clamped = std::min(std::max(M5.getBatteryVoltage(), BAT_LOW), BAT_HIGH);
+	auto voltage = getSmoothBatteryVoltage();
+	if (voltage > 4275) {
+		return -1;
+	}
+	auto clamped = std::min(std::max(getSmoothBatteryVoltage(), BAT_LOW), BAT_HIGH);
 	return (float)(clamped - BAT_LOW) / (float)(BAT_HIGH - BAT_LOW);
 }
 

@@ -18,7 +18,10 @@ MainScreen::MainScreen() {
 	ADD_PNL(PNL_LEFT, Panel(Pos{0, 0}, Size{l_pnl_w, 540}, L_PNL));
 	ADD_PNL(PNL_RIGHT, Panel(Pos{652, 0}, Size{308, 540}, R_PNL));
 
-	ADD_TXT(TXT_TOP_CLOCK, Text(Pos{875, 20}, Size{77, 40}, "00:00", FS_NORMAL, BK, R_PNL));
+	ADD_TXT(TXT_TOP_CLOCK,
+	        Text(Pos{864, 20}, Size{77, 40}, "00:00", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
+	ADD_TXT(TXT_BATTERY_LEVEL,
+	        Text(Pos{738, 20}, Size{70, 40}, "100", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
 	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{77, 40}, "00:00", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_ROOM_NAME, Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_TITLE, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
@@ -53,7 +56,7 @@ MainScreen::MainScreen() {
 
 	ADD_TXT(TXT_BATTERY_WARNING,
 	        Text(Pos{l_pnl_w + r_txt_pad, 64}, Size{r_txt_w, 56}, l10n.msg(L10nMessage::CHARGE_ME),
-	             FS_NORMAL, WH, 14, false, false, Margins{16, 16, 16, 80}));
+	             FS_NORMAL, WH, 14, false, Align::LEFT, Margins{16, 16, 16, 80}));
 
 	ADD_BTN(BTN_SETTINGS, Button(Pos{16, 16}, Size{64, 56}, "/images/settingsWhite.png",
 	                             [this]() { onGoSettings(); }));
@@ -202,8 +205,12 @@ void MainScreen::draw(m5epd_update_mode_t mode) {
 	// Always update passive elements before draw (dependent on things other than status)
 	_texts[TXT_TOP_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
 	_texts[TXT_MID_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
-	_curBatteryImage = utils::isCharging() ? 4 : uint8_t(utils::getBatteryLevel() * 3.9999);
+	// Negative battery level means that we are charging
+	float batteryLevel = utils::getBatteryLevel();
+	_curBatteryImage = batteryLevel < 0 ? 4 : uint8_t(batteryLevel * 3.9999);
 	_texts[TXT_BATTERY_WARNING]->show(_curBatteryImage == 0);
+	_texts[TXT_BATTERY_LEVEL]->show(batteryLevel >= 0);
+	_texts[TXT_BATTERY_LEVEL]->setText(String(int(batteryLevel * 100)));
 	updateButtons();
 
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);

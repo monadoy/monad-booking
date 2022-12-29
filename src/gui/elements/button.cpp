@@ -8,7 +8,8 @@ namespace gui {
 Button::Button(Pos pos, Size size, const String& text, uint8_t fontSize, uint8_t textColor,
                uint8_t bgColor, std::function<void()> callback)
     : Element(pos, size),
-      _text{utils::make_unique<Text>(pos, size, text, fontSize, textColor, bgColor, true, true)},
+      _text{utils::make_unique<Text>(pos, size, text, fontSize, textColor, bgColor, true,
+                                     Align::CENTER)},
       _callback{callback} {
 	_text->show(true);
 }

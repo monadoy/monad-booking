@@ -63,8 +63,6 @@ class Result {
 	}
 };
 
-bool isCharging();
-
 float getBatteryLevel();
 
 std::vector<String> getBootLog();

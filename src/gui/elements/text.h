@@ -7,10 +7,13 @@
 #include "element.h"
 
 namespace gui {
+// Only left align allows multiline text
+enum class Align { LEFT, CENTER, RIGHT };
+
 class Text : public Element {
   public:
 	Text(Pos pos, Size size, const String& text, uint8_t fontSize = 24, uint8_t textColor = 15,
-	     uint8_t bgColor = 0, bool bold = false, bool centered = false,
+	     uint8_t bgColor = 0, bool bold = false, Align align = Align::LEFT,
 	     Margins margins = Margins{4, 4, 4, 4});
 	~Text(){};
 
@@ -30,7 +33,7 @@ class Text : public Element {
 	uint16_t _fontSize;
 	uint8_t _textColor;
 	bool _bold;
-	bool _centered;
+	Align _align;
 	M5EPD_Canvas _canvas;
 
 	uint8_t _bgColor;
