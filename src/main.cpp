@@ -30,6 +30,8 @@
 
 #define NTP_TIMEOUT_MS 20 * 1000
 
+#define SETUP_HOLD_BUTTON_MS 10000
+
 std::unique_ptr<config::ConfigStore> configStore = nullptr;
 std::unique_ptr<cal::APITask> apiTask = nullptr;
 std::unique_ptr<gui::GUITask> guiTask = nullptr;
@@ -148,7 +150,6 @@ std::unique_ptr<cal::APITask> createApiTask(JsonObjectConst config) {
 }
 
 void normalBoot(JsonObjectConst config) {
-	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
 	guiTask->setLoadingScreenText("Booting...");
 
@@ -202,6 +203,36 @@ void normalBoot(JsonObjectConst config) {
 	// utils::addBootLogEntry("[" + safeMyTZ.dateTime(RFC3339) + "] normal boot");
 
 	preferences.putBool(CURR_BOOT_SUCCESS_KEY, true);
+}
+
+bool detectButtonHold() {
+	log_i("Detecting button hold");
+	// Hold button for 5s to force setup
+	M5.update();
+	if (M5.BtnP.isPressed()) {
+		M5EPD_Canvas canvas(&M5.EPD);
+		canvas.createCanvas(960, 200);
+		canvas.fillCanvas(0);
+		canvas.setTextColor(15);
+		canvas.setTextSize(4);
+		canvas.setTextDatum(CC_DATUM);
+		canvas.drawString("Keep holding the button ", 960 / 2, 80);
+		canvas.drawString("to enter setup", 960 / 2, 120);
+		canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+	}
+
+	time_t holdStart = millis();
+
+	while (M5.BtnP.isPressed()) {
+		if (millis() - holdStart > SETUP_HOLD_BUTTON_MS) {
+			return true;
+		}
+		delay(100);
+		M5.update();
+	};
+
+	log_i("Not pressed");
+	return false;
 }
 
 void setupBoot() {
@@ -259,7 +290,10 @@ void setup() {
 	configStore = utils::make_unique<config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
 
-	if (config.begin() != config.end()) {
+	guiTask = utils::make_unique<gui::GUITask>();
+
+	bool forceSetup = detectButtonHold();
+	if (!forceSetup && config.begin() != config.end()) {
 		normalBoot(config);
 	} else {
 		setupBoot();
