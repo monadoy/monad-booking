@@ -68,6 +68,36 @@ void forceRestart() {
 	shutdown->toUpperCase();
 }
 
+std::vector<String> listFiles(const String& directory) {
+	std::vector<String> files;
+
+	File dir = LittleFS.open(directory);
+	if (!dir) {
+		log_e("Not a directory: %s", directory.c_str());
+		return files;
+	}
+
+	log_d("Files in directory  %s:", directory.c_str());
+
+	while (true) {
+		File f = dir.openNextFile();
+		if (!f) {
+			break;
+		}
+		if (!f.isDirectory()) {
+			log_d("File: %s", f.path());
+			files.push_back(f.name());
+		} else {
+			log_d("Dir : %s", f.path());
+		}
+
+		f.close();
+	}
+	dir.close();
+
+	return files;
+}
+
 void merge(JsonVariant dst, JsonVariantConst src) {
 	if (src.is<JsonObjectConst>()) {
 		for (auto kvp : src.as<JsonObjectConst>()) {

@@ -82,6 +82,8 @@ void merge(JsonVariant dst, JsonVariantConst src);
 
 void forceRestart();
 
+std::vector<String> listFiles(const String& directory);
+
 }  // namespace utils
 
 #endif

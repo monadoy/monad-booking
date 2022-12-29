@@ -170,6 +170,14 @@ std::unique_ptr<utils::Error> updateFirmware(const String& newVersion, const Str
 
 	onBeforeFormat();
 
+	// Move old assets to tmp.
+	// This is needed because assets are fingerprinted, so they are not overwritten when expanding
+	// filesystem and would take a lot of space after multiple updates.
+	auto assets = utils::listFiles("/webroot/assets");
+	for (const auto& file : assets) {
+		LittleFS.rename("/webroot/assets/" + file, "/tmp/webroot/assets/" + file);
+	}
+
 	std::unique_ptr<TarGzUnpacker> TARGZUnpacker = makeTarGzUnpacker();
 
 	// Expand new file system
@@ -181,6 +189,12 @@ std::unique_ptr<utils::Error> updateFirmware(const String& newVersion, const Str
 		const esp_partition_t* running_part = esp_ota_get_running_partition();
 		esp_ota_set_boot_partition(running_part);
 		TARGZUnpacker.reset();
+
+		// Revert asset move
+		for (const auto& file : assets) {
+			LittleFS.rename("/tmp/webroot/assets/" + file, "/webroot/assets/" + file);
+		}
+
 		return utils::make_unique<utils::Error>("Firmware updater failed.");
 	}
 	TARGZUnpacker.reset();
