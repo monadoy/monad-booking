@@ -76,7 +76,7 @@ class GUITask {
 	 */
 	void startSetup(bool useAP);
 
-	void showShutdownScreen(const String& shutdownText);
+	void showShutdownScreen(const String& shutdownText, bool isError);
 
   private:
 	TaskHandle_t _taskHandle;

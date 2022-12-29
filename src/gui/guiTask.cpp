@@ -42,7 +42,7 @@ GUITask::GUITask() : _gui(this) {
 		// This shouldShutdown call is ignored if an error is already displayed
 		time_t projectedTurnOnTime = sleepManager.calculateTurnOnTimeUTC(safeMyTZ.now());
 		showShutdownScreen("Shut down.\nWaking up at "
-		                   + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".");
+		                   + safeMyTZ.dateTime(projectedTurnOnTime, UTC_TIME, RFC3339) + ".", false);
 	});
 }
 
@@ -103,8 +103,8 @@ void GUITask::setLoadingScreenText(const String& data) {
 	_enqueue(new QueueFunc([=]() { _gui.setLoadingScreenText(data); }));
 }
 
-void GUITask::showShutdownScreen(const String& shutdownText) {
-	_enqueue(new QueueFunc([=]() { _gui.showShutdownScreen(shutdownText); }));
+void GUITask::showShutdownScreen(const String& shutdownText, bool isError) {
+	_enqueue(new QueueFunc([=]() { _gui.showShutdownScreen(shutdownText, isError); }));
 }
 
 void GUITask::_enqueue(void* func) {

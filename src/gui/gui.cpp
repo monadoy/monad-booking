@@ -175,7 +175,7 @@ void GUI::startSetup(bool useAP) {
 	switchToScreen(SCR_SETUP);
 }
 
-void GUI::showShutdownScreen(String message) {
+void GUI::showShutdownScreen(String message, bool isError) {
 	// We don't want to override our previous shutdown screen, it probably contains an error message
 	if (_currentScreen == SCR_SHUTDOWN)
 		return;
@@ -184,7 +184,7 @@ void GUI::showShutdownScreen(String message) {
 		_loading = false;
 	}
 
-	_shutdownScreen->setText(message);
+	_shutdownScreen->setText(message, isError);
 	switchToScreen(SCR_SHUTDOWN);
 }
 

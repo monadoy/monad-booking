@@ -18,7 +18,7 @@ class ShutdownScreen : public Screen {
 	~ShutdownScreen(){};
 
 	enum PanelIdx { PNL_MAIN, PNL_SIZE };
-	enum TextIdx { TXT_1, TXT_2, TXT_SIZE };
+	enum TextIdx { TXT_SETUP_GUIDE, TXT_1, TXT_2, TXT_SIZE };
 	enum ButtonIdx { BTN_SIZE };
 
 	void draw(m5epd_update_mode_t mode) override;
@@ -28,7 +28,7 @@ class ShutdownScreen : public Screen {
 	/**
 	 * Set the main text. Use a newline to utilize the second line.
 	 * */
-	void setText(String text);
+	void setText(String text, bool isError);
 
   private:
 	std::array<std::unique_ptr<Panel>, PNL_SIZE> _panels;

@@ -58,7 +58,7 @@ class GUI {
 
 	void setLoadingScreenText(String text);
 
-	void showShutdownScreen(String message);
+	void showShutdownScreen(String message, bool isError);
 
   private:
 	// Non owning pointers
