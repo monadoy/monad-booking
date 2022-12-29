@@ -14,7 +14,7 @@ const int NAME_GET_MAX_SIZE = 1024;
 
 MicrosoftAPI::MicrosoftAPI(const Token& token, const String& calendarId)
     : _token{token}, _roomEmail{calendarId} {
-	_http.setReuse(false);  // FIXME: Cannot for some reason reuse when using multiple certificates
+	_http.setReuse(false);
 };
 
 const int AUTH_RESPONSE_MAX_SIZE = 4096;
