@@ -53,7 +53,7 @@ def littlefs():
 def frontend():
     click.echo("Building frontend...")
 
-    os.chdir("./webPortalFrontend")
+    os.chdir("./setup-frontend")
 
     os.system("npm install")
     os.system("npm run build")
@@ -62,7 +62,7 @@ def frontend():
     if os.path.exists("./data/webroot"):
         shutil.rmtree("./data/webroot")
 
-    shutil.copytree("./webPortalFrontend/dist", "./data/webroot")
+    shutil.copytree("./setup-frontend/dist", "./data/webroot")
 
     click.echo("Done")
 

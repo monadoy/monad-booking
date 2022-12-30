@@ -55,7 +55,7 @@ jobs:
         with:
           node-version: 16
           cache: "npm"
-          cache-dependency-path: webPortalFrontend/package-lock.json
+          cache-dependency-path: setup-frontend/package-lock.json
 
       - name: Build frontend
         run: python ./scripts/setup.py frontend
