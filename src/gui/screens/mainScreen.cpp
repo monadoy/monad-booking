@@ -19,10 +19,10 @@ MainScreen::MainScreen() {
 	ADD_PNL(PNL_RIGHT, Panel(Pos{652, 0}, Size{308, 540}, R_PNL));
 
 	ADD_TXT(TXT_TOP_CLOCK,
-	        Text(Pos{864, 20}, Size{77, 40}, "00:00", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
+	        Text(Pos{872, 20}, Size{70, 32}, "00:00", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
 	ADD_TXT(TXT_BATTERY_LEVEL,
-	        Text(Pos{738, 20}, Size{70, 40}, "100", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
-	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{77, 40}, "00:00", FS_NORMAL, BK, L_PNL));
+	        Text(Pos{748, 20}, Size{60, 32}, "100", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
+	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{70, 32}, "00:00", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_ROOM_NAME, Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_TITLE, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
 	                        l10n.msg(L10nMessage::NOT_BOOKED), FS_TITLE, BK, L_PNL, true));
@@ -83,36 +83,7 @@ MainScreen::MainScreen() {
 	setStatus(std::shared_ptr<cal::CalendarStatus>(new cal::CalendarStatus{
 	    .name = "Couldn't fetch room name", .currentEvent = nullptr, .nextEvent = nullptr}));
 }
-
-void MainScreen::updateButtons() {
-	// Booking buttons are pretty complicated, they need to be hidden based on
-	// the the timings of current and next event. Also the "until next" button needs to be
-	// properly positioned after the 90min button or to the left side.
-
-	bool curTaken = !!_status->currentEvent;
-	bool nextTaken = !!_status->nextEvent;
-
-	time_t diffToNext = nextTaken ? _status->nextEvent->unixStartTime - safeUTC.now() : LONG_MAX;
-	time_t diffFromCurrToNext = curTaken && nextTaken ? _status->nextEvent->unixStartTime
-	                                                        - _status->currentEvent->unixEndTime
-	                                                  : LONG_MAX;
-
-	std::array<bool, 4> buttonShow{
-	    !curTaken && diffToNext >= 15 * SECS_PER_MIN, !curTaken && diffToNext >= 30 * SECS_PER_MIN,
-	    !curTaken && diffToNext >= 60 * SECS_PER_MIN, !curTaken && diffToNext >= 90 * SECS_PER_MIN};
-	for (int i = 0; i < buttonShow.size(); i++) {
-		_buttons[BTN_15 + i]->show(buttonShow[i]);
-	}
-	_buttons[BTN_UNTIL_NEXT]->show(!curTaken && nextTaken && diffToNext >= 5 * SECS_PER_MIN
-	                               && diffToNext <= 3 * 60 * SECS_PER_MIN);
-	// Move the "until next" button to the third or fourth position depending on the "90" button
-	_buttons[BTN_UNTIL_NEXT]->setPos(BTN_GRID_POSITIONS[3 + size_t(buttonShow[3])]);
-
-	_buttons[BTN_FREE_ROOM]->show(curTaken);
-	_buttons[BTN_EXTEND_15]->show(curTaken && diffFromCurrToNext >= 15 * SECS_PER_MIN);
-}
-
-void MainScreen::updateLeftSide() {
+void MainScreen::_updateLeftSide() {
 	std::shared_ptr<cal::Event>& event = _status->currentEvent;
 	bool taken = !!event;
 
@@ -147,7 +118,7 @@ void MainScreen::updateLeftSide() {
 	_buttons[BTN_SETTINGS]->setReverseColor(taken ? true : false);
 }
 
-void MainScreen::updateRightSide() {
+void MainScreen::_updateRightSide() {
 	std::shared_ptr<cal::Event>& event = _status->nextEvent;
 	bool taken = !!event;
 
@@ -177,17 +148,18 @@ void MainScreen::updateRightSide() {
 	_texts[TXT_R_TAKEN_SUMMARY]->setBGColor(bgColor);
 	_texts[TXT_R_TAKEN_TIMESPAN]->setBGColor(bgColor);
 
-	_curBatteryStyle = taken ? BATTERY_DARKER : BATTERY_LIGHT;
+	_batteryStyle = taken ? BATTERY_DARKER : BATTERY_LIGHT;
 }
 
 void MainScreen::setStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	log_i("setting status....");
 	// status is  null if it hasn't changed
 	if (status) {
+		_statusChanged = true;
 		_status = status;
 
-		updateLeftSide();
-		updateRightSide();
+		_updateLeftSide();
+		_updateRightSide();
 	}
 
 	// Calling setStatus means that no error happened
@@ -195,33 +167,107 @@ void MainScreen::setStatus(std::shared_ptr<cal::CalendarStatus> status) {
 }
 
 void MainScreen::setError(const String& error) {
+	_errorChanged = true;
 	_error = error;
 	_texts[TXT_ERROR]->show();
 	_texts[TXT_ERROR]->setText(_error);
 }
 
-void MainScreen::draw(m5epd_update_mode_t mode) {
-	M5.EPD.Active();
-	// Always update passive elements before draw (dependent on things other than status)
+void MainScreen::draw(m5epd_update_mode_t mode) { _drawImpl(mode, false); }
+
+void MainScreen::reducedDraw(m5epd_update_mode_t mode) { _drawImpl(mode, true); }
+
+void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
+	// Always update elements that are expected to change all the time
+	// (things based on clock and battery level)
 	_texts[TXT_TOP_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
 	_texts[TXT_MID_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
 	// Negative battery level means that we are charging
-	float batteryLevel = utils::getBatteryLevel();
-	_curBatteryImage = batteryLevel < 0 ? 4 : uint8_t(batteryLevel * 3.9999);
-	_texts[TXT_BATTERY_WARNING]->show(_curBatteryImage == 0);
-	_texts[TXT_BATTERY_LEVEL]->show(batteryLevel >= 0);
-	_texts[TXT_BATTERY_LEVEL]->setText(String(int(batteryLevel * 100)));
-	updateButtons();
+	float oldBatteryLevel = _batteryLevel;
+	_batteryLevel = utils::getBatteryLevel();
 
-	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
-	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
-	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
-	_batteryAnim[_curBatteryStyle].drawFrame(_curBatteryImage + 1, UPDATE_MODE_NONE);
-	if (_curBatteryImage == 0) {
-		_batteryWarningIcon.draw(UPDATE_MODE_NONE);
+	uint8_t oldBatteryImage = _batteryImage;
+	_batteryImage = _batteryLevel < 0 ? 4 : uint8_t(_batteryLevel * 3.9999);
+
+	_texts[TXT_BATTERY_WARNING]->show(_batteryImage == 0);
+	bool batteryWarningChanged = (oldBatteryImage == 0) != (_batteryImage == 0);
+
+	_texts[TXT_BATTERY_LEVEL]->show(_batteryLevel >= 0);
+	_texts[TXT_BATTERY_LEVEL]->setText(String(int(_batteryLevel * 100)));
+
+	bool buttonsChanged = _updateButtons();
+
+	log_i(
+	    "Allow reduced draw: %d, status changed: %d, error changed: %d, battery warning changed: "
+	    "%d, buttons changed: %d",
+	    allowReducedDraw, _statusChanged, _errorChanged, batteryWarningChanged, buttonsChanged);
+
+	M5.EPD.Active();
+	// Do a special non flashy update if clock and battery level are the only things that
+	// changed since last update
+	if (allowReducedDraw && !_statusChanged && !_errorChanged && !batteryWarningChanged
+	    && !buttonsChanged) {
+		_texts[TXT_TOP_CLOCK]->draw(UPDATE_MODE_GL16);
+		if (oldBatteryImage != _batteryImage)
+			_batteryAnim[_batteryStyle].drawFrame(_batteryImage + 1, UPDATE_MODE_GL16);
+		if (oldBatteryLevel != _batteryLevel)
+			_texts[TXT_BATTERY_LEVEL]->draw(UPDATE_MODE_GL16);
+		_texts[TXT_MID_CLOCK]->draw(UPDATE_MODE_GL16);
+
+	} else {
+		for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
+		for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
+		for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
+		_batteryAnim[_batteryStyle].drawFrame(_batteryImage + 1, UPDATE_MODE_NONE);
+		if (_batteryImage == 0) {
+			_batteryWarningIcon.draw(UPDATE_MODE_NONE);
+		}
+		M5.EPD.UpdateFull(mode);
 	}
 
-	M5.EPD.UpdateFull(mode);
+	_statusChanged = false;
+	_errorChanged = false;
+}
+
+bool MainScreen::_updateButtons() {
+	// Booking buttons are pretty complicated, they need to be hidden based on
+	// the the timings of current and next event. Also the "until next" button needs to be
+	// properly positioned after the 90min button or to the left side.
+
+	bool curTaken = !!_status->currentEvent;
+	bool nextTaken = !!_status->nextEvent;
+
+	time_t diffToNext = nextTaken ? _status->nextEvent->unixStartTime - safeUTC.now() : LONG_MAX;
+	time_t diffFromCurrToNext = curTaken && nextTaken ? _status->nextEvent->unixStartTime
+	                                                        - _status->currentEvent->unixEndTime
+	                                                  : LONG_MAX;
+
+	std::array<bool, 5> oldButtonShow{!_buttons[BTN_15]->isHidden(), !_buttons[BTN_30]->isHidden(),
+	                                  !_buttons[BTN_60]->isHidden(), !_buttons[BTN_90]->isHidden(),
+	                                  !_buttons[BTN_UNTIL_NEXT]->isHidden()};
+
+	std::array<bool, 5> buttonShow{
+	    !curTaken && diffToNext >= 15 * SECS_PER_MIN,  // 15min
+	    !curTaken && diffToNext >= 30 * SECS_PER_MIN,  // 30min
+	    !curTaken && diffToNext >= 60 * SECS_PER_MIN,  // 60min
+	    !curTaken && diffToNext >= 90 * SECS_PER_MIN,  // 90min
+	    !curTaken && nextTaken && diffToNext >= 5 * SECS_PER_MIN
+	        && diffToNext <= 3 * 60 * SECS_PER_MIN  // "until next"
+	};
+	for (int i = 0; i < buttonShow.size(); i++) {
+		_buttons[BTN_15 + i]->show(buttonShow[i]);
+	}
+	// Move the "until next" button to the third or fourth position depending on the "90" button
+	_buttons[BTN_UNTIL_NEXT]->setPos(BTN_GRID_POSITIONS[3 + size_t(buttonShow[3])]);
+
+	_buttons[BTN_FREE_ROOM]->show(curTaken);
+	_buttons[BTN_EXTEND_15]->show(curTaken && diffFromCurrToNext >= 15 * SECS_PER_MIN);
+
+	bool changed = false;
+	for (int i = 0; i < buttonShow.size(); i++) {
+		changed |= oldButtonShow[i] != buttonShow[i];
+	}
+	return changed;
 }
 
 void MainScreen::handleTouch(int16_t x, int16_t y) {

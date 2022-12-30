@@ -143,7 +143,9 @@ void GUI::switchToScreen(ScreenIdx screenId) {
 
 void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	log_i("Setting calendar status");
-	stopLoading();
+	bool wasLoading = _loading;
+	if (_loading)
+		stopLoading();
 
 	if (status)
 		_status = status;
@@ -151,7 +153,10 @@ void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	_mainScreen->setStatus(status);
 
 	if (_currentScreen == SCR_MAIN) {
-		_mainScreen->draw(MY_UPDATE_MODE);
+		if (wasLoading)  // Need to do full draw to draw over loading animation
+			_mainScreen->draw(MY_UPDATE_MODE);
+		else
+			_mainScreen->reducedDraw(MY_UPDATE_MODE);
 	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		switchToScreen(SCR_MAIN);
 	}
@@ -159,12 +164,17 @@ void GUI::showCalendarStatus(std::shared_ptr<cal::CalendarStatus> status) {
 
 void GUI::showError(const String& error) {
 	log_i("Showing error");
-	stopLoading();
+	bool wasLoading = _loading;
+	if (_loading)
+		stopLoading();
 
 	_mainScreen->setError(error);
 
 	if (_currentScreen == SCR_MAIN) {
-		_mainScreen->draw(MY_UPDATE_MODE);
+		if (wasLoading)  // Need to do full draw to draw over loading animation
+			_mainScreen->draw(MY_UPDATE_MODE);
+		else
+			_mainScreen->reducedDraw(MY_UPDATE_MODE);
 	} else if (_currentScreen == SCR_LOADING || _currentScreen == SCR_CONFIRM_FREE) {
 		switchToScreen(SCR_MAIN);
 	}

@@ -60,6 +60,19 @@ class MainScreen : public Screen {
 
 	void draw(m5epd_update_mode_t mode) override;
 
+	/**
+	 * This draw mode is called when we are already on the main screen.
+	 * This means that we don't necessarily need to draw everything again.
+	 * We do still draw everyting if state has sufficiently changed.
+	 *
+	 * This is a separate function to not pollute the Screen interface.
+	 *
+	 * We need to be diligent when calling this function.
+	 * We need to make sure that the current screen surely is already this screen and there is no
+	 * loading icons or anything else that needs to be drawn over.
+	 */
+	void reducedDraw(m5epd_update_mode_t mode);
+
 	void handleTouch(int16_t x = -1, int16_t y = -1) override;
 
 	// Callbacks the GUI class can register to (they fire on button presses)
@@ -70,18 +83,23 @@ class MainScreen : public Screen {
 	std::function<void()> onGoSettings = nullptr;
 
   private:
-	void updateLeftSide();
-	void updateRightSide();
+	void _updateLeftSide();
+	void _updateRightSide();
 
-	void updateLeftPanelColors();
-	void updateRightPanelColors();
+	/**
+	 * Returns true if buttons have changed (hidden or shown).
+	 */
+	bool _updateButtons();
 
-	void updateButtons();
+	void _drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw);
 
 	std::shared_ptr<cal::CalendarStatus> _status = nullptr;
-	bool _statusChanged = false;
 	String _error = "";
-	bool _showError = false;
+
+	bool _statusChanged = true;
+	bool _errorChanged = true;
+
+	float _batteryLevel = -1;
 
 	std::array<std::unique_ptr<Panel>, PNL_SIZE> _panels;
 	std::array<std::unique_ptr<Text>, TXT_SIZE> _texts;
@@ -92,8 +110,8 @@ class MainScreen : public Screen {
 
 	Image _batteryWarningIcon{"/images/battery1.png", Pos{652 + 32 + 12 + 4, 64 + 8 + 4}, true};
 
-	BatteryStyle _curBatteryStyle = BATTERY_LIGHT;
-	uint8_t _curBatteryImage = 0;
+	BatteryStyle _batteryStyle = BATTERY_LIGHT;
+	uint8_t _batteryImage = 0;
 };
 }  // namespace gui
 
