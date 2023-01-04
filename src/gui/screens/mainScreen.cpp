@@ -183,8 +183,9 @@ void MainScreen::reducedDraw(m5epd_update_mode_t mode) { _drawImpl(mode, true); 
 void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 	// Always update elements that are expected to change all the time
 	// (things based on clock and battery level)
-	_texts[TXT_TOP_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
-	_texts[TXT_MID_CLOCK]->setText(safeMyTZ.dateTime("G:i"));
+	const String time = safeMyTZ.dateTime("G:i");
+	_texts[TXT_TOP_CLOCK]->setText(time);
+	_texts[TXT_MID_CLOCK]->setText(time);
 	// Negative battery level means that we are charging
 	float oldBatteryLevel = _batteryLevel;
 	_batteryLevel = utils::getBatteryLevel();
