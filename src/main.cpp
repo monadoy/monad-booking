@@ -151,6 +151,7 @@ std::unique_ptr<cal::APITask> createApiTask(JsonObjectConst config) {
 }
 
 void normalBoot(JsonObjectConst config) {
+	guiTask = utils::make_unique<gui::GUITask>();
 	guiTask->startLoading();
 	guiTask->setLoadingScreenText("Booting...");
 
@@ -237,6 +238,7 @@ bool detectButtonHold() {
 }
 
 void setupBoot() {
+	guiTask = utils::make_unique<gui::GUITask>();
 	sleepManager.incrementTaskCounter();
 	// Try to sync from rtc in case there is some kind of time
 	syncEzTimeFromRTC();
@@ -290,8 +292,6 @@ void setup() {
 
 	configStore = utils::make_unique<config::ConfigStore>(LittleFS);
 	JsonObjectConst config = configStore->getConfigJson();
-
-	guiTask = utils::make_unique<gui::GUITask>();
 
 	bool forceSetup = detectButtonHold();
 	if (!forceSetup && config.begin() != config.end()) {
