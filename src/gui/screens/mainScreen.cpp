@@ -19,10 +19,10 @@ MainScreen::MainScreen() {
 	ADD_PNL(PNL_RIGHT, Panel(Pos{652, 0}, Size{308, 540}, R_PNL));
 
 	ADD_TXT(TXT_TOP_CLOCK,
-	        Text(Pos{872, 20}, Size{70, 32}, "00:00", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
+	        Text(Pos{872, 20}, Size{74, 30}, "00:00", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
 	ADD_TXT(TXT_BATTERY_LEVEL,
-	        Text(Pos{748, 20}, Size{60, 32}, "100", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
-	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{70, 32}, "00:00", FS_NORMAL, BK, L_PNL));
+	        Text(Pos{748, 20}, Size{58, 30}, "100", FS_NORMAL, BK, R_PNL, false, Align::RIGHT));
+	ADD_TXT(TXT_MID_CLOCK, Text(Pos{l_txt_pad, 92}, Size{70, 30}, "00:00", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_ROOM_NAME, Text(Pos{l_txt_pad, 125}, Size{l_txt_w, 40}, "", FS_NORMAL, BK, L_PNL));
 	ADD_TXT(TXT_TITLE, Text(Pos{l_txt_pad, 164}, Size{l_txt_w, 77},
 	                        l10n.msg(L10nMessage::NOT_BOOKED), FS_TITLE, BK, L_PNL, true));
