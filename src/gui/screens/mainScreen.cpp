@@ -163,7 +163,10 @@ void MainScreen::setStatus(std::shared_ptr<cal::CalendarStatus> status) {
 	}
 
 	// Calling setStatus means that no error happened
-	_texts[TXT_ERROR]->hide();
+	if (!_texts[TXT_ERROR]->isHidden()) {
+		_errorChanged = true;
+		_texts[TXT_ERROR]->hide();
+	}
 }
 
 void MainScreen::setError(const String& error) {
