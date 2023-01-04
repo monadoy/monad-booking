@@ -26,7 +26,7 @@ jobs:
           if [[ "${{ inputs.channel }}" == "beta" ]]; then
             echo "DEPLOY_FOLDER=beta/" >> $GITHUB_ENV
           else
-            echo "DEPLOY_FOLDER=''" >> $GITHUB_ENV
+            echo "DEPLOY_FOLDER=" >> $GITHUB_ENV
           fi
 
       - name: Get version numbers from platformio.ini

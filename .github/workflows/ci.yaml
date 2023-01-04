@@ -8,24 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Test1
-        run: echo "DEPLOY_FOLDER=''" >> $GITHUB_ENV
-        
-      - name: Echo test1
-        run: echo ${{ env.DEPLOY_FOLDER }}
-
-      - name: Test2
-        run: echo "DEPLOY_FOLDER2=" >> $GITHUB_ENV
-
-      - name: Echo test1
-        run: echo ${{ env.DEPLOY_FOLDER2 }}
-
-      - name: Test3
-        run: echo 'DEPLOY_FOLDER3=""' >> $GITHUB_ENV
-
-      - name: Echo test1
-        run: echo ${{ env.DEPLOY_FOLDER3 }}
-
       - name: Set up Python with cache
         uses: actions/setup-python@v4
         with:
