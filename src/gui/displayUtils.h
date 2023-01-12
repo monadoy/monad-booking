@@ -7,6 +7,19 @@ namespace gui {
 
 String timeSpanStr(time_t startTime, time_t endTime);
 
+/**
+ * Put the display to sleep.
+ * This wraps M5.EPD.Sleep() in a boolean check to prevent unnecessary calls.
+ * DO NOT CALL M5.EPD.Sleep() DIRECTLY, it causes a de-sync!
+ */
+void sleepDisplay();
+/**
+ * Wake the display. Needs to be called before drawing.
+ * This wraps M5.EPD.Active() in a boolean check to prevent unnecessary calls.
+ * DO NOT CALL M5.EPD.Active() DIRECTLY, it causes a de-sync!
+ */
+void wakeDisplay();
+
 };  // namespace gui
 
 #endif

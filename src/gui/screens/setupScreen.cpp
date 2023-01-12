@@ -1,6 +1,7 @@
 #include "setupScreen.h"
 
 #include "globals.h"
+#include "gui/displayUtils.h"
 
 namespace gui {
 
@@ -53,7 +54,7 @@ void drawQRCode() {
 }
 
 void SetupScreen::draw(m5epd_update_mode_t mode) {
-	M5.EPD.Active();
+	wakeDisplay();
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
@@ -62,7 +63,7 @@ void SetupScreen::draw(m5epd_update_mode_t mode) {
 
 	// Usually the screen goes to sleep when the device goes to sleep,
 	// but in this screen we never sleep so we need to do it manually
-	M5.EPD.Sleep();
+	sleepDisplay();
 }
 
 }  // namespace gui

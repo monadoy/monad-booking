@@ -206,7 +206,7 @@ void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 	    "%d, buttons changed: %d",
 	    allowReducedDraw, _statusChanged, _errorChanged, batteryWarningChanged, buttonsChanged);
 
-	M5.EPD.Active();
+	wakeDisplay();
 	// Do a special non flashy update if clock and battery level are the only things that
 	// changed since last update
 	if (allowReducedDraw && !_statusChanged && !_errorChanged && !batteryWarningChanged

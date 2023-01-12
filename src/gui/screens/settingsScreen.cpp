@@ -35,7 +35,7 @@ SettingsScreen::SettingsScreen() {
 }
 
 void SettingsScreen::draw(m5epd_update_mode_t mode) {
-	M5.EPD.Active();
+	wakeDisplay();
 	_buttons[BTN_UPDATE]->show(latestVersionResult.isOk()
 	                           && *latestVersionResult.ok() != CURRENT_VERSION);
 

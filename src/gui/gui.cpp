@@ -1,6 +1,7 @@
 #include "gui.h"
 
 #include "LittleFS.h"
+#include "displayUtils.h"
 #include "globals.h"
 #include "guiTask.h"
 
@@ -129,7 +130,7 @@ void GUI::sleep() {
 		switchToScreen(SCR_MAIN);
 	}
 
-	M5.EPD.Sleep();
+	sleepDisplay();
 }
 
 void GUI::switchToScreen(ScreenIdx screenId) {
@@ -199,7 +200,7 @@ void GUI::showShutdownScreen(String message, bool isError) {
 }
 
 void GUI::startLoading() {
-	M5.EPD.Active();
+	wakeDisplay();
 	_loading = true;
 	_guiTask->loadingAnimNextFrame();
 }

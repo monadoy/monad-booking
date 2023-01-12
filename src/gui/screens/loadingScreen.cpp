@@ -1,6 +1,7 @@
 #include "loadingScreen.h"
 
 #include "globals.h"
+#include "gui/displayUtils.h"
 
 namespace gui {
 
@@ -16,7 +17,7 @@ LoadingScreen::LoadingScreen() {
 }
 
 void LoadingScreen::draw(m5epd_update_mode_t mode) {
-	M5.EPD.Active();
+	wakeDisplay();
 	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
 	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
@@ -37,7 +38,7 @@ void LoadingScreen::setText(String text) {
 		_texts[TXT_LOADING_1]->setText(text.substring(0, newline));
 		_texts[TXT_LOADING_2]->setText(text.substring(newline + 1));
 	}
-	M5.EPD.Active();
+	wakeDisplay();
 	delay(30);
 	// Draw only text
 	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
