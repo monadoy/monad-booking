@@ -201,7 +201,7 @@ void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 
 	bool buttonsChanged = _updateButtons();
 
-	log_i(
+	log_d(
 	    "Allow reduced draw: %d, status changed: %d, error changed: %d, battery warning changed: "
 	    "%d, buttons changed: %d",
 	    allowReducedDraw, _statusChanged, _errorChanged, batteryWarningChanged, buttonsChanged);
