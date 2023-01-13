@@ -28,18 +28,29 @@ class Element {
 	Element(Pos pos, Size size, bool hidden = false) : _pos{pos}, _size{size}, _hidden{hidden} {};
 	virtual ~Element() = default;
 
-	virtual void draw(m5epd_update_mode_t mode) = 0;
+	virtual void drawToCanvas(M5EPD_Canvas& canvas) = 0;
 
-	void show(bool show = true) { _hidden = !show; }
-	void hide() { _hidden = true; }
+	void show(bool show = true) {
+		_hidden = !show;
+		_changed = true;
+	}
+	void hide() {
+		_hidden = true;
+		_changed = true;
+	}
 	bool isHidden() { return _hidden; }
 
-	void setPos(Pos pos) { _pos = pos; }
+	void setPos(Pos pos) {
+		_pos = pos;
+		_changed = true;
+	}
 
   protected:
 	Pos _pos;
 	Size _size;
 	bool _hidden;
+
+	bool _changed = true;
 };
 }  // namespace gui
 

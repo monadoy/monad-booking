@@ -2,6 +2,9 @@
 #define DISPLAY_UTILS_H
 
 #include <Arduino.h>
+#include <M5EPD.h>
+
+#include "elements/element.h"
 
 namespace gui {
 
@@ -19,6 +22,9 @@ void sleepDisplay();
  * DO NOT CALL M5.EPD.Active() DIRECTLY, it causes a de-sync!
  */
 void wakeDisplay();
+
+void readPartFromCanvas(Pos pos, Size size, M5EPD_Canvas& canvas, uint16_t canvasWidth,
+                        uint8_t* partBuffer);
 
 };  // namespace gui
 

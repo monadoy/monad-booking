@@ -36,6 +36,8 @@ class ShutdownScreen : public Screen {
 	std::array<std::unique_ptr<Button>, BTN_SIZE> _buttons;
 
 	Image _logo{Image("/images/frame1.png", Pos{292, 107})};
+
+	M5EPD_Canvas _canvas{&M5.EPD};
 };
 }  // namespace gui
 

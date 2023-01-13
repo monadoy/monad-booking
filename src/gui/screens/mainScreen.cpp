@@ -6,6 +6,8 @@
 namespace gui {
 
 MainScreen::MainScreen() {
+	_canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
+
 	const int l_pnl_w = 652;
 	const int l_txt_pad = 80;
 	const int l_txt_w = l_pnl_w - 2 * l_txt_pad;
@@ -180,6 +182,14 @@ void MainScreen::draw(m5epd_update_mode_t mode) { _drawImpl(mode, false); }
 
 void MainScreen::reducedDraw(m5epd_update_mode_t mode) { _drawImpl(mode, true); }
 
+const Pos POS_1 = Pos{.x = 748, .y = 20};
+const Size SIZE_1 = Size{.w = 200, .h = 30};
+uint8_t* part1_buf = new uint8_t[SIZE_1.w * SIZE_1.h / 2];
+
+const Pos POS_2 = Pos{.x = 80, .y = 92};
+const Size SIZE_2 = Size{.w = 72, .h = 30};
+uint8_t* part2_buf = new uint8_t[SIZE_2.w * SIZE_2.h / 2];
+
 void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 	// Always update elements that are expected to change all the time
 	// (things based on clock and battery level)
@@ -211,23 +221,33 @@ void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 	// changed since last update
 	if (allowReducedDraw && !_statusChanged && !_errorChanged && !batteryWarningChanged
 	    && !buttonsChanged) {
-		_texts[TXT_TOP_CLOCK]->draw(UPDATE_MODE_GL16);
+		_texts[TXT_TOP_CLOCK]->drawToCanvas(_canvas);
 		if (oldBatteryImage != _batteryImage)
-			_batteryAnim[_batteryStyle].drawFrame(_batteryImage + 1, UPDATE_MODE_GL16);
+			_batteryAnim[_batteryStyle].drawFrameToCanvas(_batteryImage + 1, _canvas);
 		if (oldBatteryLevel != _batteryLevel)
-			_texts[TXT_BATTERY_LEVEL]->draw(UPDATE_MODE_GL16);
-		_texts[TXT_MID_CLOCK]->draw(UPDATE_MODE_GL16);
+			_texts[TXT_BATTERY_LEVEL]->drawToCanvas(_canvas);
+		_texts[TXT_MID_CLOCK]->drawToCanvas(_canvas);
 
+		// Update top right part with battery level and clock
+		readPartFromCanvas(POS_1, SIZE_1, _canvas, M5EPD_PANEL_W, part1_buf);
+		M5.EPD.WritePartGram4bpp(POS_1.x, POS_1.y, SIZE_1.w, SIZE_1.h, part1_buf);
+		M5.EPD.UpdateArea(POS_1.x, POS_1.y, SIZE_1.w, SIZE_1.h, mode);
+
+		// Update clock on left side
+		readPartFromCanvas(POS_2, SIZE_2, _canvas, M5EPD_PANEL_W, part2_buf);
+		M5.EPD.WritePartGram4bpp(POS_2.x, POS_2.y, SIZE_2.w, SIZE_2.h, part2_buf);
+		M5.EPD.UpdateArea(POS_2.x, POS_2.y, SIZE_2.w, SIZE_2.h, mode);
 	} else {
-		for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
-		for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
-		for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
-		_batteryAnim[_batteryStyle].drawFrame(_batteryImage + 1, UPDATE_MODE_NONE);
+		for (auto& p : _panels) p->drawToCanvas(_canvas);
+		for (auto& t : _texts) t->drawToCanvas(_canvas);
+		for (auto& b : _buttons) b->drawToCanvas(_canvas);
+		_batteryAnim[_batteryStyle].drawFrameToCanvas(_batteryImage + 1, _canvas);
 		if (_batteryImage == 0) {
-			_batteryWarningIcon.draw(UPDATE_MODE_NONE);
+			_batteryWarningIcon.drawToCanvas(_canvas);
 		}
-		M5.EPD.UpdateFull(mode);
+		_canvas.pushCanvas(0, 0, mode);
 	}
+	sleepDisplay();
 
 	_statusChanged = false;
 	_errorChanged = false;

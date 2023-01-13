@@ -24,14 +24,20 @@ class Animation {
 	 */
 	void drawFrame(int16_t frame, m5epd_update_mode_t updateMode);
 
+	void drawFrameToCanvas(int16_t frame, M5EPD_Canvas& canvas);
+
 	/**
 	 * Draws the next frame of the animation.
 	 * If the animation is at the end, it will loop by going backwards.
 	 */
 	void drawNext(m5epd_update_mode_t updateMode);
+	void drawNextToCanvas(M5EPD_Canvas& canvas);
+
 	void reset();
 
   private:
+	void advanceFrame();
+
 	const String _basePath;
 	const int16_t _frames;
 	int8_t _animDir = 1;        // 1 = forward, -1 = backward

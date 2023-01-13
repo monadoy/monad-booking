@@ -12,12 +12,16 @@ class Panel : public Element {
 	Panel(Pos pos, Size size, uint8_t color);
 	~Panel(){};
 
-	void setColor(uint8_t color) { _color = color; }
+	void setColor(uint8_t color) {
+		if (_color == color)
+			return;
+		_color = color;
+		_changed = true;
+	}
 
-	void draw(m5epd_update_mode_t mode) override final;
+	void drawToCanvas(M5EPD_Canvas& canvas) override;
 
   private:
-	M5EPD_Canvas _canvas;
 	uint8_t _color;
 };
 }  // namespace gui

@@ -27,4 +27,18 @@ void wakeDisplay() {
 	M5.EPD.Active();
 }
 
+void readPartFromCanvas(Pos pos, Size size, M5EPD_Canvas& canvas, uint16_t canvasWidth,
+                        uint8_t* partBuffer) {
+	uint8_t* frameBuffer = (uint8_t*)canvas.frameBuffer();
+	for (uint16_t y = 0; y < size.h; y++) {
+		for (uint16_t x = 0; x < size.w / 2; x++) {
+			auto x_idx = pos.x / 2 + x;
+			auto y_idx = pos.y + y;
+			auto idx = y_idx * canvasWidth / 2 + x_idx;
+
+			partBuffer[y * size.w / 2 + x] = frameBuffer[idx];
+		}
+	}
+}
+
 };  // namespace gui

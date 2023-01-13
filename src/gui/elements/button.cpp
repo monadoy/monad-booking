@@ -17,15 +17,15 @@ Button::Button(Pos pos, Size size, const String& text, uint8_t fontSize, uint8_t
 Button::Button(Pos pos, Size size, const String& imagePath, std::function<void()> callback)
     : Element(pos, size), _image{utils::make_unique<Image>(imagePath, pos)}, _callback{callback} {}
 
-void Button::draw(m5epd_update_mode_t mode) {
+void Button::drawToCanvas(M5EPD_Canvas& canvas) {
 	if (_hidden) {
 		return;
 	}
 
 	if (_text) {
-		_text->draw(mode);
+		_text->drawToCanvas(canvas);
 	} else if (_image) {
-		_image->draw(mode);
+		_image->drawToCanvas(canvas);
 	}
 }
 

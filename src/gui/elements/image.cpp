@@ -39,6 +39,14 @@ void PNGDraw(PNGDRAW* pDraw) {
 	                         pDraw->pPixels);
 }
 
+void PNGDrawToCanvas(PNGDRAW* pDraw) {
+	Image* image = static_cast<Image*>(pDraw->pUser);
+	image->_canvas->pushImage(image->pos.x, image->pos.y + pDraw->y, pDraw->iWidth, 1,
+	                          pDraw->pPixels);
+	if (!image->_reverseColor)
+		image->_canvas->ReversePartColor(image->pos.x, image->pos.y + pDraw->y, pDraw->iWidth, 1);
+}
+
 Image::Image(String path, Pos pos, bool reverseColor)
     : pos{pos}, _path(path), _reverseColor(reverseColor) {}
 
@@ -59,6 +67,18 @@ void Image::draw(m5epd_update_mode_t updateMode) {
 	}
 	if (!_reverseColor)
 		M5.EPD.SetColorReverse(false);
+	log_d("Frame drawing took %u ms.", millis() - beginTime);
+	png.close();
+}
+
+void Image::drawToCanvas(M5EPD_Canvas& canvas) {
+	int beginTime = millis();
+
+	_canvas = &canvas;
+	int res1 = png.open(_path.c_str(), openFunc, closeFunc, readFunc, seekFunc, PNGDrawToCanvas);
+	if (res1 == PNG_SUCCESS) {
+		int res2 = png.decode(this, 0);
+	}
 	log_d("Frame drawing took %u ms.", millis() - beginTime);
 	png.close();
 }

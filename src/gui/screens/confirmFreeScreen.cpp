@@ -6,6 +6,8 @@
 namespace gui {
 
 ConfirmFreeScreen::ConfirmFreeScreen() {
+	_canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
+	
 	const int txt_pad = 144;
 	const int txt_w = 960 - 2 * txt_pad;
 
@@ -41,10 +43,11 @@ void ConfirmFreeScreen::setEvent(std::shared_ptr<cal::Event> event) {
 
 void ConfirmFreeScreen::draw(m5epd_update_mode_t mode) {
 	wakeDisplay();
-	for (auto& p : _panels) p->draw(UPDATE_MODE_NONE);
-	for (auto& t : _texts) t->draw(UPDATE_MODE_NONE);
-	for (auto& b : _buttons) b->draw(UPDATE_MODE_NONE);
-	M5.EPD.UpdateFull(mode);
+	for (auto& p : _panels) p->drawToCanvas(_canvas);
+	for (auto& t : _texts) t->drawToCanvas(_canvas);
+	for (auto& b : _buttons) b->drawToCanvas(_canvas);
+	_canvas.pushCanvas(0, 0, mode);
+	sleepDisplay();
 }
 
 void ConfirmFreeScreen::handleTouch(int16_t x, int16_t y) {

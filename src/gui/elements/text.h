@@ -17,16 +17,29 @@ class Text : public Element {
 	     Margins margins = Margins{4, 4, 4, 4});
 	~Text(){};
 
-	void setText(const String& text) { _text = text; }
-
-	void setBGColor(uint8_t color) { _bgColor = color; }
-
-	void setColors(uint8_t textColor, uint8_t bgColor) {
-		_textColor = textColor;
-		_bgColor = bgColor;
+	void setText(const String& text) {
+		if (_text == text)
+			return;
+		_text = text;
+		_changed = true;
 	}
 
-	void draw(m5epd_update_mode_t mode) override;
+	void setBGColor(uint8_t color) {
+		if (_bgColor == color)
+			return;
+		_bgColor = color;
+		_changed = true;
+	}
+
+	void setColors(uint8_t textColor, uint8_t bgColor) {
+		if (_textColor == textColor && _bgColor == bgColor)
+			return;
+		_textColor = textColor;
+		_bgColor = bgColor;
+		_changed = true;
+	}
+
+	void drawToCanvas(M5EPD_Canvas& canvas) override;
 
   private:
 	String _text;

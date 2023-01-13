@@ -112,6 +112,8 @@ class MainScreen : public Screen {
 
 	BatteryStyle _batteryStyle = BATTERY_LIGHT;
 	uint8_t _batteryImage = 0;
+
+	M5EPD_Canvas _canvas{&M5.EPD};
 };
 }  // namespace gui
 

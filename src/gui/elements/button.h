@@ -18,7 +18,7 @@ class Button : public Element {
 	void disable(bool disabled = true) { _disabled = disabled; }
 	void enable() { disable(false); }
 
-	void draw(m5epd_update_mode_t mode) override;
+	void drawToCanvas(M5EPD_Canvas& canvas) override;
 
 	void registerCallback(std::function<void()> callback) { _callback = callback; }
 
