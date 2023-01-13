@@ -142,6 +142,7 @@ void MainScreen::_updateRightSide() {
 	uint8_t bgColor = taken ? R_PNL_TAKEN : R_PNL;
 	_panels[PNL_RIGHT]->setColor(bgColor);
 	_texts[TXT_TOP_CLOCK]->setBGColor(bgColor);
+	_texts[TXT_BATTERY_LEVEL]->setBGColor(bgColor);
 	_texts[TXT_R_FREE_HEADER]->setBGColor(bgColor);
 	_texts[TXT_R_TAKEN_HEADER]->setBGColor(bgColor);
 	_texts[TXT_R_TAKEN_ORGANIZER]->setBGColor(bgColor);
