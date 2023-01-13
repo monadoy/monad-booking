@@ -30,7 +30,7 @@ void ShutdownScreen::draw(m5epd_update_mode_t mode) {
 }
 
 void ShutdownScreen::setText(String text, bool isError) {
-	log_i("Setting loading screen text to: %s", text.c_str());
+	log_i("Setting shutdown screen text to: %s", text.c_str());
 	int newline = text.indexOf('\n');
 	if (newline == -1) {
 		_texts[TXT_1]->setText(text);

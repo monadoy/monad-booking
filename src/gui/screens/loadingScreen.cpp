@@ -45,7 +45,7 @@ void LoadingScreen::setText(String text) {
 	M5EPD_Canvas& c = getScreenBuffer();
 	for (auto& t : _texts) t->drawToCanvas(c);
 	wakeDisplay();
-	M5.EPD.UpdateArea(0, 402, 960, 84, MY_UPDATE_MODE);
+	c.pushCanvas(0, 0, MY_UPDATE_MODE);
 	delay(30);
 }
 
