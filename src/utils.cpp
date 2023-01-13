@@ -38,16 +38,14 @@ uint32_t getSmoothBatteryVoltage() {
 
 /**
  * Returns battery level in 0.0-1.0 range.
- * Returns -1 if charging.
  */
 float getBatteryLevel() {
 	auto voltage = getSmoothBatteryVoltage();
-	if (voltage > 4275) {
-		return -1;
-	}
 	auto clamped = std::min(std::max(getSmoothBatteryVoltage(), BAT_LOW), BAT_HIGH);
 	return (float)(clamped - BAT_LOW) / (float)(BAT_HIGH - BAT_LOW);
 }
+
+bool isCharging() { return M5.getBatteryVoltage() > 4275; }
 
 std::vector<String> getBootLog() {
 	fs::File readHandle = LittleFS.open("/boot.log", FILE_READ);

@@ -65,6 +65,8 @@ class Result {
 
 float getBatteryLevel();
 
+bool isCharging();
+
 std::vector<String> getBootLog();
 
 bool addBootLogEntry(const String& entry);

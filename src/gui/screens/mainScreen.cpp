@@ -200,7 +200,7 @@ void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 	_batteryLevel = utils::getBatteryLevel();
 
 	uint8_t oldBatteryImage = _batteryImage;
-	_batteryImage = _batteryLevel < 0 ? 4 : uint8_t(_batteryLevel * 3.9999);
+	_batteryImage = utils::isCharging() ? 4 : uint8_t(_batteryLevel * 3.9999);
 
 	_texts[TXT_BATTERY_WARNING]->show(_batteryImage == 0);
 	bool batteryWarningChanged = (oldBatteryImage == 0) != (_batteryImage == 0);
