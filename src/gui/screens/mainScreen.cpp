@@ -6,8 +6,6 @@
 namespace gui {
 
 MainScreen::MainScreen() {
-	_canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
-
 	const int l_pnl_w = 652;
 	const int l_txt_pad = 80;
 	const int l_txt_w = l_pnl_w - 2 * l_txt_pad;
@@ -216,38 +214,42 @@ void MainScreen::_drawImpl(m5epd_update_mode_t mode, bool allowReducedDraw) {
 	    "%d, buttons changed: %d",
 	    allowReducedDraw, _statusChanged, _errorChanged, batteryWarningChanged, buttonsChanged);
 
-	wakeDisplay();
+	M5EPD_Canvas& c = getScreenBuffer();
 	// Do a special non flashy update if clock and battery level are the only things that
 	// changed since last update
 	if (allowReducedDraw && !_statusChanged && !_errorChanged && !batteryWarningChanged
 	    && !buttonsChanged) {
-		_texts[TXT_TOP_CLOCK]->drawToCanvas(_canvas);
+		_texts[TXT_TOP_CLOCK]->drawToCanvas(c);
 		if (oldBatteryImage != _batteryImage)
-			_batteryAnim[_batteryStyle].drawFrameToCanvas(_batteryImage + 1, _canvas);
+			_batteryAnim[_batteryStyle].drawFrameToCanvas(_batteryImage + 1, c);
 		if (oldBatteryLevel != _batteryLevel)
-			_texts[TXT_BATTERY_LEVEL]->drawToCanvas(_canvas);
-		_texts[TXT_MID_CLOCK]->drawToCanvas(_canvas);
+			_texts[TXT_BATTERY_LEVEL]->drawToCanvas(c);
+		_texts[TXT_MID_CLOCK]->drawToCanvas(c);
 
+		readPartFromCanvas(POS_1, SIZE_1, c, M5EPD_PANEL_W, part1_buf);
+		readPartFromCanvas(POS_2, SIZE_2, c, M5EPD_PANEL_W, part2_buf);
+
+		wakeDisplay();
 		// Update top right part with battery level and clock
-		readPartFromCanvas(POS_1, SIZE_1, _canvas, M5EPD_PANEL_W, part1_buf);
 		M5.EPD.WritePartGram4bpp(POS_1.x, POS_1.y, SIZE_1.w, SIZE_1.h, part1_buf);
 		M5.EPD.UpdateArea(POS_1.x, POS_1.y, SIZE_1.w, SIZE_1.h, mode);
 
 		// Update clock on left side
-		readPartFromCanvas(POS_2, SIZE_2, _canvas, M5EPD_PANEL_W, part2_buf);
 		M5.EPD.WritePartGram4bpp(POS_2.x, POS_2.y, SIZE_2.w, SIZE_2.h, part2_buf);
 		M5.EPD.UpdateArea(POS_2.x, POS_2.y, SIZE_2.w, SIZE_2.h, mode);
+		sleepDisplay();
 	} else {
-		for (auto& p : _panels) p->drawToCanvas(_canvas);
-		for (auto& t : _texts) t->drawToCanvas(_canvas);
-		for (auto& b : _buttons) b->drawToCanvas(_canvas);
-		_batteryAnim[_batteryStyle].drawFrameToCanvas(_batteryImage + 1, _canvas);
+		for (auto& p : _panels) p->drawToCanvas(c);
+		for (auto& t : _texts) t->drawToCanvas(c);
+		for (auto& b : _buttons) b->drawToCanvas(c);
+		_batteryAnim[_batteryStyle].drawFrameToCanvas(_batteryImage + 1, c);
 		if (_batteryImage == 0) {
-			_batteryWarningIcon.drawToCanvas(_canvas);
+			_batteryWarningIcon.drawToCanvas(c);
 		}
-		_canvas.pushCanvas(0, 0, mode);
+		wakeDisplay();
+		c.pushCanvas(0, 0, mode);
+		sleepDisplay();
 	}
-	sleepDisplay();
 
 	_statusChanged = false;
 	_errorChanged = false;

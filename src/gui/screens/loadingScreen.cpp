@@ -6,8 +6,6 @@
 namespace gui {
 
 LoadingScreen::LoadingScreen() {
-	_canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
-
 	ADD_PNL(PNL_MAIN, Panel(Pos{0, 0}, Size{960, 540}, WH));
 
 	ADD_TXT(TXT_LOADING_1,
@@ -19,11 +17,12 @@ LoadingScreen::LoadingScreen() {
 }
 
 void LoadingScreen::draw(m5epd_update_mode_t mode) {
+	M5EPD_Canvas& c = getScreenBuffer();
+	for (auto& p : _panels) p->drawToCanvas(c);
+	for (auto& t : _texts) t->drawToCanvas(c);
+	for (auto& b : _buttons) b->drawToCanvas(c);
 	wakeDisplay();
-	for (auto& p : _panels) p->drawToCanvas(_canvas);
-	for (auto& t : _texts) t->drawToCanvas(_canvas);
-	for (auto& b : _buttons) b->drawToCanvas(_canvas);
-	_canvas.pushCanvas(0, 0, mode);
+	c.pushCanvas(0, 0, mode);
 	sleepDisplay();
 }
 
@@ -41,10 +40,11 @@ void LoadingScreen::setText(String text) {
 		_texts[TXT_LOADING_1]->setText(text.substring(0, newline));
 		_texts[TXT_LOADING_2]->setText(text.substring(newline + 1));
 	}
-	wakeDisplay();
 	delay(30);
 	// Draw only text
-	for (auto& t : _texts) t->drawToCanvas(_canvas);
+	M5EPD_Canvas& c = getScreenBuffer();
+	for (auto& t : _texts) t->drawToCanvas(c);
+	wakeDisplay();
 	M5.EPD.UpdateArea(0, 402, 960, 84, MY_UPDATE_MODE);
 	delay(30);
 }

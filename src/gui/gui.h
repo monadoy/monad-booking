@@ -86,8 +86,6 @@ class GUI {
 	bool _loading = false;
 
 	std::shared_ptr<cal::CalendarStatus> _status = nullptr;
-
-	M5EPD_Canvas _canvas;
 };
 }  // namespace gui
 

@@ -39,8 +39,6 @@ class ConfirmFreeScreen : public Screen {
 
 	std::unique_ptr<config::ConfigStore> _configStore = nullptr;
 	std::unique_ptr<config::ConfigServer> _configServer = nullptr;
-
-	M5EPD_Canvas _canvas{&M5.EPD};
 };
 }  // namespace gui
 

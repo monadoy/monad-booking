@@ -26,6 +26,13 @@ void wakeDisplay();
 void readPartFromCanvas(Pos pos, Size size, M5EPD_Canvas& canvas, uint16_t canvasWidth,
                         uint8_t* partBuffer);
 
+/**
+ * Get a canvas that can be used as a screen buffer.
+ * Used by all screens, so it should be fully overwritten when drawing.
+ * This function is used to avoid allocating the buffer multiple times.
+ */
+M5EPD_Canvas& getScreenBuffer();
+
 };  // namespace gui
 
 #endif

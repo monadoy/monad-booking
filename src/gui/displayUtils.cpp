@@ -41,4 +41,11 @@ void readPartFromCanvas(Pos pos, Size size, M5EPD_Canvas& canvas, uint16_t canva
 	}
 }
 
+M5EPD_Canvas& getScreenBuffer() {
+	static M5EPD_Canvas canvas(&M5.EPD);
+	// Does nothing is already created
+	canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
+	return canvas;
+}
+
 };  // namespace gui

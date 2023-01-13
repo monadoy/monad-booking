@@ -35,8 +35,6 @@ class SettingsScreen : public Screen {
 	std::array<std::unique_ptr<Panel>, PNL_SIZE> _panels;
 	std::array<std::unique_ptr<Text>, TXT_SIZE> _texts;
 	std::array<std::unique_ptr<Button>, BTN_SIZE> _buttons;
-
-	M5EPD_Canvas _canvas{&M5.EPD};
 };
 }  // namespace gui
 

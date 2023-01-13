@@ -1,5 +1,8 @@
 #ifndef SCREEN_H
 #define SCREEN_H
+
+#include <M5EPD.h>
+
 namespace gui {
 
 #define ADD_PNL(id, p) _panels[id] = std::unique_ptr<Panel>(new p)
@@ -36,7 +39,6 @@ class Screen {
 	virtual void draw(m5epd_update_mode_t mode) = 0;
 
 	virtual void handleTouch(int16_t x = -1, int16_t y = -1) = 0;
-
 };
 }  // namespace gui
 

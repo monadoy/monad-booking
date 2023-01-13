@@ -6,8 +6,6 @@
 namespace gui {
 
 SettingsScreen::SettingsScreen() {
-	_canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
-
 	const int txt_pad_x = 60;
 	const int txt_pad_y = 120;
 	const int txt_w = 960 - 2 * txt_pad_x;
@@ -37,14 +35,14 @@ SettingsScreen::SettingsScreen() {
 }
 
 void SettingsScreen::draw(m5epd_update_mode_t mode) {
-	wakeDisplay();
 	_buttons[BTN_UPDATE]->show(latestVersionResult.isOk()
 	                           && *latestVersionResult.ok() != CURRENT_VERSION);
-
-	for (auto& p : _panels) p->drawToCanvas(_canvas);
-	for (auto& t : _texts) t->drawToCanvas(_canvas);
-	for (auto& b : _buttons) b->drawToCanvas(_canvas);
-	_canvas.pushCanvas(0, 0, mode);
+	M5EPD_Canvas& c = getScreenBuffer();
+	for (auto& p : _panels) p->drawToCanvas(c);
+	for (auto& t : _texts) t->drawToCanvas(c);
+	for (auto& b : _buttons) b->drawToCanvas(c);
+	wakeDisplay();
+	c.pushCanvas(0, 0, mode);
 	sleepDisplay();
 }
 

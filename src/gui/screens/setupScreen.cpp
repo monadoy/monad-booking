@@ -6,8 +6,6 @@
 namespace gui {
 
 SetupScreen::SetupScreen() {
-	_canvas.createCanvas(M5EPD_PANEL_W, M5EPD_PANEL_H);
-
 	const int txt_pad = 60;
 	const int txt_w = 960 - 2 * txt_pad;
 
@@ -43,7 +41,7 @@ void SetupScreen::startSetup(bool useAP) {
 	_configServer->start();
 }
 
-void drawQRCode() {
+void drawQRCode(M5EPD_Canvas& c) {
 	if (!wifiManager.isAccessPoint())
 		return;
 
@@ -52,16 +50,17 @@ void drawQRCode() {
 	WiFiInfo info = wifiManager.getAccessPointInfo();
 	const String qrString = "WIFI:S:" + info.ssid + ";T:WPA;P:" + info.password + ";;";
 	canvasQR.qrcode(qrString, 0, 0, 360, 7);
-	canvasQR.pushCanvas(510, 90, UPDATE_MODE_NONE);
+	canvasQR.pushToCanvas(510, 90, &c);
 }
 
 void SetupScreen::draw(m5epd_update_mode_t mode) {
+	M5EPD_Canvas& c = getScreenBuffer();
+	for (auto& p : _panels) p->drawToCanvas(c);
+	for (auto& t : _texts) t->drawToCanvas(c);
+	for (auto& b : _buttons) b->drawToCanvas(c);
+	drawQRCode(c);
 	wakeDisplay();
-	for (auto& p : _panels) p->drawToCanvas(_canvas);
-	for (auto& t : _texts) t->drawToCanvas(_canvas);
-	for (auto& b : _buttons) b->drawToCanvas(_canvas);
-	drawQRCode();
-	_canvas.pushCanvas(0, 0, mode);
+	c.pushCanvas(0, 0, mode);
 	sleepDisplay();
 }
 
