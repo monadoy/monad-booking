@@ -37,6 +37,19 @@ jobs:
           export VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo VERSION="${VERSION}" >> $GITHUB_ENV
       
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Verify that platformio.ini defines the same version as the tag
+        run: |
+          if [[ "${{ env.VERSION }}" != "${{ steps.tag.outputs.tag }}" ]]; then
+            echo "Version in platformio.ini (${{ env.VERSION }}) does not match tag (${{ steps.tag.outputs.tag }})";
+            exit 1;
+          fi
+      
       - name: Verify that this version is not already deployed
         run: |
           curl -s -o /dev/null -w "%{http_code}" https://storage.googleapis.com/no-booking-binaries/${{ env.DEPLOY_FOLDER }}v${{ env.VERSION }}/firmware.bin | grep -q 404
