@@ -162,6 +162,7 @@ void normalBoot(JsonObjectConst config) {
 	}
 
 	sleepManager.setOnTimes(config["awake"]);
+	sleepManager.setWiFiKeepConnected(config["wifi"]["keep_connected"] | false);
 
 	if (!wifiManager.openStation(config["wifi"]["ssid"], config["wifi"]["password"],
 	                             BOOT_WIFI_CONNECT_MAX_RETRIES)) {

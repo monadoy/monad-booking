@@ -53,18 +53,6 @@
 
 	$: console.log(config)
 
-	const updateGoogleToken = (s: string) => {
-		if (!s) return
-		try {
-			config.gcalsettings.token = JSON.parse(s.trim())
-			clearMessage("[Malformed google_token.json]")
-		} catch (err) {
-			config.gcalsettings.token = undefined
-			console.log(err)
-			message = { isError: true, content: `[Malformed google_token.json] ${err.message}` }
-		}
-	}
-
 	let googleTokenFiles: FileList
 	$: if (googleTokenFiles && googleTokenFiles.length > 0) {
 		googleTokenFiles[0].text().then(text => (googleTokenString = text))
@@ -145,6 +133,15 @@
 			<input id="wifissid" type="text" bind:value={config.wifi.ssid} />
 			<label for="wifipassword">WIFI Password</label>
 			<input id="wifipassword" type="text" bind:value={config.wifi.password} />
+			<label for="wifikeepconnected">WIFI Keep Connected</label>
+			<div class="multi-input">
+				<input type="checkbox" id="wifikeepconnected" bind:checked={config.wifi.keep_connected} />
+				{#if config.wifi.keep_connected}
+					(Enabled)
+				{:else}
+					(Disabled)
+				{/if}
+			</div>
 			<label for="timezone">IANA Time Zone</label>
 			<select id="timezone" bind:value={config.timezone}>
 				{#each timeZonesNames as tz}

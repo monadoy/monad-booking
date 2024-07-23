@@ -13,6 +13,7 @@ export let defaultConfig: Config = {
 	wifi: {
 		ssid: "",
 		password: "",
+		keep_connected: false,
 	},
 	awake: {
 		time: {
@@ -58,6 +59,7 @@ export interface Config {
 	wifi: {
 		ssid: string
 		password: string
+		keep_connected: boolean
 	}
 	awake: {
 		time: {

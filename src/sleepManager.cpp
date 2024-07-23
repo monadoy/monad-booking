@@ -180,7 +180,9 @@ SleepManager::WakeReason SleepManager::_sleep() {
 
 	Serial.flush();
 
-	wifiManager.sleepWiFi();
+	if (!_wifiKeepConnected) {
+		wifiManager.sleepWiFi();
+	}
 
 	// Light sleep and wait for timer or touch interrupt
 	esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);  // TOUCH_INT
@@ -232,6 +234,11 @@ void SleepManager::setOnTimes(JsonObjectConst config) {
 	      _onDays[4], _onDays[5], _onDays[6]);
 	log_i("Awake times: from: %02d:%02d, to: %02d:%02d.", _onHours[0], _onMinutes[0], _onHours[1],
 	      _onMinutes[1]);
+}
+
+void SleepManager::setWiFiKeepConnected(bool value) { 
+	_wifiKeepConnected = value;
+	log_i("WiFi keep connected: %d", value);
 }
 
 time_t SleepManager::calculateTurnOnTimeUTC(time_t localNow) {

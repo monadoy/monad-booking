@@ -113,6 +113,9 @@ class SleepManager {
 	std::array<uint8_t, 2> _onHours{0, 0};
 	std::array<uint8_t, 2> _onMinutes{0, 0};
 
+	void setWiFiKeepConnected(bool value);
+	bool _wifiKeepConnected;
+
 	time_t calculateTurnOnTimeUTC(time_t localNow);
 	bool _shouldShutdown();
 

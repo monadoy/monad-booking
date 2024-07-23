@@ -128,9 +128,7 @@ bool WiFiManager::waitWiFi(int maxRetries) {
 		if (WiFi.isConnected()) {
 			xSemaphoreGive(_waitWifiSemaphore);
 			return true;
-		} else {
-			esp_wifi_deauth_sta(0);
-		}
+		} 
 	}
 	log_w("Couldn't connect to WiFi even after %d tries.", maxRetries + 1);
 	xSemaphoreGive(_waitWifiSemaphore);
